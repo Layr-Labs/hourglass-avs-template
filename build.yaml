@@ -1,0 +1,4 @@
+container:
+  registry: "" # optional, defaults to dockerhub
+  image: "my-avs"
+  version: "latest"
