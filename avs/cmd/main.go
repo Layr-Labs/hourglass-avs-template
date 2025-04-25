@@ -1,77 +1,69 @@
+// This main.go file exists to show you which components need to be implemented
+// to create a valid Ponos Performer so that Operators can run your AVS software.
+//
+// Think of this as a template to get started; you are more than welcome to
+// structure your project as you see fit.
 package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/Layr-Labs/hourglass-monorepo/ponos-performer/go/pkg/server"
-	"github.com/Layr-Labs/hourglass-monorepo/ponos/pkg/performer"
-	"github.com/pkg/errors"
+	performerV1 "github.com/Layr-Labs/hourglass-monorepo/ponos/gen/protos/eigenlayer/hourglass/v1/performer"
+	"github.com/Layr-Labs/hourglass-monorepo/ponos/pkg/performer/server"
 	"go.uber.org/zap"
 	"time"
 )
 
-type TaskWorker struct{}
-
-type TaskRequestPayload struct {
-	Message string
+// TaskWorker is a struct that implements the TaskWorker interface
+type TaskWorker struct {
+	logger *zap.Logger
 }
 
-type TaskResponsePayload struct {
-	Message       string
-	UnixTimestamp uint64
+func NewTaskWorker(logger *zap.Logger) *TaskWorker {
+	return &TaskWorker{
+		logger: logger,
+	}
 }
 
-func (tw *TaskWorker) marshalPayload(t *performer.Task) (*TaskRequestPayload, error) {
-	if len(t.Payload) == 0 {
-		return nil, fmt.Errorf("task payload is empty")
-	}
-
-	payloadBytes, err := t.GetPayloadBytes()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get payload bytes")
-	}
-	var payload *TaskRequestPayload
-	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal payload")
-	}
-	return payload, nil
-}
-
-func (tw *TaskWorker) ValidateTask(t *performer.Task) error {
-	if _, err := tw.marshalPayload(t); err != nil {
-		return errors.Wrap(err, "invalid task payload")
-	}
+// ValidateTask validates the task payload and returns an error
+// if it is invalid
+func (tw *TaskWorker) ValidateTask(t *performerV1.Task) error {
+	// ------------------------------------------------------------------------
+	// Add your AVS task validation logic here.
+	// ------------------------------------------------------------------------
 	return nil
 }
 
-func (tw *TaskWorker) HandleTask(t *performer.Task) (*performer.TaskResult, error) {
-	payload, err := tw.marshalPayload(t)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal payload")
-	}
+// HandleTask handles the task and returns the result
+func (tw *TaskWorker) HandleTask(t *performerV1.Task) (*performerV1.TaskResult, error) {
+	// ------------------------------------------------------------------------
+	// Add your AVS task handling logic here
+	// ------------------------------------------------------------------------
 
-	responsePayload := &TaskResponsePayload{
-		Message:       fmt.Sprintf("Hello %s", payload.Message),
-		UnixTimestamp: uint64(time.Now().Unix()),
-	}
-	responseBytes, err := json.Marshal(responsePayload)
+	var responseBytes []byte
 
-	return performer.NewTaskResult(t.TaskID, t.Avs, t.OperatorSetID, responseBytes), nil
+	return &performerV1.TaskResult{
+		TaskId:     t.TaskId,
+		AvsAddress: t.AvsAddress,
+		Result:     responseBytes,
+	}, nil
 }
 
 func main() {
 	ctx := context.Background()
 	l, _ := zap.NewProduction()
 
-	w := &TaskWorker{}
+	w := NewTaskWorker(l)
 
-	pp := server.NewPonosPerformer(&server.PonosPerformerConfig{
+	pp, err := server.NewPonosPerformerWithRpcServer(&server.PonosPerformerConfig{
 		Port:    8080,
 		Timeout: 5 * time.Second,
 	}, w, l)
+	if err != nil {
+		panic(fmt.Errorf("failed to create performer: %w", err))
+	}
 
-	if err := pp.StartHttpServer(ctx); err != nil {
+	if err := pp.Start(ctx); err != nil {
 		panic(err)
 	}
 }

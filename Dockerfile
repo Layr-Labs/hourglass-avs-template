@@ -8,4 +8,4 @@ WORKDIR /build
 
 RUN make build
 
-COMMAND ["/build/bin/performer"]
+CMD ["/build/bin/performer"]

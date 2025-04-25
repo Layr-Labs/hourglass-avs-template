@@ -1,3 +1,11 @@
+# -----------------------------------------------------------------------------
+# This Makefile is used for building your AVS application.
+#
+# It contains basic targets for building the application, installing dependencies,
+# and building a Docker container.
+#
+# Modify each target as needed to suit your application's requirements.
+# -----------------------------------------------------------------------------
 
 GO = $(shell which go)
 OUT = ./bin
@@ -12,8 +20,8 @@ deps:
 
 
 build/container:
-	$(eval buildConfig := $(shell cat build.yaml))
-	$(eval registry := $(shell yq '.container.registry' build.yaml))
+	$(eval buildConfig := $(shell cat ./.hourglass/build.yaml))
+	$(eval registry := $(shell cat ./.hourglass/build.yaml | yq -r '.container.registry'))
 	$(if $(registry),$(eval registry := $(registry)/),)
 
-	docker build -t "$(registry)$(shell yq '.container.image' build.yaml):$(shell yq '.container.version' build.yaml)" .
+	docker build -t "$(registry)$(shell cat ./.hourglass/build.yaml | yq -r '.container.image'):$(shell cat ./.hourglass/build.yaml | yq -r '.container.version')" .
