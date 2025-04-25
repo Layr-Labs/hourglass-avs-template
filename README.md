@@ -2,20 +2,27 @@ Directory structure
 
 ```bash
 .
-|-- Dockerfile                   # basic dockerfile
-|-- Makefile                     # makefile for building the project
-|-- avs                          # where your AVS code lives
+|-- .gitignore
+|-- .hourglass
+|   |-- build.yaml
+|   |-- config
+|   |   |-- aggregator.yaml
+|   |   `-- executor.yaml
+|   `-- scripts
+|       |-- build.sh
+|       |-- init.sh
+|       `-- run.sh
+|-- Dockerfile
+|-- Makefile
+|-- Makefile.Devkit
+|-- README.md
+|-- avs
 |   `-- cmd
-|       `-- main.go                 # compiled main module
-|-- bin                          # compiled binary destination
+|       `-- main.go
+|-- bin
 |   `-- performer
-|-- build.yaml                  # build configuration: container name, tag, etc
-|-- config                      # runtime configs
-|   |-- avs                         # avs-specific config
-|   |   `-- README.md
-|   `-- hourglass                   # hourglass components configs
-|       |-- aggregator.yaml             # aggregator runtime config
-|       `-- executor.yaml               # executor runtime config
+|-- config
+|   `-- README.md
 |-- go.mod
 `-- go.sum
 
