@@ -20,6 +20,7 @@ deps:
 
 
 build/container:
+	@echo "Building container..."
 	$(eval buildConfig := $(shell cat ./.hourglass/build.yaml))
 	$(eval registry := $(shell cat ./.hourglass/build.yaml | yq -r '.container.registry'))
 	$(if $(registry),$(eval registry := $(registry)/),)
