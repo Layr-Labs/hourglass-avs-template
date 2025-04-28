@@ -1,0 +1,39 @@
+---
+grpcPort: 9090
+performerNetworkName: "hourglass-local_hourglass-network"
+operator:
+  address: "0xoperator..."
+  operatorPrivateKey: "..."
+  signingKeys:
+    bls:
+      keystore: |
+        {
+          "publicKey": "27ca30a9935d5c8435d4a2854cc6c376c253d6a4cb6e0026ea7a98b12789fd0b297a85d16550fe94ee0433eeac9a6a854d64e61ed82d7484b4287cb289ea962212e3a593a27a8aa7e196adc51336857c6fb30791fb70ac5bd8a522d4d486d0e3043f3e74c00a9f10bed939b07a06ff1b9bbb47794e613aa597d3e364c540bdf7",
+          "crypto": {
+            "cipher": "aes-128-ctr",
+            "ciphertext": "a0e75151edfb59c0a224a4ef74c6b572d98607a2fa48f85133a693b399d5c316",
+            "cipherparams": {
+              "iv": "6f02e76da70983d69a7cb9f072f3a384"
+            },
+            "kdf": "scrypt",
+            "kdfparams": {
+              "dklen": 32,
+              "n": 262144,
+              "p": 1,
+              "r": 8,
+              "salt": "c06be39f07a19428c69bec6c5d136a38ed5bb73ec0f68c81af1634dfda099ab8"
+            },
+            "mac": "28b382b5cb3fb663d7ac0e17dc7c7fdc9fe8065901e536fea12ce30c2d7a70a4"
+          },
+          "uuid": "2d34e7e1-0c94-4741-bfdc-a8aae120cf2f",
+          "version": 4,
+          "curveType": "bn254"
+        }
+      password: ""
+avsPerformers:
+  - image:
+      repository: "my-avs"
+      tag: "latest"
+    processType: "server"
+    avsAddress: "0xavs1..."
+    workerCount: 1
