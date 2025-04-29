@@ -1,11 +1,10 @@
 # This Makefile is specifically used as an interface for the devkit-cli.
 #
 # If you need to modify how your project is build, you should modify the main Makefile
-
 .PHONY: build
 build:
-    ./.hourglass/build.sh
+	BUILD_CONTAINER=true ./.hourglass/scripts/build.sh
 
 .PHONY: run
 run:
-    ./.hourglass/run.sh
+	./.hourglass/scripts/run.sh

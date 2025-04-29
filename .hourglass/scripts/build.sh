@@ -3,7 +3,7 @@
 BUILD_CONTAINER=${BUILD_CONTAINER:-"false"}
 
 if [[ "$BUILD_CONTAINER" == "true" ]]; then
-    make build/container
+    ./.hourglass/scripts/buildContainer.sh
 fi
 
 make build

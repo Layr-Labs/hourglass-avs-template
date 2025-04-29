@@ -1,0 +1,23 @@
+version: '3.8'
+
+name: hourglass-local
+services:
+  executor:
+    image: public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v0.1.0_130a7dc
+    networks:
+      - hourglass-network
+    ports:
+      - "127.0.0.1:9090:9090"
+    command:
+      - "executor"
+      - "run"
+      - "--config"
+      - "/ponos-config/executor.yaml"
+      - "--performer-network-name"
+      - "custom-network"
+    volumes:
+      - ./config:/ponos-config
+      - /var/run/docker.sock:/var/run/docker.sock # required for DinD
+networks:
+  hourglass-network:
+    driver: bridge

@@ -43,9 +43,8 @@ func (tw *TaskWorker) HandleTask(t *performerV1.Task) (*performerV1.TaskResult, 
 	var responseBytes []byte
 
 	return &performerV1.TaskResult{
-		TaskId:     t.TaskId,
-		AvsAddress: t.AvsAddress,
-		Result:     responseBytes,
+		TaskId: t.TaskId,
+		Result: responseBytes,
 	}, nil
 }
 

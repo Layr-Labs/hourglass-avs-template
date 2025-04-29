@@ -3,7 +3,7 @@ module github.com/Layr-Labs/hourglass-avs-template
 go 1.23.6
 
 require (
-	github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250425142944-1fa7fe22267e
+	github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250428184048-5d9944e72ab3
 	go.uber.org/zap v1.27.0
 )
 
