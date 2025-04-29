@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-go run ./avs/cmd/main.go
+
+docker compose --file ./.hourglass/docker-compose.yml up

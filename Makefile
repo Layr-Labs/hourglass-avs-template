@@ -16,13 +16,10 @@ build: deps
 	go build -o $(OUT)/performer ./avs/cmd/main.go
 
 deps:
-	go mod tidy
+	GOPRIVATE=github.com/Layr-Labs/* go mod tidy
 
 
 build/container:
-	@echo "Building container..."
-	$(eval buildConfig := $(shell cat ./.hourglass/build.yaml))
-	$(eval registry := $(shell cat ./.hourglass/build.yaml | yq -r '.container.registry'))
-	$(if $(registry),$(eval registry := $(registry)/),)
+	./.hourglass/scripts/buildContainer.sh
 
-	docker build -t "$(registry)$(shell cat ./.hourglass/build.yaml | yq -r '.container.image'):$(shell cat ./.hourglass/build.yaml | yq -r '.container.version')" .
+
