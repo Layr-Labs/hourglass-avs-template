@@ -35,3 +35,20 @@ This template includes a basic Go program that uses the Hourglass framework to g
 `-- go.sum
 
 ```
+
+## Interacting with the aggregator
+
+```bash
+curl -H 'content-type: application/json' -XPOST localhost:8081/events -d '{ 
+        "taskId": "0xtask1",
+        "avsAddress": "0xavs1...",
+        "operatorSetId": 1,
+        "callbackAddr": "0xcallmemaybe",
+        "deadline": 300,
+        "stakeRequired": 100,
+        "payload": "eyAibnVtYmVyVG9CZVNxdWFyZWQiOiA0IH0=",
+        "chainId": 1,
+        "blockNumber": 12345,
+        "blockHash": "0xblockHash"
+}'
+```

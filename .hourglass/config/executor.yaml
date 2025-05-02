@@ -37,3 +37,14 @@ avsPerformers:
     processType: "server"
     avsAddress: "0xavs1..."
     workerCount: 1
+    signingCurve: "bn254"
+simulation:
+  simulatePeering:
+    enabled: true
+    aggregatorPeers:
+      - networkAddress: "localhost"
+        port: 9999
+        operatorAddress: "0xaggregator123..."
+        operatorSetId: 0
+        publicKey: "006298d9fcf37ad16474df4a7536fbf7e8a0e8a5bbb24d73abdf048a4bf820330787130e90af3671e60afa2256a075966a2eecd21d04bc979d7bf3bd289a785004c3cc9aa53a8fa23b29787511315b4ad67577950e9091658f78cc60025c19f01ba6fd7aabda8e70984d3fec6b2fe6ebcb037e44dd9f261fb3ce87d54cd15b29"
+
