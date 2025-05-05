@@ -1,7 +1,7 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250428184048-5d9944e72ab3 h1:FkV9bWbngD/YAdWdvNxQelotlDxDEB+L2WIzIdEx2RA=
-github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250428184048-5d9944e72ab3/go.mod h1:SgU2XmlYFqoXpQF7aPd+6MlFC6V8qnRvRehqNUiKnBo=
+github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg=
+github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250502011232-ff28025c0466 h1:bgvFo54kpNkU61yWlehbOhrAa+AmNJXwoQUEEcAQqQs=
 github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250502011232-ff28025c0466/go.mod h1:TK9VdNzZ7cAMKQLOKdGzU07mgme8cw17Vd4qrA3D6dQ=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=

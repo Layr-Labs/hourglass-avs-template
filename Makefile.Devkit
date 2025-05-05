@@ -8,3 +8,27 @@ build:
 .PHONY: run
 run:
 	./.hourglass/scripts/run.sh
+
+.PHONY: create-operator-set
+create-operator-set:
+	@eval "$$(go run ./.hourglass/go-scripts/parse_operator_sets.go eigen.toml)" && \
+	for alias in $${OPERATOR_ALIAS_list}; do \
+		echo "Creating operator set: $$alias with ID=$${$${alias}_OPERATOR_SET_ID}"; \
+		forge script script/CreateOperatorSet.s.sol:CreateOperatorSet --rpc-url $(RPC_URL) -vvvv --broadcast --sig "run()"; \
+	done
+
+.PHONY: setup-submodules
+setup-submodules:
+	./.hourglass/scripts/devnet.sh
+
+.PHONY: deploy-taskmailbox
+deploy-taskmailbox:
+	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	chmod +x ./.hourglass/scripts/deploy-mailbox.sh && \
+	RPC_URL=$${RPC_URL} ./.hourglass/scripts/deploy-mailbox.sh
+
+.PHONY: deploy-taskavsregistrar
+deploy-taskavsregistrar:
+	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	chmod +x ./.hourglass/scripts/deploy-taskavsregistrar.sh && \
+	RPC_URL=$${RPC_URL} ./.hourglass/scripts/deploy-taskavsregistrar.sh
