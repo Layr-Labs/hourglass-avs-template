@@ -49,3 +49,15 @@ setup-avsl1contracts:
 	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
 	chmod +x ./.hourglass/scripts/setup-avsl1contracts.sh && \
 	RPC_URL=$${RPC_URL} ./.hourglass/scripts/setup-avsl1contracts.sh
+
+.PHONY: setup-avstaskmailbox-config
+setup-avstaskmailbox-config:
+	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	chmod +x ./.hourglass/scripts/setup-avstaskmailbox-config.sh && \
+	RPC_URL=$${RPC_URL} ./.hourglass/scripts/setup-avstaskmailbox-config.sh
+
+.PHONY: register-operator-to-eigenlayer
+register-operator-to-eigenlayer:
+	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	chmod +x ./.hourglass/scripts/register-operator-to-eigenlayer.sh && \
+	RPC_URL=$${RPC_URL} OPERATOR_PVT_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 ./.hourglass/scripts/register-operator-to-eigenlayer.sh
