@@ -58,6 +58,10 @@ setup-avstaskmailbox-config:
 
 .PHONY: register-operator-to-eigenlayer
 register-operator-to-eigenlayer:
-	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
-	chmod +x ./.hourglass/scripts/register-operator-to-eigenlayer.sh && \
-	RPC_URL=$${RPC_URL} OPERATOR_PVT_KEY=0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 ./.hourglass/scripts/register-operator-to-eigenlayer.sh
+	@bash -c '\
+		eval "$$(go run ./.hourglass/go-scripts/parse_operator_keys.go eigen.toml)"; \
+		eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)"; \
+		for key in $$OPERATOR_KEYS_list; do \
+			echo "Registering operator key: $$key"; \
+			OPERATOR_PVT_KEY=$$key RPC_URL=$$RPC_URL ./.hourglass/scripts/register-operator-to-eigenlayer.sh; \
+		done'
