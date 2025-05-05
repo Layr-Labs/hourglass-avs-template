@@ -38,12 +38,12 @@ func main() {
 	}
 
 	// Output as Makefile-compatible variables
-	fmt.Printf("OPERATOR_ALIAS_list := %s\n", strings.Join(aliases, " "))
+	fmt.Printf("export OPERATOR_ALIAS_list=\"%s\"\n", strings.Join(aliases, " "))
 	for alias, set := range config.OperatorSets {
 		prefix := strings.ToUpper(strings.ReplaceAll(alias, "-", "_"))
-		fmt.Printf("%s_OPERATOR_SET_ID := %d\n", prefix, set.OperatorSetID)
-		fmt.Printf("%s_RPC_ENDPOINT := %s\n", prefix, set.RPCEndpoint)
-		fmt.Printf("%s_AVS := %s\n", prefix, set.AVS)
-		fmt.Printf("%s_SUBMIT_WALLET := %s\n", prefix, set.SubmitWallet)
+		fmt.Printf("export %s_OPERATOR_SET_ID=%d\n", prefix, set.OperatorSetID)
+		fmt.Printf("export %s_RPC_ENDPOINT=%s\n", prefix, set.RPCEndpoint)
+		fmt.Printf("export %s_AVS=%s\n", prefix, set.AVS)
+		fmt.Printf("export %s_SUBMIT_WALLET=%s\n", prefix, set.SubmitWallet)
 	}
 }

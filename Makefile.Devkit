@@ -11,11 +11,16 @@ run:
 
 .PHONY: create-operator-set
 create-operator-set:
-	@eval "$$(go run ./.hourglass/go-scripts/parse_operator_sets.go eigen.toml)" && \
-	for alias in $${OPERATOR_ALIAS_list}; do \
-		echo "Creating operator set: $$alias with ID=$${$${alias}_OPERATOR_SET_ID}"; \
-		forge script script/CreateOperatorSet.s.sol:CreateOperatorSet --rpc-url $(RPC_URL) -vvvv --broadcast --sig "run()"; \
-	done
+	@bash -c '\
+		eval "$$(go run ./.hourglass/go-scripts/parse_operator_sets.go eigen.toml)"; \
+		eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)"; \
+		for alias in $$OPERATOR_ALIAS_list; do \
+			alias_var=$$(echo $$alias | tr a-z- A-Z_); \
+			operator_set_id=$$(eval echo \$${$${alias_var}_OPERATOR_SET_ID}); \
+			echo "Creating operator set: $$alias with ID=$$operator_set_id"; \
+			RPC_URL=$$RPC_URL OPERATOR_SET_ID=$$operator_set_id ./.hourglass/scripts/create-operator-set.sh; \
+		done'
+
 
 .PHONY: setup-submodules
 setup-submodules:
@@ -32,3 +37,15 @@ deploy-taskavsregistrar:
 	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
 	chmod +x ./.hourglass/scripts/deploy-taskavsregistrar.sh && \
 	RPC_URL=$${RPC_URL} ./.hourglass/scripts/deploy-taskavsregistrar.sh
+
+.PHONY: deploy-avsl2contracts
+deploy-avsl2contracts:
+	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	chmod +x ./.hourglass/scripts/deploy-avsl2contracts.sh && \
+	RPC_URL=$${RPC_URL} ./.hourglass/scripts/deploy-avsl2contracts.sh
+
+.PHONY: setup-avsl1contracts
+setup-avsl1contracts:
+	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	chmod +x ./.hourglass/scripts/setup-avsl1contracts.sh && \
+	RPC_URL=$${RPC_URL} ./.hourglass/scripts/setup-avsl1contracts.sh
