@@ -90,8 +90,46 @@ register-operator-to-avs:
 	chmod +x ./.hourglass/scripts/register_all_operators.sh
 	./.hourglass/scripts/register_all_operators.sh
 
+.PHONY: deposit-into-strategies
+deposit-into-strategies:
+	@bash -c '\
+		set -euo pipefail; \
+		eval "$$(go run ./go-scripts/parse_operator_keys.go eigen.toml)"; \
+		eval "$$(go run ./go-scripts/parse_rpc_url.go eigen.toml)"; \
+		eval "$$(go run ./go-scripts/parse_strategies.go eigen.toml)"; \
+		chmod +x ./.hourglass/scripts/deposit-into-strategies.sh; \
+		for key in $$OPERATOR_KEYS_list; do \
+			for (( j=0; j<$$STRATEGY_COUNT; j++ )); do \
+				strategy=$$(eval echo \$$STRATEGY_$${j}_ADDRESS); \
+				echo "📥 Depositing into strategy $$strategy with key $$key"; \
+				OPERATOR_PVT_KEY=$$key STRATEGY_ADDRESS=$$strategy RPC_URL=$$RPC_URL ./.hourglass/scripts/deposit-into-strategies.sh; \
+			done; \
+		done'
+
+.PHONY: modify-allocations
+modify-allocations:
+	@bash -c '\
+		set -euo pipefail; \
+		eval "$$(go run ./go-scripts/parse_operator_allocations.go eigen.toml)"; \
+		eval "$$(go run ./go-scripts/parse_rpc_url.go eigen.toml)"; \
+		chmod +x ./.hourglass/scripts/modify-allocations.sh; \
+		for (( strat=0; strat<$$STRATEGY_COUNT; strat++ )); do \
+			GROUP_COUNT=$$(eval echo \$$STRATEGY_$${strat}_ALLOCATION_GROUP_COUNT); \
+			for (( group=0; group<$$GROUP_COUNT; group++ )); do \
+				STRATEGY_ADDRESS=$$(eval echo \$$STRATEGY_$${strat}_ADDRESS); \
+				OPERATOR_PVT_KEY=$$(eval echo \$$STRATEGY_$${strat}_GROUP_$${group}_OPERATOR_PVT_KEY); \
+				ALLOCATION=$$(eval echo \$$STRATEGY_$${strat}_GROUP_$${group}_ALLOCATION); \
+				OPERATOR_SET_ID=$$(eval echo \$$STRATEGY_$${strat}_GROUP_$${group}_OPERATOR_SET_ID); \
+				AVS_ADDRESS=$$(eval echo \$$STRATEGY_$${strat}_GROUP_$${group}_AVS_ADDRESS); \
+				echo \"🔁 Modifying allocation: strategy=$$STRATEGY_ADDRESS, operatorSetID=$$OPERATOR_SET_ID, allocation=$$ALLOCATION\"; \
+				OPERATOR_PVT_KEY=$$OPERATOR_PVT_KEY STRATEGY_ADDRESS=$$STRATEGY_ADDRESS AVS_ADDRESS=$$AVS_ADDRESS OPERATOR_SET_ID=$$OPERATOR_SET_ID ALLOCATION=$$ALLOCATION RPC_URL=$$RPC_URL ./.hourglass/scripts/modify-allocations.sh; \
+			done; \
+		done'
 
 
+
+
+	
 
 
 

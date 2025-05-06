@@ -24,7 +24,7 @@ operatorAddr, err := getOperatorAddressFromHexKey(operatorKey)
 
 x, y, err := getPubkeyRegistrationMessageHash(rpcURL, common.HexToAddress(registrarAddr), operatorAddr)
 if err != nil {
-	log.Fatalf("Failed to get pubkeyRegistrationMessageHash for operator %d: %v", i, err)
+	log.Fatalf("Failed to get pubkeyRegistrationMessageHash for operator %v", err)
 }
 fmt.Printf("export PUBKEY_REGISTRATION_MESSAGE_HASH_X_POINT=%s\n", x.String())
 fmt.Printf("export PUBKEY_REGISTRATION_MESSAGE_HASH_Y_POINT=%s\n", y.String())
