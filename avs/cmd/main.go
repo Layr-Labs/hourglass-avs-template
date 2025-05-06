@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
+	"time"
+
 	performerV1 "github.com/Layr-Labs/hourglass-monorepo/ponos/gen/protos/eigenlayer/hourglass/v1/performer"
 	"github.com/Layr-Labs/hourglass-monorepo/ponos/pkg/performer/server"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"math/big"
-	"time"
 )
 
 type TaskWorker struct {
@@ -23,20 +24,23 @@ func NewTaskWorker(logger *zap.Logger) *TaskWorker {
 }
 
 type TaskRequestPayload struct {
-	NumberToBeSquared json.Number `json:"numberToBeSquared"`
-}
-
-func (trp *TaskRequestPayload) GetBigInt() (*big.Int, error) {
-	i, success := new(big.Int).SetString(trp.NumberToBeSquared.String(), 10)
-	if !success {
-		return nil, fmt.Errorf("failed to convert json.Number to big.Int")
-	}
-	return i, nil
+	Value *big.Int
 }
 
 type TaskResponsePayload struct {
 	Result        *big.Int
 	UnixTimestamp uint64
+}
+
+// parseABIEncodedUint256 parses an ABI-encoded uint256 from the payload
+// In ABI encoding, a uint256 is a 32-byte value, padded on the left
+func parseABIEncodedUint256(data []byte) (*big.Int, error) {
+	if len(data) < 32 {
+		return nil, fmt.Errorf("data too short for uint256: %d bytes", len(data))
+	}
+
+	// Extract the uint256 value (32 bytes)
+	return new(big.Int).SetBytes(data[:32]), nil
 }
 
 func (tw *TaskWorker) marshalPayload(t *performerV1.Task) (*TaskRequestPayload, error) {
@@ -45,11 +49,17 @@ func (tw *TaskWorker) marshalPayload(t *performerV1.Task) (*TaskRequestPayload, 
 	}
 
 	payloadBytes := t.GetPayload()
-	var payload *TaskRequestPayload
-	if err := json.Unmarshal(payloadBytes, &payload); err != nil {
-		return nil, errors.Wrap(err, "failed to unmarshal payload")
+	tw.logger.Sugar().Debugw("Raw payload bytes", "bytes", fmt.Sprintf("%x", payloadBytes))
+
+	// Parse the ABI-encoded uint256 value
+	value, err := parseABIEncodedUint256(payloadBytes)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to decode ABI payload")
 	}
-	return payload, nil
+
+	return &TaskRequestPayload{
+		Value: value,
+	}, nil
 }
 
 func (tw *TaskWorker) ValidateTask(t *performerV1.Task) error {
@@ -61,9 +71,9 @@ func (tw *TaskWorker) ValidateTask(t *performerV1.Task) error {
 		return errors.Wrap(err, "invalid task payload")
 	}
 
-	_, err = payload.GetBigInt()
-	if err != nil {
-		return errors.Wrap(err, "failed to get big.Int from payload")
+	// Check if Value is nil
+	if payload.Value == nil {
+		return errors.New("value is nil")
 	}
 
 	return nil
@@ -78,12 +88,7 @@ func (tw *TaskWorker) HandleTask(t *performerV1.Task) (*performerV1.TaskResult, 
 		return nil, errors.Wrap(err, "failed to marshal payload")
 	}
 
-	i, err := payload.GetBigInt()
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to get big.Int from payload")
-	}
-
-	squaredNumber := new(big.Int).Exp(i, big.NewInt(2), nil)
+	squaredNumber := new(big.Int).Exp(payload.Value, big.NewInt(2), nil)
 
 	responsePayload := &TaskResponsePayload{
 		Result:        squaredNumber,
