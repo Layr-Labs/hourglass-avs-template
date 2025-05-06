@@ -19,13 +19,16 @@ fi
 # Untrack submodules in Git index if already added
 git rm --cached contracts/lib/eigenlayer-middleware 2>/dev/null || true
 git rm --cached contracts/lib/forge-std 2>/dev/null || true
+git rm --cached contracts/lib/hourglass-monorepo 2>/dev/null || true
+
 # Remove existing submodule folders
-rm -rf contracts/lib/eigenlayer-middleware contracts/lib/forge-std
+rm -rf contracts/lib/eigenlayer-middleware contracts/lib/forge-std contracts/lib/hourglass-monorepo
 
 # Clean any submodule remnants
 git config --remove-section submodule.contracts/lib/eigenlayer-middleware 2>/dev/null || true
 git config --remove-section submodule.contracts/lib/forge-std 2>/dev/null || true
-rm -rf .git/modules/contracts/lib/eigenlayer-middleware .git/modules/contracts/lib/forge-std
+git config --remove-section submodule.contracts/lib/hourglass-monorepo 2>/dev/null || true
+rm -rf .git/modules/contracts/lib/eigenlayer-middleware .git/modules/contracts/lib/forge-std .git/modules/contracts/lib/hourglass-monorepo
 
 # Delete stale .gitmodules (must be staged or removed properly)
 if [ -f .gitmodules ]; then
@@ -37,6 +40,8 @@ fi
 # # Re-add submodules
 git submodule add https://github.com/Layr-Labs/eigenlayer-middleware contracts/lib/eigenlayer-middleware
 git submodule add https://github.com/foundry-rs/forge-std contracts/lib/forge-std
+git submodule add https://github.com/Layr-Labs/hourglass-monorepo contracts/lib/hourglass-monorepo
+
 
 
 # # Initialize submodules
@@ -45,13 +50,4 @@ git submodule update --init --recursive
 cd "$root_dir/contracts"
 
 cp .env.example .env
-# # Call Forge script
-# forge script script/DeployTaskMailbox.s.sol:DeployTaskMailbox --rpc-url "$RPC_URL" -vvvv --private-key "$PRIVATE_KEY" --broadcast --sig "run()"
 
-# forge script script/DeployTaskAVSRegistrar.s.sol:DeployTaskAVSRegistrar --rpc-url "$RPC_URL" -vvvv --private-key "$PRIVATE_KEY" --broadcast --sig "run()" 
-
-# forge script script/DeployAVSL2Contracts.s.sol:DeployAVSL2Contracts --rpc-url "$RPC_URL" -vvvv --broadcast --sig "run()" 
-
-# forge script script/SetupAVSL1Contracts.s.sol:SetupAVSL1Contracts --rpc-url "$RPC_URL" -vvvv --broadcast --sig "run()" 
-
-# forge script script/CreateOperatorSet.s.sol:CreateOperatorSet --rpc-url "$RPC_URL" -vvvv --broadcast --sig "run()" 
