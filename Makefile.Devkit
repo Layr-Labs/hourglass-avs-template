@@ -4,6 +4,7 @@
 .PHONY: build
 build:
 	BUILD_CONTAINER=true ./.hourglass/scripts/build.sh
+	cd contracts && forge build
 
 .PHONY: run
 run:
