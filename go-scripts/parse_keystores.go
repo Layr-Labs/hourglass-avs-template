@@ -2,9 +2,8 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
-
+	"log"
 	"github.com/BurntSushi/toml"
 	"github.com/Layr-Labs/eigensdk-go/crypto/bls"
 	"github.com/Layr-Labs/hourglass-monorepo/ponos/pkg/signing/bn254"
@@ -36,13 +35,13 @@ type EigenConfig struct {
 func main() {
 
 	if len(os.Args) != 2 {
-		// log.Fatalf("Usage: %s <eigen.toml>", os.Args[0])
+		log.Fatalf("Usage: %s <eigen.toml>", os.Args[0])
 	}
 	tomlPath := os.Args[1]
 
 	var cfg EigenConfig
 	if _, err := toml.DecodeFile(tomlPath, &cfg); err != nil {
-		// log.Fatalf("Error decoding TOML: %v", err)
+		log.Fatalf("Error decoding TOML: %v", err)
 	}
 
 	keystores := cfg.Operator.BLS.Keystores
@@ -53,11 +52,11 @@ func main() {
 		scheme := bn254.NewScheme()
 		keystoreData, err := keystore.LoadKeystoreFile(ks.Path)
 		if err != nil{
-			// log.Printf("failed to get keystore data %s",err)
+			log.Printf("failed to get keystore data %s",err)
 		}
 		privateKeyData, err := keystoreData.GetPrivateKey(ks.Password, scheme)
 		if err != nil {
-			// log.Printf("failed to extract key %s",err)
+			log.Printf("failed to extract key %s",err)
 		}
 	
 
@@ -71,15 +70,8 @@ func main() {
 		g2_y_0 := keyPair.GetPubKeyG2().Y.A0
 		g2_y_1 := keyPair.GetPubKeyG2().Y.A1
 
-		log.Printf("g1_x_point %s",&g1_x)
-		log.Printf("g1_y_point %s",&g1_y)
-		log.Printf("g2_x_0_point %s",&g2_x_0)
-		log.Printf("g2_x_1_point %s",&g2_x_1)
-		log.Printf("g2_y_0_point %s",&g2_y_0)
-		log.Printf("g2_y_1_point %s",&g2_y_1)
 
 		blsInt := privateKeyData.Bytes()
-		log.Printf("check %s",blsInt)
 		fmt.Printf("export OPERATOR_%d_BLSPRIVATE_KEY=%s\n", i, string(blsInt))
 		fmt.Printf("export OPERATOR_%d_G1_X=%s\n", i, g1_x.String())
 		fmt.Printf("export OPERATOR_%d_G1_Y=%s\n", i, g1_y.String())

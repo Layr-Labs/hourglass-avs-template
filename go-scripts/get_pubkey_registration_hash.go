@@ -19,19 +19,13 @@ func main() {
 	rpcURL := os.Getenv("RPC_URL")
 registrarAddr := os.Getenv("REGISTRAR_ADDRESS")
 operatorKey := os.Getenv("OPERATOR_KEY")
-log.Printf("rpcUrl%s",rpcURL)
-log.Printf("registrarAddr%s",registrarAddr)
-log.Printf("operatorKey%s",operatorKey)
 
 operatorAddr, err := getOperatorAddressFromHexKey(operatorKey)
 
 x, y, err := getPubkeyRegistrationMessageHash(rpcURL, common.HexToAddress(registrarAddr), operatorAddr)
 if err != nil {
-	// log.Fatalf("Failed to get pubkeyRegistrationMessageHash for operator %d: %v", i, err)
+	log.Fatalf("Failed to get pubkeyRegistrationMessageHash for operator %d: %v", i, err)
 }
-log.Printf("operator_address %s",operatorAddr)
-log.Printf("x_point_hash %s",x.String())
-log.Printf("y_point_hash %s",y.String())
 fmt.Printf("export PUBKEY_REGISTRATION_MESSAGE_HASH_X_POINT=%s\n", x.String())
 fmt.Printf("export PUBKEY_REGISTRATION_MESSAGE_HASH_Y_POINT=%s\n", y.String())
 
