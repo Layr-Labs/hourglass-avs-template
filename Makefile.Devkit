@@ -3,7 +3,8 @@
 # If you need to modify how your project is build, you should modify the main Makefile
 .PHONY: build
 build:
-	BUILD_CONTAINER=true setup-hourglass ./.hourglass/scripts/build.sh
+	@$(MAKE) setup-hourglass
+	BUILD_CONTAINER=true ./.hourglass/scripts/build.sh
 
 .PHONY: run
 run:
