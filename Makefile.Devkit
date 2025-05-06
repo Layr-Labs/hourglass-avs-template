@@ -3,11 +3,27 @@
 # If you need to modify how your project is build, you should modify the main Makefile
 .PHONY: build
 build:
-	BUILD_CONTAINER=true ./.hourglass/scripts/build.sh
+	BUILD_CONTAINER=true setup-hourglass ./.hourglass/scripts/build.sh
 
 .PHONY: run
 run:
 	./.hourglass/scripts/run.sh
+
+GIT_HOURGLASS_REPO=git@github.com:Layr-Labs/hourglass-monorepo.git
+HOURGLASS_DIR=./temp_external/hourglass-monorepo
+HOURGLASS_COMMIT=fc82a2b32c486bd6027288cf451ca20b8370784e
+
+.PHONY: setup-hourglass
+setup-hourglass: ## Clone and wire up hourglass-monorepo locally
+	@echo "📦 Cloning hourglass-monorepo to $(HOURGLASS_DIR)..."
+	@rm -rf $(HOURGLASS_DIR)
+	@git clone $(GIT_HOURGLASS_REPO) $(HOURGLASS_DIR)
+	@cd $(HOURGLASS_DIR) && git checkout $(HOURGLASS_COMMIT)
+	@echo "🔧 Replacing Go module path to use local clone..."
+	@go mod edit -replace=github.com/Layr-Labs/hourglass-monorepo=$(HOURGLASS_DIR)
+	@go mod edit -replace=github.com/Layr-Labs/hourglass-monorepo/contracts=$(HOURGLASS_DIR)/contracts
+	@go mod tidy
+	@echo "✅ hourglass-monorepo (commit: $(HOURGLASS_COMMIT)) linked successfully"
 
 .PHONY: create-operator-set
 create-operator-set:
