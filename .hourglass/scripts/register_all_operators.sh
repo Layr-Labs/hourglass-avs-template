@@ -3,9 +3,9 @@ set -euo pipefail
 
 eigen_toml="eigen.toml"
 
-eval "$(go run ./.hourglass/go-scripts/parse_operator_sets.go "$eigen_toml")"
-eval "$(go run ./.hourglass/go-scripts/parse_operator_keys.go "$eigen_toml")"
-eval "$(go run ./.hourglass/go-scripts/parse_rpc_url.go "$eigen_toml")"
+eval "$(go run ./go-scripts/parse_operator_sets.go "$eigen_toml")"
+eval "$(go run ./go-scripts/parse_operator_keys.go "$eigen_toml")"
+eval "$(go run ./go-scripts/parse_rpc_url.go "$eigen_toml")"
 
 read -a KEYS_ARRAY <<< "$OPERATOR_KEYS_list"
 KEYSTORE_COUNT=${#KEYS_ARRAY[@]}
@@ -14,10 +14,10 @@ for (( i=0; i<KEYSTORE_COUNT; i++ )); do
 	export OPERATOR_KEY="${KEYS_ARRAY[$i]}"
 	echo "🔑 Registering operator $i: $OPERATOR_KEY"
 
-	eval "$(go run ./.hourglass/go-scripts/parse_keystores.go "$eigen_toml")"
-	eval "$(RPC_URL=$RPC_URL REGISTRAR_ADDRESS=$REGISTRAR_ADDRESS OPERATOR_KEY=$OPERATOR_KEY go run ./.hourglass/go-scripts/get_pubkey_registration_hash.go)"
+	eval "$(go run ./go-scripts/parse_keystores.go "$eigen_toml")"
+	eval "$(RPC_URL=$RPC_URL REGISTRAR_ADDRESS=$REGISTRAR_ADDRESS OPERATOR_KEY=$OPERATOR_KEY go run ./go-scripts/get_pubkey_registration_hash.go)"
 	export OPERATOR_INDEX=$i
-	eval "$(OPERATOR_BLSPRIVATE_KEY=$OPERATOR_KEY PUBKEY_REGISTRATION_MESSAGE_HASH_X_POINT=$PUBKEY_REGISTRATION_MESSAGE_HASH_X_POINT PUBKEY_REGISTRATION_MESSAGE_HASH_Y_POINT=$PUBKEY_REGISTRATION_MESSAGE_HASH_Y_POINT go run ./.hourglass/go-scripts/sign_pubkey_hash.go)"
+	eval "$(OPERATOR_BLSPRIVATE_KEY=$OPERATOR_KEY PUBKEY_REGISTRATION_MESSAGE_HASH_X_POINT=$PUBKEY_REGISTRATION_MESSAGE_HASH_X_POINT PUBKEY_REGISTRATION_MESSAGE_HASH_Y_POINT=$PUBKEY_REGISTRATION_MESSAGE_HASH_Y_POINT go run ./go-scripts/sign_pubkey_hash.go)"
 
 	G1_X="$(eval echo \${OPERATOR_${i}_G1_X})"
 	G1_Y="$(eval echo \${OPERATOR_${i}_G1_Y})"

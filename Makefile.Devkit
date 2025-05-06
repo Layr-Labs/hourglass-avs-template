@@ -30,8 +30,8 @@ setup-hourglass: ## Clone and wire up hourglass-monorepo locally
 .PHONY: create-operator-set
 create-operator-set:
 	@bash -c '\
-		eval "$$(go run ./.hourglass/go-scripts/parse_operator_sets.go eigen.toml)"; \
-		eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)"; \
+		eval "$$(go run ./go-scripts/parse_operator_sets.go eigen.toml)"; \
+		eval "$$(go run ./go-scripts/parse_rpc_url.go eigen.toml)"; \
 		for alias in $$OPERATOR_ALIAS_list; do \
 			alias_var=$$(echo $$alias | tr a-z- A-Z_); \
 			operator_set_id=$$(eval echo \$${$${alias_var}_OPERATOR_SET_ID}); \
@@ -46,39 +46,39 @@ setup-submodules:
 
 .PHONY: deploy-taskmailbox
 deploy-taskmailbox:
-	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	@eval "$$(go run ./go-scripts/parse_rpc_url.go eigen.toml)" && \
 	chmod +x ./.hourglass/scripts/deploy-mailbox.sh && \
 	RPC_URL=$${RPC_URL} ./.hourglass/scripts/deploy-mailbox.sh
 
 .PHONY: deploy-taskavsregistrar
 deploy-taskavsregistrar:
-	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	@eval "$$(go run ./go-scripts/parse_rpc_url.go eigen.toml)" && \
 	chmod +x ./.hourglass/scripts/deploy-taskavsregistrar.sh && \
 	RPC_URL=$${RPC_URL} ./.hourglass/scripts/deploy-taskavsregistrar.sh
 
 .PHONY: deploy-avsl2contracts
 deploy-avsl2contracts:
-	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	@eval "$$(go run ./go-scripts/parse_rpc_url.go eigen.toml)" && \
 	chmod +x ./.hourglass/scripts/deploy-avsl2contracts.sh && \
 	RPC_URL=$${RPC_URL} ./.hourglass/scripts/deploy-avsl2contracts.sh
 
 .PHONY: setup-avsl1contracts
 setup-avsl1contracts:
-	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	@eval "$$(go run ./go-scripts/parse_rpc_url.go eigen.toml)" && \
 	chmod +x ./.hourglass/scripts/setup-avsl1contracts.sh && \
 	RPC_URL=$${RPC_URL} ./.hourglass/scripts/setup-avsl1contracts.sh
 
 .PHONY: setup-avstaskmailbox-config
 setup-avstaskmailbox-config:
-	@eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)" && \
+	@eval "$$(go run ./go-scripts/parse_rpc_url.go eigen.toml)" && \
 	chmod +x ./.hourglass/scripts/setup-avstaskmailbox-config.sh && \
 	RPC_URL=$${RPC_URL} ./.hourglass/scripts/setup-avstaskmailbox-config.sh
 
 .PHONY: register-operator-to-eigenlayer
 register-operator-to-eigenlayer:
 	@bash -c '\
-		eval "$$(go run ./.hourglass/go-scripts/parse_operator_keys.go eigen.toml)"; \
-		eval "$$(go run ./.hourglass/go-scripts/parse_rpc_url.go eigen.toml)"; \
+		eval "$$(go run ./go-scripts/parse_operator_keys.go eigen.toml)"; \
+		eval "$$(go run ./go-scripts/parse_rpc_url.go eigen.toml)"; \
 		chmod +x ./.hourglass/scripts/register-operator-to-eigenlayer.sh; \
 		for key in $$OPERATOR_KEYS_list; do \
 			echo "Registering operator key: $$key"; \
