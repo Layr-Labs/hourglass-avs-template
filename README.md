@@ -11,6 +11,7 @@ This template includes a basic Go program that uses the Hourglass framework to g
 ```bash
 .
 |-- .gitignore
+|-- .gitmodules
 |-- .hourglass
 |   |-- build.yaml
 |   |-- config
@@ -31,10 +32,15 @@ This template includes a basic Go program that uses the Hourglass framework to g
 |   `-- performer
 |-- config
 |   `-- README.md
+|-- contracts
 |-- go.mod
 `-- go.sum
 
 ```
+
+## Contracts
+
+The `/contracts` directory contains the Hourglass contracts template as a git submodule. This provides the smart contracts needed for your AVS to interact with EigenLayer. The contracts are maintained in a separate repository at [github.com/Layr-Labs/hourglass-contracts-template](https://github.com/Layr-Labs/hourglass-contracts-template).
 
 ## Interacting with the aggregator
 
