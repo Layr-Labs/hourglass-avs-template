@@ -3,6 +3,7 @@
 # If you need to modify how your project is build, you should modify the main Makefile
 .PHONY: build
 build:
+	./.hourglass/scripts/devnet.sh
 	@$(MAKE) setup-hourglass
 	BUILD_CONTAINER=true ./.hourglass/scripts/build.sh
 
