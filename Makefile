@@ -20,3 +20,6 @@ deps:
 
 build/container:
 	./.hourglass/scripts/buildContainer.sh
+
+test:
+	go test ./... -v -p 1
