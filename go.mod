@@ -4,6 +4,7 @@ go 1.23.6
 
 require (
 	github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250502011232-ff28025c0466
+	github.com/pkg/errors v0.9.1
 	go.uber.org/zap v1.27.0
 )
 
