@@ -127,7 +127,7 @@ modify-allocations:
 		done'
 
 
-
+deploy: deploy-taskmailbox deploy-taskavsregistrar deploy-avsl2contracts setup-avsl1contracts create-operator-set setup-avstaskmailbox-config register-operator-to-eigenlayer register-operator-to-avs
 
 	
 
