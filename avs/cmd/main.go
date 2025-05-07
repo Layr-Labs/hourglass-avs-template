@@ -2,15 +2,13 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"math/big"
-	"time"
-
 	performerV1 "github.com/Layr-Labs/hourglass-monorepo/ponos/gen/protos/eigenlayer/hourglass/v1/performer"
 	"github.com/Layr-Labs/hourglass-monorepo/ponos/pkg/performer/server"
-	"github.com/pkg/errors"
 	"go.uber.org/zap"
+	"math/big"
+	"strings"
+	"time"
 )
 
 type TaskWorker struct {
@@ -23,82 +21,59 @@ func NewTaskWorker(logger *zap.Logger) *TaskWorker {
 	}
 }
 
-type TaskRequestPayload struct {
-	Value *big.Int
-}
-
-type TaskResponsePayload struct {
-	Result        *big.Int
-	UnixTimestamp uint64
-}
-
-// parseABIEncodedUint256 parses an ABI-encoded uint256 from the payload
-// In ABI encoding, a uint256 is a 32-byte value, padded on the left
-func parseABIEncodedUint256(data []byte) (*big.Int, error) {
-	if len(data) < 32 {
-		return nil, fmt.Errorf("data too short for uint256: %d bytes", len(data))
+func parseHexBytesToBigInt(payload []byte) (*big.Int, error) {
+	if len(payload) == 0 {
+		return nil, fmt.Errorf("payload is empty")
 	}
 
-	// Extract the uint256 value (32 bytes)
-	return new(big.Int).SetBytes(data[:32]), nil
+	payloadStr := strings.TrimPrefix(string(payload), "0x")
+
+	i, success := new(big.Int).SetString(payloadStr, 16)
+	if !success {
+		return nil, fmt.Errorf("failed to convert hex string to big.Int")
+	}
+	return i, nil
 }
 
-func (tw *TaskWorker) marshalPayload(t *performerV1.Task) (*TaskRequestPayload, error) {
-	if len(t.Payload) == 0 {
-		return nil, fmt.Errorf("task payload is empty")
+func parseBigIntToHex(i *big.Int) []byte {
+	if i == nil {
+		return nil
 	}
-
-	payloadBytes := t.GetPayload()
-	tw.logger.Sugar().Debugw("Raw payload bytes", "bytes", fmt.Sprintf("%x", payloadBytes))
-
-	// Parse the ABI-encoded uint256 value
-	value, err := parseABIEncodedUint256(payloadBytes)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode ABI payload")
+	hexStr := i.Text(16)
+	if len(hexStr)%2 != 0 {
+		hexStr = "0" + hexStr
 	}
-
-	return &TaskRequestPayload{
-		Value: value,
-	}, nil
+	return []byte("0x" + hexStr)
 }
 
 func (tw *TaskWorker) ValidateTask(t *performerV1.Task) error {
 	tw.logger.Sugar().Infow("Validating task",
 		zap.Any("task", t),
 	)
-	payload, err := tw.marshalPayload(t)
-	if err != nil {
-		return errors.Wrap(err, "invalid task payload")
-	}
+	_, err := parseHexBytesToBigInt(t.Payload)
 
-	// Check if Value is nil
-	if payload.Value == nil {
-		return errors.New("value is nil")
-	}
-
-	return nil
+	return err
 }
 
 func (tw *TaskWorker) HandleTask(t *performerV1.Task) (*performerV1.TaskResult, error) {
 	tw.logger.Sugar().Infow("Handling task",
 		zap.Any("task", t),
 	)
-	payload, err := tw.marshalPayload(t)
+	i, err := parseHexBytesToBigInt(t.Payload)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal payload")
+		return nil, err
 	}
 
-	squaredNumber := new(big.Int).Exp(payload.Value, big.NewInt(2), nil)
+	squaredNumber := new(big.Int).Exp(i, big.NewInt(2), nil)
 
-	responsePayload := &TaskResponsePayload{
-		Result:        squaredNumber,
-		UnixTimestamp: uint64(time.Now().Unix()),
-	}
-	responseBytes, err := json.Marshal(responsePayload)
+	tw.logger.Sugar().Infow("Task result",
+		zap.Uint64("originalInput", i.Uint64()),
+		zap.Uint64("squaredResult", squaredNumber.Uint64()),
+	)
 
 	return &performerV1.TaskResult{
 		TaskId: t.TaskId,
-		Result: responseBytes,
+		Result: parseBigIntToHex(squaredNumber),
 	}, nil
 }
 

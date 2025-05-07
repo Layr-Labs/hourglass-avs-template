@@ -19,8 +19,8 @@ serverConfig:
   aggregatorUrl: "aggregator:9000"
 
 operator:
-  address: "0xaggregator123..."
-  operatorPrivateKey: "..."
+  address: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+  operatorPrivateKey: "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
   signingKeys:
     bls:
       keystore: |
@@ -63,7 +63,6 @@ chains:
 
 avss:
   - address: "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
-    privateKey: "0xabcdefabcdefabcdefabcdefabcdefabcdefabcdef"
     responseTimeout: 3000
     chainIds: [1]
     signingCurve: "bn254"
