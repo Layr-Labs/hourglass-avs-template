@@ -10,7 +10,7 @@ build:
 
 .PHONY: anvil
 anvil:
-	cd contracts && anvil --fork-url $(RPC_URL) --fork-block-number 22396947 --block-time 12
+	cd contracts && anvil --fork-url $(RPC_URL) --fork-block-number 22396947 --chain-id 31337 --block-time 12
 
 .PHONY: deploy
 deploy:
