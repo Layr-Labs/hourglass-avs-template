@@ -50,19 +50,16 @@ func (tw *TaskWorker) ValidateTask(t *performerV1.Task) error {
 	tw.logger.Sugar().Infow("Validating task",
 		zap.Any("task", t),
 	)
-	_, err := parseHexBytesToBigInt(t.Payload)
+	_ = new(big.Int).SetBytes(t.Payload)
 
-	return err
+	return nil
 }
 
 func (tw *TaskWorker) HandleTask(t *performerV1.Task) (*performerV1.TaskResult, error) {
 	tw.logger.Sugar().Infow("Handling task",
 		zap.Any("task", t),
 	)
-	i, err := parseHexBytesToBigInt(t.Payload)
-	if err != nil {
-		return nil, err
-	}
+	i := new(big.Int).SetBytes(t.Payload)
 
 	squaredNumber := new(big.Int).Exp(i, big.NewInt(2), nil)
 
