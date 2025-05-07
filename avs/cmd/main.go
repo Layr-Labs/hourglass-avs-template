@@ -70,7 +70,7 @@ func (tw *TaskWorker) HandleTask(t *performerV1.Task) (*performerV1.TaskResult, 
 
 	return &performerV1.TaskResult{
 		TaskId: t.TaskId,
-		Result: parseBigIntToHex(squaredNumber),
+		Result: squaredNumber.Bytes(),
 	}, nil
 }
 
