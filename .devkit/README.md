@@ -11,7 +11,7 @@ This README explains how to use the commands in the `.devkit/Makefile`. These co
 
 ## Available Commands
 
-### Building the Project
+### 1. Build the Project
 
 Build the contracts and dependencies:
 
@@ -19,7 +19,7 @@ Build the contracts and dependencies:
 make -f .devkit/Makefile build
 ```
 
-### Running a Local Ethereum Node with Anvil
+### 2. Run a Local Ethereum Node with Anvil
 
 Start a local Ethereum node forked from mainnet:
 
@@ -29,16 +29,27 @@ make -f .devkit/Makefile anvil FORK_URL="<YOUR_ETHEREUM_RPC_URL>"
 
 This will run a local node at `127.0.0.1:8545` with chain ID 31337 and a 12-second block time.
 
-### Deploying the Contracts
+### 3. Deploy the TaskMailbox Contract
 
-The deploy command executes all the deployment and setup steps in sequence. It also runs the AVS:
+Deploy the TaskMailbox contract:
 
-1. Deploys the TaskMailbox contract
-2. Deploys AVS L1 contracts
-3. Sets up AVS on L1
-4. Deploys AVS L2 contracts
-5. Sets up AVS Task Mailbox configuration
-6. Runs the AVS
+```sh
+make -f .devkit/Makefile deploy-task-mailbox \
+  L2_RPC_URL="127.0.0.1:8545" \
+  PRIVATE_KEY_DEPLOYER="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" \
+  ENVIRONMENT="local"
+```
+
+This uses predefined private keys from Anvil for deployment. Make sure your Anvil node is running before executing this command.
+
+### 4. Deploy and set up the Contracts
+
+The deploy command executes all the deployment and setup steps in sequence:
+
+1. Deploys AVS L1 contracts
+2. Sets up AVS on L1
+3. Deploys AVS L2 contracts
+4. Sets up AVS Task Mailbox configuration
 
 Run it with:
 
@@ -61,9 +72,17 @@ make -f .devkit/Makefile deploy \
 
 This uses predefined private keys from Anvil for deployment. Make sure your Anvil node is running before executing this command.
 
-### Creating a Task
+### 5. Run the AVS
 
-After deployment, you can create a task with:
+Run the Aggregator and Executor in docker containers:
+
+```sh
+make -f .devkit/Makefile run-avs
+```
+
+### 6. Create a Task
+
+Create a task on the TaskMailbox contract:
 
 ```sh
 make -f .devkit/Makefile run \
