@@ -24,25 +24,39 @@ make -f .devkit/Makefile build
 Start a local Ethereum node forked from mainnet:
 
 ```sh
-make -f .devkit/Makefile anvil RPC_URL="<YOUR_ETHEREUM_RPC_URL>"
+make -f .devkit/Makefile anvil FORK_URL="<YOUR_ETHEREUM_RPC_URL>"
 ```
 
 This will run a local node at `127.0.0.1:8545` with chain ID 31337 and a 12-second block time.
 
 ### Deploying the Contracts
 
-The deploy command executes all the deployment steps in sequence:
+The deploy command executes all the deployment and setup steps in sequence. It also runs the AVS:
 
 1. Deploys the TaskMailbox contract
 2. Deploys AVS L1 contracts
 3. Sets up AVS on L1
 4. Deploys AVS L2 contracts
 5. Sets up AVS Task Mailbox configuration
+6. Runs the AVS
 
 Run it with:
 
 ```sh
-make -f .devkit/Makefile deploy
+make -f .devkit/Makefile deploy \
+  L1_RPC_URL="127.0.0.1:8545" \
+  L2_RPC_URL="127.0.0.1:8545" \
+  PRIVATE_KEY_DEPLOYER="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" \
+  PRIVATE_KEY_AVS="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d" \
+  ENVIRONMENT="local" \
+  AVS_ADDRESS='0x70997970C51812dc3A010C7d01b50e0d17dc79C8' \
+  ALLOCATION_MANAGER_ADDRESS='0x948a420b8CC1d6BFd0B6087C2E7c344a2CD0bc39' \
+  METADATA_URI="TestAVS" \
+  AGGREGATOR_OPERATOR_SET_ID=0 \
+  AGGREGATOR_STRATEGIES='["0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7","0x93c4b944D05dfe6df7645A86cd2206016c51564D"]' \
+  EXECUTOR_OPERATOR_SET_ID=1 \
+  EXECUTOR_STRATEGIES='["0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7","0x93c4b944D05dfe6df7645A86cd2206016c51564D"]' \
+  TASK_SLA=60
 ```
 
 This uses predefined private keys from Anvil for deployment. Make sure your Anvil node is running before executing this command.
@@ -52,7 +66,13 @@ This uses predefined private keys from Anvil for deployment. Make sure your Anvi
 After deployment, you can create a task with:
 
 ```sh
-make -f .devkit/Makefile run
+make -f .devkit/Makefile run \
+  L2_RPC_URL="127.0.0.1:8545" \
+  PRIVATE_KEY_APP="0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a" \
+  ENVIRONMENT="local" \
+  AVS_ADDRESS='0x70997970C51812dc3A010C7d01b50e0d17dc79C8' \
+  EXECUTOR_OPERATOR_SET_ID=1 \
+  PAYLOAD='0x0000000000000000000000000000000000000000000000000000000000000005'
 ```
 
 This will create a task on the TaskMailbox contract with the specified AVS address, operator set ID, and payload.
