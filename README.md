@@ -80,7 +80,11 @@ Follow these steps to set up and run your AVS with the Hourglass framework:
 
 Follow the instructions in the [devkit-cli](https://github.com/Layr-Labs/devkit-cli) README to install the devkit.
 
-### 1. Build the AVS project
+### 1. AVS Logic
+
+Update the `avs/cmd/main.go` file to implement your offchain AVS logic. Additionally, update the contracts in `contracts/src` to add any additional logic (only if needed).
+
+### 2. Build the AVS project
 
 Build the project and the contracts:
 
@@ -88,7 +92,7 @@ Build the project and the contracts:
 devkit avs build
 ```
 
-### 2. Update the AVS config
+### 3. Update the AVS config
 
 Read or modify eigen.yaml configuration
 
@@ -96,7 +100,7 @@ Read or modify eigen.yaml configuration
 devkit avs config
 ```
 
-### 3. Start the AVS devnet
+### 4. Start the AVS devnet
 
 Start the AVS devnet, deploy and set up the contracts, and run the AVS:
 
@@ -104,7 +108,7 @@ Start the AVS devnet, deploy and set up the contracts, and run the AVS:
 devkit avs devnet start
 ```
 
-### 4. Create a task
+### 5. Create a task
 
 Create a task on the TaskMailbox contract:
 
