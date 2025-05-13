@@ -24,7 +24,7 @@ make -f .devkit/Makefile build
 Start a local Ethereum node forked from mainnet:
 
 ```sh
-make -f .devkit/Makefile anvil FORK_URL="<YOUR_ETHEREUM_RPC_URL>"
+anvil --fork-url $(FORK_URL) --chain-id 31337 --block-time 12
 ```
 
 This will run a local node at `127.0.0.1:8545` with chain ID 31337 and a 12-second block time.
@@ -34,7 +34,7 @@ This will run a local node at `127.0.0.1:8545` with chain ID 31337 and a 12-seco
 Deploy the TaskMailbox contract:
 
 ```sh
-make -f .devkit/Makefile deploy-task-mailbox \
+make -f .devkit/Makefile deploy-framework \
   L2_RPC_URL="127.0.0.1:8545" \
   PRIVATE_KEY_DEPLOYER="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" \
   ENVIRONMENT="local"
@@ -54,7 +54,7 @@ The deploy command executes all the deployment and setup steps in sequence:
 Run it with:
 
 ```sh
-make -f .devkit/Makefile deploy \
+make -f .devkit/Makefile deploy-avs \
   L1_RPC_URL="127.0.0.1:8545" \
   L2_RPC_URL="127.0.0.1:8545" \
   PRIVATE_KEY_DEPLOYER="0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80" \

@@ -82,7 +82,8 @@ Follow the instructions in the [devkit-cli](https://github.com/Layr-Labs/devkit-
 
 ### 1. AVS Logic
 
-Update the `avs/cmd/main.go` file to implement your offchain AVS logic. Additionally, update the contracts in `contracts/src` to add any additional logic (only if needed).
+Update the `avs/cmd/main.go` file to implement your offchain AVS logic. 
+Update the `TaskAVSRegistrar.sol` and `AVSTaskHook.sol` contracts in `contracts/src` to add any additional onchain logic (only if needed).
 
 ### 2. Build the AVS project
 
@@ -94,7 +95,7 @@ devkit avs build
 
 ### 3. Update the AVS config
 
-Read or modify eigen.yaml configuration
+Read or modify eigen.yaml configuration file to set the correct parameters for your AVS.
 
 ```bash
 devkit avs config

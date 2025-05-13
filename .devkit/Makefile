@@ -1,22 +1,18 @@
 # This Makefile is specifically used as an interface for the devkit-cli.
 #
-# If you need to modify how your project is build, you should modify the main Makefile
+# If you need to modify how your project is built, you should modify the main Makefile
 
 .PHONY: build
 build:
 	BUILD_CONTAINER=true ./.hourglass/scripts/build.sh
 	cd contracts && forge build
 
-.PHONY: anvil
-anvil:
-	cd contracts && anvil --fork-url $(FORK_URL) --chain-id 31337 --block-time 12
-
-.PHONY: deploy-task-mailbox
-deploy-task-mailbox:
+.PHONY: deploy-framework
+deploy-framework:
 	cd contracts && PRIVATE_KEY_DEPLOYER="$(PRIVATE_KEY_DEPLOYER)" make deploy-task-mailbox RPC_URL="$(L2_RPC_URL)" ENVIRONMENT="$(ENVIRONMENT)"
 
-.PHONY: deploy
-deploy:
+.PHONY: deploy-avs
+deploy-avs:
 	cd contracts && PRIVATE_KEY_DEPLOYER="$(PRIVATE_KEY_DEPLOYER)" make deploy-avs-l1-contracts RPC_URL="$(L1_RPC_URL)" ENVIRONMENT="$(ENVIRONMENT)" AVS_ADDRESS='$(AVS_ADDRESS)' ALLOCATION_MANAGER_ADDRESS='$(ALLOCATION_MANAGER_ADDRESS)'
 	cd contracts && PRIVATE_KEY_AVS="$(PRIVATE_KEY_AVS)" make setup-avs-l1 RPC_URL="$(L1_RPC_URL)" ENVIRONMENT="$(ENVIRONMENT)" ALLOCATION_MANAGER_ADDRESS='$(ALLOCATION_MANAGER_ADDRESS)' METADATA_URI="$(METADATA_URI)" AGGREGATOR_OPERATOR_SET_ID=$(AGGREGATOR_OPERATOR_SET_ID) AGGREGATOR_STRATEGIES='$(AGGREGATOR_STRATEGIES)' EXECUTOR_OPERATOR_SET_ID=$(EXECUTOR_OPERATOR_SET_ID) EXECUTOR_STRATEGIES='$(EXECUTOR_STRATEGIES)'
 	cd contracts && PRIVATE_KEY_DEPLOYER="$(PRIVATE_KEY_DEPLOYER)" make deploy-avs-l2-contracts RPC_URL="$(L2_RPC_URL)" ENVIRONMENT="$(ENVIRONMENT)"
