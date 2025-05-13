@@ -18,4 +18,4 @@ if [[ -f ~/.gitconfig ]]; then
     cp ~/.gitconfig ./.hourglass/.docker-build-tmp/
 fi
 
-docker build --progress=plain -t "${image}:${tag}" .
+docker build -t "${image}:${tag}" .
