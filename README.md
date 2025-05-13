@@ -110,5 +110,5 @@ Create a task on the TaskMailbox contract:
 
 ```bash
 devkit avs run PAYLOAD='<PAYLOAD>'
-``
+```
 
