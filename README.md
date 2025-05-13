@@ -12,6 +12,9 @@ This template includes a basic Go program that uses the Hourglass framework to g
 .
 |-- .gitignore
 |-- .gitmodules
+|-- .devkit
+|   |-- Makefile
+|   |-- README.md
 |-- .hourglass
 |   |-- build.yaml
 |   |-- config
@@ -19,11 +22,11 @@ This template includes a basic Go program that uses the Hourglass framework to g
 |   |   `-- executor.yaml
 |   `-- scripts
 |       |-- build.sh
+|       |-- buildContainer.sh
 |       |-- init.sh
 |       `-- run.sh
 |-- Dockerfile
 |-- Makefile
-|-- Makefile.Devkit
 |-- README.md
 |-- avs
 |   `-- cmd
@@ -33,84 +36,79 @@ This template includes a basic Go program that uses the Hourglass framework to g
 |-- config
 |   `-- README.md
 |-- contracts
+|   |-- lib
+|   |-- script
+|   |   `-- local
+|   |       |-- deploy
+|   |       |   |-- DeployAVSL1Contracts.s.sol
+|   |       |   |-- DeployAVSL2Contracts.s.sol
+|   |       |   |-- DeployTaskMailbox.s.sol
+|   |       |   `-- DeployTaskMailboxConfig.s.sol
+|   |       |-- output
+|   |       |   |-- deploy_avs_l1_output.json
+|   |       |   |-- deploy_avs_l2_output.json
+|   |       |   |-- deploy_hourglass_output.json
+|   |       |-- run
+|   |       |   |-- CreateTask.s.sol
+|   |       |-- setup
+|   |       |   |-- SetupAVSL1.s.sol
+|   |       |   `-- SetupAVSTaskMailboxConfig.s.sol
+|   |-- src
+|   |   |-- l1-contracts
+|   |   |   |-- TaskAVSRegistrar.sol
+|   |   |-- l2-contracts
+|   |   |   |-- AVSTaskHook.sol
+|   |   |   `-- BN254CertificateVerifier.sol
+|   |-- test
+|   |   `-- TaskAVSRegistrar.t.sol
+|   |-- .env.example
+|   |-- .gitignore
+|   |-- .gitmodules
+|   |-- foundry.toml
+|   |-- Makefile
+|   `-- README.md
 |-- go.mod
 `-- go.sum
 
 ```
 
-### Contracts
-
-The `/contracts` directory contains the Hourglass contracts template as a git submodule. This provides the smart contracts needed for your AVS to interact with EigenLayer. The contracts are maintained in a separate repository at [github.com/Layr-Labs/hourglass-contracts-template](https://github.com/Layr-Labs/hourglass-contracts-template).
-
-
 ## Getting Started
 
 Follow these steps to set up and run your AVS with the Hourglass framework:
 
-### 1. Install Dependencies
+### 0. Prerequisites
 
-Install all required Go and Foundry dependencies:
+Follow the instructions in the [devkit-cli](https://github.com/Layr-Labs/devkit-cli) README to install the devkit.
 
-```bash
-make deps
-```
+### 1. Build the AVS project
 
-### 2. Build the Application
-
-Compile the application binaries and contracts:
+Build the project and the contracts:
 
 ```bash
-make build
+devkit avs build
 ```
 
-This command creates the executable in the `./bin` directory.
+### 2. Update the AVS config
 
-### 3. Local Development Environment
-
-Start a local forked Ethereum node with Anvil (requires a mainnet RPC URL):
+Read or modify eigen.yaml configuration
 
 ```bash
-make anvil MAINNET_RPC_URL="<MAINNET_RPC_URL>"
+devkit avs config
 ```
 
-Keep this running in a separate terminal window.
+### 3. Start the AVS devnet
 
-### 4. Deploy Contracts
-
-Deploy all necessary contracts to your local development environment:
+Start the AVS devnet, deploy and set up the contracts, and run the AVS:
 
 ```bash
-make deploy
+devkit avs devnet start
 ```
 
-This command:
-- Deploys the task mailbox
-- Deploys AVS L1 contracts with the specified AVS address
-- Sets up the AVS L1 with the EigenLayer core protocol
-- Deploys AVS L2 contracts
-- Configures the task mailbox with appropriate AVS addresses and configs.
+### 4. Create a task
 
-### 5. Run a Task
-
-Create a task in the deployed contracts:
+Create a task on the TaskMailbox contract:
 
 ```bash
-make run
-```
+devkit avs run PAYLOAD='<PAYLOAD>'
+``
 
-## Interacting with the aggregator
-
-```bash
-curl -H 'content-type: application/json' -XPOST localhost:8081/events -d '{ 
-        "taskId": "0xtask1",
-        "avsAddress": "0xavs1...",
-        "operatorSetId": 1,
-        "callbackAddr": "0xcallmemaybe",
-        "deadline": 300,
-        "stakeRequired": 100,
-        "payload": "eyAibnVtYmVyVG9CZVNxdWFyZWQiOiA0IH0=",
-        "chainId": 1,
-        "blockNumber": 12345,
-        "blockHash": "0xblockHash"
-}'
-```
