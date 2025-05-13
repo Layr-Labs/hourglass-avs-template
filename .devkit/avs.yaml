@@ -1,0 +1,7 @@
+taskSla: 60
+
+aggregator:
+  operatorSetId: 0
+
+executor:
+  operatorSetId: 1
