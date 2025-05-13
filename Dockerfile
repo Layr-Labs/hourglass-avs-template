@@ -1,26 +1,22 @@
+# syntax=docker/dockerfile:1.3
+
 FROM golang:1.23.6-bookworm AS build
 
 RUN apt-get update
 
-# -----------------------------------------------------------------------------
-# Janky hack to get around the hourglass-monorepo module living in a private repo
-#
-COPY .hourglass/.docker-build-tmp /root/.docker-build-tmp
-
-RUN cp -R /root/.docker-build-tmp/.ssh /root/.ssh
-RUN cp /root/.docker-build-tmp/.gitconfig /root/.gitconfig || true
-
-RUN chmod -R 700 /root/.ssh && \
-    chmod 644 /root/.ssh/known_hosts
-# -----------------------------------------------------------------------------
-
-ADD . /build
-
 WORKDIR /build
 
-RUN make build
+# Setup Git + known_hosts + env
+RUN --mount=type=ssh git config --global url."git@github.com:".insteadOf "https://github.com/"
+RUN mkdir -p ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
+ENV GOPRIVATE=github.com/Layr-Labs/*
+ENV GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
 
-RUN rm -rf /root/.ssh
+# Copy full source
+ADD . /build
+
+# Build with host ssh mounted
+RUN --mount=type=ssh make build
 
 FROM debian:stable-slim
 

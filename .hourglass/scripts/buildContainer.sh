@@ -9,13 +9,7 @@ if [[ ! -z "$registry" ]]; then
     image="$registry/$image"
 fi
 
-# TODO(seanmcgary): remove this janky hack once the repo is public
-mkdir -p ./.hourglass/.docker-build-tmp
-cp -R ~/.ssh ./.hourglass/.docker-build-tmp
-
-# check if ~/.gitconfig exists
-if [[ -f ~/.gitconfig ]]; then
-    cp ~/.gitconfig ./.hourglass/.docker-build-tmp/
-fi
-
-docker build --progress=plain -t "${image}:${tag}" .
+DOCKER_BUILDKIT=1 docker build \
+    --ssh default \
+    --progress=plain \
+    -t "${image}:${tag}" .
