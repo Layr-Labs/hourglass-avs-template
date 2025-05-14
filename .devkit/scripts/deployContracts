@@ -170,22 +170,7 @@ PRIVATE_KEY_AVS="${PRIVATE_KEY_AVS}" make setup-avs-task-mailbox-config RPC_URL=
 echo "Contract deployment completed successfully."
 
 # Process deployment output files
-OUTPUT_DIR="contracts/script/${ENVIRONMENT}/output"
-result=[]
-
-# Function to extract address entries from a JSON file
-extract_addresses() {
-    local file=$1
-    
-    if [ ! -f "$file" ]; then
-        echo "Warning: File $file does not exist"
-        return
-    }
-    
-    # Extract addresses section and convert to format like deployed_contracts.json
-    jq -r '.addresses | to_entries | .[] | {address: .value, name: .key}' "$file"
-}
-
+OUTPUT_DIR="script/${ENVIRONMENT}/output"
 # Initialize an empty array
 result='[]'
 
