@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+echo "Building AVS performer and contracts..."
+
+# Check if required tools are available
+if ! command -v forge &> /dev/null; then
+    echo "Error: forge not found. Please install Foundry first."
+    exit 1
+fi
+
+# Build the contracts and dependencies
+BUILD_CONTAINER=true ./.hourglass/scripts/build.sh
+cd contracts && forge build
+
+echo "Build completed successfully." 
