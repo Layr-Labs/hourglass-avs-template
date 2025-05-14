@@ -22,6 +22,11 @@ if ! command -v yq &> /dev/null; then
     exit 1
 fi
 
+if ! command -v make &> /dev/null; then
+    echo "Error: make is required for contract deployment. Please install make first."
+    exit 1
+fi
+
 # Extract required values from context
 ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
 L1_RPC_URL=$(echo "$CONTEXT" | jq -r '.context.chains.l1.rpc_url')
