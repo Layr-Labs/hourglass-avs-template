@@ -1,75 +1,74 @@
 # hourglass-avs-template
 
-This template is for building an AVS with the EigenLayer Hourglass framework. It provides a basic structure and configuration files to get you started.
+This template is for building an AVS with the EigenLayer Hourglass framework. It's designed to be used with the devkit-cli.
 
-It is also compatibile with the devkit-cli which will help you build, test, and deploy your AVS.
+It provides a basic structure and configuration files to get you started out of the box.
 
 ## Basic Structure
 
-This template includes a basic Go program that uses the Hourglass framework to get you started along with some sample configs, a Dockerfile and basic build scripts.
+This template includes a basic Go program and smart contracts that uses the Hourglass framework to get you started along with some default configs.
 
 ```bash
 .
 |-- .gitignore
 |-- .gitmodules
 |-- .devkit
-|   |-- Makefile
-|   |-- README.md
+|   |-- scripts
+|       |-- build
+|       |-- call
+|       |-- deployContracts
+|       |-- getOperatorRegistrationMetadata
+|       |-- getOperatorSets
+|       |-- init
+|       |-- run
 |-- .hourglass
 |   |-- build.yaml
+|   |-- docker-compose.yml
+|   |-- context
+|   |   |-- devnet.yaml
 |   |-- config
 |   |   |-- aggregator.yaml
-|   |   `-- executor.yaml
-|   `-- scripts
+|   |   |-- executor.yaml
+|   |-- scripts
 |       |-- build.sh
 |       |-- buildContainer.sh
 |       |-- init.sh
-|       `-- run.sh
+|       |-- run.sh
 |-- Dockerfile
 |-- Makefile
 |-- README.md
 |-- avs
-|   `-- cmd
-|       `-- main.go
-|-- bin
-|   `-- performer
-|-- config
-|   `-- README.md
+|   |-- cmd
+|       |-- main.go
 |-- contracts
 |   |-- lib
 |   |-- script
-|   |   `-- local
+|   |   |-- devnet
 |   |       |-- deploy
 |   |       |   |-- DeployAVSL1Contracts.s.sol
 |   |       |   |-- DeployAVSL2Contracts.s.sol
 |   |       |   |-- DeployTaskMailbox.s.sol
-|   |       |   `-- DeployTaskMailboxConfig.s.sol
 |   |       |-- output
 |   |       |   |-- deploy_avs_l1_output.json
 |   |       |   |-- deploy_avs_l2_output.json
-|   |       |   |-- deploy_hourglass_output.json
+|   |       |   |-- deploy_hourglass_core_output.json
 |   |       |-- run
 |   |       |   |-- CreateTask.s.sol
 |   |       |-- setup
 |   |       |   |-- SetupAVSL1.s.sol
-|   |       |   `-- SetupAVSTaskMailboxConfig.s.sol
+|   |       |   |-- SetupAVSTaskMailboxConfig.s.sol
 |   |-- src
 |   |   |-- l1-contracts
 |   |   |   |-- TaskAVSRegistrar.sol
 |   |   |-- l2-contracts
 |   |   |   |-- AVSTaskHook.sol
-|   |   |   `-- BN254CertificateVerifier.sol
+|   |   |   |-- BN254CertificateVerifier.sol
 |   |-- test
-|   |   `-- TaskAVSRegistrar.t.sol
-|   |-- .env.example
-|   |-- .gitignore
-|   |-- .gitmodules
+|   |   |-- TaskAVSRegistrar.t.sol
 |   |-- foundry.toml
 |   |-- Makefile
-|   `-- README.md
 |-- go.mod
-`-- go.sum
-
+|-- go.sum
 ```
 
 ## Getting Started
