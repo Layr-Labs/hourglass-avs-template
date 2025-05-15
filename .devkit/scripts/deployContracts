@@ -1,10 +1,15 @@
 #!/bin/bash
 set -e
 
+# Function to log to stderr
+log() {
+    echo "$@" >&2
+}
+
 # Check if context parameter is provided
 if [ -z "$1" ]; then
-    echo "Error: Missing context parameter"
-    echo "Usage: ./deployContracts '{\"version\":\"0.0.1\",\"context\":{...}}'"
+    log "Error: Missing context parameter"
+    log "Usage: ./deployContracts '{\"version\":\"0.0.1\",\"context\":{...}}'"
     exit 1
 fi
 
@@ -13,17 +18,17 @@ CONTEXT="$1"
 
 # Check for required tools
 if ! command -v jq &> /dev/null; then
-    echo "Error: jq is required for JSON parsing. Please install jq first."
+    log "Error: jq is required for JSON parsing. Please install jq first."
     exit 1
 fi
 
 if ! command -v yq &> /dev/null; then
-    echo "Error: yq is required for YAML parsing. Please install yq first."
+    log "Error: yq is required for YAML parsing. Please install yq first."
     exit 1
 fi
 
 if ! command -v make &> /dev/null; then
-    echo "Error: make is required for contract deployment. Please install make first."
+    log "Error: make is required for contract deployment. Please install make first."
     exit 1
 fi
 
@@ -38,44 +43,44 @@ METADATA_URI=$(echo "$CONTEXT" | jq -r '.context.avs.metadata_url')
 
 # Validate required fields exist in JSON
 if [ "$L1_RPC_URL" == "null" ] || [ -z "$L1_RPC_URL" ]; then
-    echo "Error: Missing L1_RPC_URL in context"
+    log "Error: Missing L1_RPC_URL in context"
     exit 1
 fi
 
 if [ "$L2_RPC_URL" == "null" ] || [ -z "$L2_RPC_URL" ]; then
-    echo "Error: Missing L2_RPC_URL in context"
+    log "Error: Missing L2_RPC_URL in context"
     exit 1
 fi
 
 if [ "$PRIVATE_KEY_DEPLOYER" == "null" ] || [ -z "$PRIVATE_KEY_DEPLOYER" ]; then
-    echo "Error: Missing deployer_private_key in context"
+    log "Error: Missing deployer_private_key in context"
     exit 1
 fi
 
 if [ "$PRIVATE_KEY_AVS" == "null" ] || [ -z "$PRIVATE_KEY_AVS" ]; then
-    echo "Error: Missing avs.avs_private_key in context"
+    log "Error: Missing avs.avs_private_key in context"
     exit 1
 fi
 
 if [ "$ENVIRONMENT" == "null" ] || [ -z "$ENVIRONMENT" ]; then
-    echo "Error: Missing name (environment) in context"
+    log "Error: Missing name (environment) in context"
     exit 1
 fi
 
 if [ "$AVS_ADDRESS" == "null" ] || [ -z "$AVS_ADDRESS" ]; then
-    echo "Error: Missing avs.address in context"
+    log "Error: Missing avs.address in context"
     exit 1
 fi
 
 if [ "$METADATA_URI" == "null" ] || [ -z "$METADATA_URI" ]; then
-    echo "Error: Missing avs.metadata_url in context"
+    log "Error: Missing avs.metadata_url in context"
     exit 1
 fi
 
 # Check if the template-specific AVS environment YAML file exists
 ENVIRONMENT_YAML_FILE=".hourglass/context/${ENVIRONMENT}.yaml"
 if [ ! -f "$ENVIRONMENT_YAML_FILE" ]; then
-    echo "Error: AVS environment file ${ENVIRONMENT_YAML_FILE} does not exist"
+    log "Error: AVS environment file ${ENVIRONMENT_YAML_FILE} does not exist"
     exit 1
 fi
 
@@ -89,17 +94,17 @@ TASK_SLA=$(yq -r '.mailbox.taskSla' "$ENVIRONMENT_YAML_FILE")
 
 # Validate YAML values
 if [ "$AGGREGATOR_OPERATOR_SET_ID" == "null" ]; then
-    echo "Error: Missing aggregator.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
+    log "Error: Missing aggregator.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
     exit 1
 fi
 
 if [ "$EXECUTOR_OPERATOR_SET_ID" == "null" ]; then
-    echo "Error: Missing executor.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
+    log "Error: Missing executor.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
     exit 1
 fi
 
 if [ "$TASK_SLA" == "null" ]; then
-    echo "Error: Missing mailbox.taskSla in ${ENVIRONMENT_YAML_FILE}"
+    log "Error: Missing mailbox.taskSla in ${ENVIRONMENT_YAML_FILE}"
     exit 1
 fi
 
@@ -118,14 +123,14 @@ get_strategies_for_set_id() {
 AGGREGATOR_STRATEGIES=$(get_strategies_for_set_id "$AGGREGATOR_OPERATOR_SET_ID" "$ENVIRONMENT_YAML_FILE")
 
 if [ "$AGGREGATOR_STRATEGIES" == "null" ] || [ -z "$AGGREGATOR_STRATEGIES" ]; then
-    echo "Error: Could not extract aggregator strategies for operatorSetId ${AGGREGATOR_OPERATOR_SET_ID} in ${ENVIRONMENT_YAML_FILE}"
+    log "Error: Could not extract aggregator strategies for operatorSetId ${AGGREGATOR_OPERATOR_SET_ID} in ${ENVIRONMENT_YAML_FILE}"
     exit 1
 fi
 
 EXECUTOR_STRATEGIES=$(get_strategies_for_set_id "$EXECUTOR_OPERATOR_SET_ID" "$ENVIRONMENT_YAML_FILE")
 
 if [ "$EXECUTOR_STRATEGIES" == "null" ] || [ -z "$EXECUTOR_STRATEGIES" ]; then
-    echo "Error: Could not extract executor strategies for operatorSetId ${EXECUTOR_OPERATOR_SET_ID} in ${ENVIRONMENT_YAML_FILE}"
+    log "Error: Could not extract executor strategies for operatorSetId ${EXECUTOR_OPERATOR_SET_ID} in ${ENVIRONMENT_YAML_FILE}"
     exit 1
 fi
 
@@ -134,7 +139,7 @@ validate_eth_address() {
     local addr=$1
     local name=$2
     if [[ ! "$addr" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
-        echo "Error: $name must be a valid Ethereum address (0x followed by 40 hex characters)"
+        log "Error: $name must be a valid Ethereum address (0x followed by 40 hex characters)"
         exit 1
     fi
 }
@@ -142,32 +147,32 @@ validate_eth_address() {
 validate_eth_address "$AVS_ADDRESS" "AVS_ADDRESS"
 validate_eth_address "$ALLOCATION_MANAGER_ADDRESS" "ALLOCATION_MANAGER_ADDRESS"
 
-echo "Starting contract deployment using context for environment: $ENVIRONMENT"
+log "Starting contract deployment using context for environment: $ENVIRONMENT"
 
 # Change to contracts directory
 cd contracts
 
 # Step 1: Deploy TaskMailbox contract (only for devnet environment)
 if [ "$ENVIRONMENT" == "devnet" ]; then
-    echo "1. Deploying TaskMailbox contract (devnet only)..."
-    PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-task-mailbox RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}"
+    log "1. Deploying TaskMailbox contract (devnet only)..."
+    PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-task-mailbox RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" >&2
 else
-    echo "Skipping TaskMailbox deployment for non-devnet environment"
+    log "Skipping TaskMailbox deployment for non-devnet environment"
 fi
 
 # Step 2: Deploy AVS L1 contracts
-echo "2. Deploying AVS L1 contracts..."
-PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}"
+log "2. Deploying AVS L1 contracts..."
+PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" >&2
 
 # Step 3: Deploy AVS L2 contracts
-echo "3. Deploying AVS L2 contracts..."
-PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l2-contracts RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}"
+log "3. Deploying AVS L2 contracts..."
+PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l2-contracts RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" >&2
 
 # Step 4: Set up AVS Task Mailbox configuration
-echo "4. Setting up AVS Task Mailbox configuration..."
-PRIVATE_KEY_AVS="${PRIVATE_KEY_AVS}" make setup-avs-task-mailbox-config RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AGGREGATOR_OPERATOR_SET_ID=${AGGREGATOR_OPERATOR_SET_ID} EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} TASK_SLA=${TASK_SLA}
+log "4. Setting up AVS Task Mailbox configuration..."
+PRIVATE_KEY_AVS="${PRIVATE_KEY_AVS}" make setup-avs-task-mailbox-config RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AGGREGATOR_OPERATOR_SET_ID=${AGGREGATOR_OPERATOR_SET_ID} EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} TASK_SLA=${TASK_SLA} >&2
 
-echo "Contract deployment completed successfully."
+log "Contract deployment completed successfully."
 
 # Process deployment output files
 OUTPUT_DIR="script/${ENVIRONMENT}/output"
@@ -184,7 +189,7 @@ if [ "$ENVIRONMENT" == "devnet" ]; then
         core_addresses=$(jq -c '[.addresses | to_entries[] | {"address": .value, "name": .key}]' "$CORE_FILE")
         result=$(echo "$result" | jq ". + $core_addresses")
     else
-        echo "Warning: Core output file $CORE_FILE not found"
+        log "Warning: Core output file $CORE_FILE not found"
         # Add default TaskMailbox
         result=$(echo "$result" | jq ". + [$DEFAULT_TASK_MAILBOX]")
     fi
@@ -199,7 +204,7 @@ if [ -f "$L1_FILE" ]; then
     l1_addresses=$(jq -c '[.addresses | to_entries[] | {"address": .value, "name": .key}]' "$L1_FILE")
     result=$(echo "$result" | jq ". + $l1_addresses")
 else
-    echo "Warning: AVS L1 output file $L1_FILE not found"
+    log "Warning: AVS L1 output file $L1_FILE not found"
 fi
 
 # Process the AVS L2 output file
@@ -208,8 +213,8 @@ if [ -f "$L2_FILE" ]; then
     l2_addresses=$(jq -c '[.addresses | to_entries[] | {"address": .value, "name": .key}]' "$L2_FILE")
     result=$(echo "$result" | jq ". + $l2_addresses")
 else
-    echo "Warning: AVS L2 output file $L2_FILE not found"
+    log "Warning: AVS L2 output file $L2_FILE not found"
 fi
 
-# Print the combined JSON result
-echo "$result" | jq . 
+# Print the combined JSON result - this is the ONLY stdout output
+echo "$result" | jq -c . 
