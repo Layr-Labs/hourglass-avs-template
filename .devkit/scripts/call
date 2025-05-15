@@ -1,0 +1,96 @@
+#!/bin/bash
+set -e
+
+# Function to log to stderr
+log() {
+    echo "$@" >&2
+}
+
+# Check if context parameter is provided
+if [ -z "$1" ]; then
+    log "Error: Missing context parameter"
+    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' 0x<payload>"
+    exit 1
+fi
+
+# Check if payload parameter is provided
+if [ -z "$2" ]; then
+    log "Error: Missing payload parameter"
+    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' 0x<payload>"
+    exit 1
+fi
+
+# Parse the JSON context and payload
+CONTEXT="$1"
+PAYLOAD="$2"
+
+# Check for required tools
+if ! command -v jq &> /dev/null; then
+    log "Error: jq not found. Please run 'avs create' first."
+    exit 1
+fi
+
+if ! command -v yq &> /dev/null; then
+    log "Error: yq not found. Please run 'avs create' first."
+    exit 1
+fi
+
+# Extract required values from context
+ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
+L2_RPC_URL=$(echo "$CONTEXT" | jq -r '.context.chains.l2.rpc_url')
+PRIVATE_KEY_APP=$(echo "$CONTEXT" | jq -r '.context.app_private_key')
+AVS_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.avs.address')
+
+# Get executor operator set ID from environment YAML file
+ENVIRONMENT_YAML_FILE=".hourglass/context/${ENVIRONMENT}.yaml"
+if [ ! -f "$ENVIRONMENT_YAML_FILE" ]; then
+    log "Error: AVS environment file ${ENVIRONMENT_YAML_FILE} does not exist"
+    exit 1
+fi
+
+EXECUTOR_OPERATOR_SET_ID=$(yq -r '.executor.operatorSetId' "$ENVIRONMENT_YAML_FILE")
+
+# Validate required fields exist in JSON
+if [ "$ENVIRONMENT" == "null" ] || [ -z "$ENVIRONMENT" ]; then
+    log "Error: Missing name (environment) in context"
+    exit 1
+fi
+
+if [ "$L2_RPC_URL" == "null" ] || [ -z "$L2_RPC_URL" ]; then
+    log "Error: Missing L2_RPC_URL in context"
+    exit 1
+fi
+
+if [ "$PRIVATE_KEY_APP" == "null" ] || [ -z "$PRIVATE_KEY_APP" ]; then
+    log "Error: Missing app_private_key in context"
+    exit 1
+fi
+
+if [ "$AVS_ADDRESS" == "null" ] || [ -z "$AVS_ADDRESS" ]; then
+    log "Error: Missing avs.address in context"
+    exit 1
+fi
+
+if [ "$EXECUTOR_OPERATOR_SET_ID" == "null" ] || [ -z "$EXECUTOR_OPERATOR_SET_ID" ]; then
+    log "Error: Missing executor.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
+    exit 1
+fi
+
+# Validate Ethereum addresses
+if [[ ! "$AVS_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+    log "Error: AVS_ADDRESS must be a valid Ethereum address (0x followed by 40 hex characters)"
+    exit 1
+fi
+
+# Validate payload is a hex string
+if [[ ! "$PAYLOAD" =~ ^0x[a-fA-F0-9]+$ ]]; then
+    log "Error: PAYLOAD must be a hex string (0x followed by hex characters)"
+    exit 1
+fi
+
+log "Creating task on the TaskMailbox contract..."
+
+# Create a task on the TaskMailbox contract
+cd contracts && PRIVATE_KEY_APP="${PRIVATE_KEY_APP}" make create-task RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} PAYLOAD="${PAYLOAD}"
+
+log "Task created successfully." 
