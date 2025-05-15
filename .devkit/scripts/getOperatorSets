@@ -18,12 +18,12 @@ CONTEXT="$1"
 
 # Check for required tools
 if ! command -v jq &> /dev/null; then
-    log "Error: jq is required for JSON parsing. Please install jq first."
+    log "Error: jq not found. Please run 'avs create' first."
     exit 1
 fi
 
 if ! command -v yq &> /dev/null; then
-    log "Error: yq is required for YAML parsing. Please install yq first."
+    log "Error: yq not found. Please run 'avs create' first."
     exit 1
 fi
 

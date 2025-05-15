@@ -18,17 +18,22 @@ CONTEXT="$1"
 
 # Check for required tools
 if ! command -v jq &> /dev/null; then
-    log "Error: jq is required for JSON parsing. Please install jq first."
+    log "Error: jq not found. Please run 'avs create' first."
     exit 1
 fi
 
 if ! command -v yq &> /dev/null; then
-    log "Error: yq is required for YAML parsing. Please install yq first."
+    log "Error: yq not found. Please run 'avs create' first."
     exit 1
 fi
 
 if ! command -v make &> /dev/null; then
-    log "Error: make is required for contract deployment. Please install make first."
+    log "Error: make not found. Please run 'avs create' first."
+    exit 1
+fi
+
+if ! command -v forge &> /dev/null; then
+    log "Error: forge not found. Please run 'avs create' first."
     exit 1
 fi
 
@@ -157,9 +162,8 @@ if [ "$ENVIRONMENT" == "devnet" ]; then
         core_addresses=$(jq -c '[.addresses | to_entries[] | {"name": .key, "address": .value}]' "$CORE_FILE")
         deployed_contracts=$(echo "$deployed_contracts" | jq ". + $core_addresses")
     else
-        log "Warning: Core output file $CORE_FILE not found"
-        # Add default TaskMailbox
-        deployed_contracts=$(echo "$deployed_contracts" | jq ". + [$DEFAULT_TASK_MAILBOX]")
+        log "Error: Core output file $CORE_FILE not found"
+        exit 1
     fi
 else
     # Add default TaskMailbox for non-devnet environments
@@ -172,7 +176,8 @@ if [ -f "$L1_FILE" ]; then
     l1_addresses=$(jq -c '[.addresses | to_entries[] | {"name": .key, "address": .value}]' "$L1_FILE")
     deployed_contracts=$(echo "$deployed_contracts" | jq ". + $l1_addresses")
 else
-    log "Warning: AVS L1 output file $L1_FILE not found"
+    log "Error: AVS L1 output file $L1_FILE not found"
+    exit 1
 fi
 
 # Process the AVS L2 output file
@@ -181,7 +186,8 @@ if [ -f "$L2_FILE" ]; then
     l2_addresses=$(jq -c '[.addresses | to_entries[] | {"name": .key, "address": .value}]' "$L2_FILE")
     deployed_contracts=$(echo "$deployed_contracts" | jq ". + $l2_addresses")
 else
-    log "Warning: AVS L2 output file $L2_FILE not found"
+    log "Error: AVS L2 output file $L2_FILE not found"
+    exit 1
 fi
 
 # Create the final JSON structure with deployed_contracts key
