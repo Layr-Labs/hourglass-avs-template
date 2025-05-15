@@ -1,0 +1,208 @@
+#!/bin/bash
+set -e
+
+# Function to log info messages
+log_info() {
+    echo -e "\033[0;34m[INFO]\033[0m $@"
+}
+
+# Function to log success messages
+log_success() {
+    echo -e "\033[0;32m[SUCCESS]\033[0m $@"
+}
+
+# Function to log warning messages
+log_warning() {
+    echo -e "\033[0;33m[WARNING]\033[0m $@"
+}
+
+# Function to log error messages
+log_error() {
+    echo -e "\033[0;31m[ERROR]\033[0m $@"
+}
+
+# Check if we're running on macOS
+if [[ "$(uname)" == "Darwin" ]]; then
+    PLATFORM="macos"
+elif [[ "$(uname)" == "Linux" ]]; then
+    PLATFORM="linux"
+    # Check if we're on Ubuntu/Debian
+    if command -v apt-get >/dev/null 2>&1; then
+        LINUX_FLAVOR="debian"
+    elif command -v yum >/dev/null 2>&1; then
+        LINUX_FLAVOR="rhel"
+    else
+        log_warning "Unsupported Linux distribution. You may need to install dependencies manually."
+        LINUX_FLAVOR="unknown"
+    fi
+else
+    log_error "Unsupported platform: $(uname). Only macOS and Linux are supported."
+    exit 1
+fi
+
+log_info "Detected platform: $PLATFORM $([ "$PLATFORM" == "linux" ] && echo "($LINUX_FLAVOR)")"
+
+# Check and install Homebrew on macOS
+install_homebrew() {
+    if ! command -v brew >/dev/null 2>&1; then
+        log_info "Installing Homebrew..."
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        # Add Homebrew to PATH for the current session
+        if [[ -d "/opt/homebrew/bin" ]]; then
+            export PATH="/opt/homebrew/bin:$PATH"  # Apple Silicon
+        elif [[ -d "/usr/local/bin" ]]; then
+            export PATH="/usr/local/bin:$PATH"  # Intel
+        fi
+        log_success "Homebrew installed successfully"
+    else
+        log_info "Homebrew is already installed"
+    fi
+}
+
+# Install a package with Homebrew
+install_with_brew() {
+    local package=$1
+    local command=${2:-$1}
+    
+    if ! command -v "$command" >/dev/null 2>&1; then
+        log_info "Installing $package..."
+        brew install "$package"
+        log_success "$package installed successfully"
+    else
+        log_info "$package is already installed"
+    fi
+}
+
+# Install a package with apt-get
+install_with_apt() {
+    local package=$1
+    local command=${2:-$1}
+    
+    if ! command -v "$command" >/dev/null 2>&1; then
+        log_info "Installing $package..."
+        sudo apt-get update
+        sudo apt-get install -y "$package"
+        log_success "$package installed successfully"
+    else
+        log_info "$package is already installed"
+    fi
+}
+
+# Install a package with yum
+install_with_yum() {
+    local package=$1
+    local command=${2:-$1}
+    
+    if ! command -v "$command" >/dev/null 2>&1; then
+        log_info "Installing $package..."
+        sudo yum update -y
+        sudo yum install -y "$package"
+        log_success "$package installed successfully"
+    else
+        log_info "$package is already installed"
+    fi
+}
+
+# Install Foundry (forge, cast, anvil)
+install_foundry() {
+    if ! command -v forge >/dev/null 2>&1; then
+        log_info "Installing Foundry..."
+        curl -L https://foundry.paradigm.xyz | bash
+        export PATH="$PATH:$HOME/.foundry/bin"
+        foundryup
+        log_success "Foundry installed successfully"
+    else
+        log_info "Foundry is already installed"
+    fi
+}
+
+# Install Docker
+install_docker() {
+    if ! command -v docker >/dev/null 2>&1; then
+        log_info "Docker not found. Please install Docker manually:"
+        log_info "macOS: https://docs.docker.com/desktop/install/mac-install/"
+        log_info "Linux: https://docs.docker.com/engine/install/"
+        log_warning "Docker installation skipped (manual installation required)"
+    else
+        log_info "Docker is already installed"
+    fi
+}
+
+# Install dependencies based on platform
+if [[ "$PLATFORM" == "macos" ]]; then
+    install_homebrew
+    install_with_brew jq
+    install_with_brew yq
+    install_with_brew make
+    install_with_brew coreutils realpath
+    install_foundry
+    install_docker
+elif [[ "$PLATFORM" == "linux" ]]; then
+    if [[ "$LINUX_FLAVOR" == "debian" ]]; then
+        install_with_apt jq
+        install_with_apt python3-pip pip3
+        install_with_apt make
+        install_with_apt coreutils realpath
+        # Install yq via pip
+        if ! command -v yq >/dev/null 2>&1; then
+            log_info "Installing yq..."
+            pip3 install yq
+            log_success "yq installed successfully"
+        else
+            log_info "yq is already installed"
+        fi
+        install_foundry
+        install_docker
+    elif [[ "$LINUX_FLAVOR" == "rhel" ]]; then
+        install_with_yum jq
+        install_with_yum python3-pip pip3
+        install_with_yum make
+        install_with_yum coreutils realpath
+        # Install yq via pip
+        if ! command -v yq >/dev/null 2>&1; then
+            log_info "Installing yq..."
+            pip3 install yq
+            log_success "yq installed successfully"
+        else
+            log_info "yq is already installed"
+        fi
+        install_foundry
+        install_docker
+    else
+        log_warning "Unsupported Linux distribution. Please install dependencies manually:"
+        log_warning "- jq"
+        log_warning "- yq"
+        log_warning "- make"
+        log_warning "- realpath (from coreutils)"
+        log_warning "- forge (from Foundry)"
+        log_warning "- docker"
+    fi
+fi
+
+# Make all scripts executable
+log_info "Making all scripts in .devkit/scripts executable..."
+chmod +x .devkit/scripts/*
+log_success "All scripts are now executable"
+
+log_info "Running dependency checks..."
+
+# Check if all dependencies are installed properly
+MISSING_DEPS=()
+for cmd in jq yq make realpath forge docker; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+        MISSING_DEPS+=("$cmd")
+    fi
+done
+
+if [ ${#MISSING_DEPS[@]} -eq 0 ]; then
+    log_success "All dependencies are installed successfully!"
+else
+    log_error "Some dependencies could not be installed automatically:"
+    for dep in "${MISSING_DEPS[@]}"; do
+        log_error "- $dep"
+    done
+    log_error "Please install these dependencies manually and run this script again."
+    exit 1
+fi
+
+log_info "Initialization complete. You can now run the other scripts in .devkit/scripts/" 
