@@ -1,0 +1,193 @@
+#!/bin/bash
+set -e
+
+# Function to log to stderr
+log() {
+    echo "$@" >&2
+}
+
+# Check if context parameter is provided
+if [ -z "$1" ]; then
+    log "Error: Missing context parameter"
+    log "Usage: ./getOperatorRegistrationMetadata '{\"version\":\"0.0.1\",\"context\":{...}}'"
+    exit 1
+fi
+
+# Parse the JSON context
+CONTEXT="$1"
+
+# Check for required tools
+if ! command -v jq &> /dev/null; then
+    log "Error: jq not found. Please run 'avs create' first."
+    exit 1
+fi
+
+if ! command -v yq &> /dev/null; then
+    log "Error: yq not found. Please run 'avs create' first."
+    exit 1
+fi
+
+if ! command -v docker &> /dev/null; then
+    log "Error: docker not found. Please run 'avs create' first."
+    exit 1
+fi
+
+if ! command -v realpath &> /dev/null; then
+    log "Error: realpath not found. Please run 'avs create' first."
+    exit 1
+fi
+
+# Extract environment from context
+ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
+
+if [ "$ENVIRONMENT" == "null" ] || [ -z "$ENVIRONMENT" ]; then
+    log "Error: Missing name (environment) in context"
+    exit 1
+fi
+
+# Check if the template-specific AVS environment YAML file exists
+ENVIRONMENT_YAML_FILE=".hourglass/context/${ENVIRONMENT}.yaml"
+if [ ! -f "$ENVIRONMENT_YAML_FILE" ]; then
+    log "Error: AVS environment file ${ENVIRONMENT_YAML_FILE} does not exist"
+    exit 1
+fi
+
+# Extract RPC URL from context
+RPC_URL=$(echo "$CONTEXT" | jq -r '.context.chains.l1.rpc_url')
+if [ "$RPC_URL" == "null" ] || [ -z "$RPC_URL" ]; then
+    log "Error: Missing L1 RPC URL in context"
+    exit 1
+fi
+
+# Replace localhost with host.docker.internal for Docker networking
+DOCKER_RPC_URL=$(echo "$RPC_URL" | sed 's/localhost/host.docker.internal/g' | sed 's/127.0.0.1/host.docker.internal/g')
+
+# Extract TaskAVSRegistrar contract address from deployed contracts (if available)
+TASK_AVS_REGISTRAR=$(echo "$CONTEXT" | jq -r '.context.deployed_contracts[] | select(.name=="taskAVSRegistrar") | .address')
+if [ "$TASK_AVS_REGISTRAR" == "null" ] || [ -z "$TASK_AVS_REGISTRAR" ]; then
+    log "Error: TaskAVSRegistrar address not found in context"
+    exit 1
+fi
+
+# Get operators from context
+OPERATORS_JSON=$(echo "$CONTEXT" | jq -c '.context.operators')
+if [ "$OPERATORS_JSON" == "null" ] || [ -z "$OPERATORS_JSON" ]; then
+    log "Error: No operators found in context"
+    exit 1
+fi
+
+# Function to find an operator in the context by address
+find_operator_in_context() {
+    local address=$1
+    echo "$OPERATORS_JSON" | jq -c ".[] | select(.address == \"$address\")"
+}
+
+# Initialize empty array for operator registration objects
+OPERATOR_REGISTRATIONS='[]'
+
+# Function to process operators of a specific type (aggregator or executor)
+process_operators() {
+    local operator_type="$1"
+    
+    log "Processing ${operator_type} operators..."
+    
+    # Get the operator set ID
+    local set_id=$(yq -r ".${operator_type}.operatorSetId" "$ENVIRONMENT_YAML_FILE")
+    if [ "$set_id" == "null" ]; then
+        log "Error: Missing ${operator_type}.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
+        exit 1
+    fi
+    
+    # Get the operators
+    local operators=$(yq -o=json ".${operator_type}.operators" "$ENVIRONMENT_YAML_FILE")
+    if [ -z "$operators" ]; then
+        log "Error: No ${operator_type} operators found in ${ENVIRONMENT_YAML_FILE}"
+        exit 1
+    fi
+    
+    # Get the number of operators
+    local operator_count=$(echo "$operators" | jq 'length')
+    
+    # Process each operator without using a pipe to while loop
+    for ((i=0; i<operator_count; i++)); do
+        local operator=$(echo "$operators" | jq -c ".[$i]")
+        local operator_address=$(echo "$operator" | jq -r '.address')
+        local operator_socket=$(echo "$operator" | jq -r '.socket')
+        
+        # Find operator details in context
+        local context_operator=$(find_operator_in_context "$operator_address")
+        if [ -z "$context_operator" ]; then
+            log "Error: Operator $operator_address not found in context"
+            exit 1
+        fi
+        
+        # Extract keystore info
+        local keystore_path=$(echo "$context_operator" | jq -r '.bls_keystore_path')
+        local keystore_password=$(echo "$context_operator" | jq -r '.bls_keystore_password')
+        
+        if [ "$keystore_path" == "null" ] || [ -z "$keystore_path" ]; then
+            log "Error: Missing keystore information for operator $operator_address"
+            exit 1
+        fi
+
+        # Check if the keystore file exists
+        if [ ! -f "$keystore_path" ]; then
+            log "Error: Keystore file $(realpath "$keystore_path") does not exist"
+            exit 1
+        fi
+        
+        log "Generating registration data for ${operator_type} operator: $operator_address"
+        
+        # Resolve the absolute path of the keystore file
+        local absolute_keystore_path=$(realpath "$keystore_path")
+        local keystore_dir=$(dirname "$absolute_keystore_path")
+        local keystore_filename=$(basename "$absolute_keystore_path")
+        
+        # Run the docker command to generate operator registration data
+        local registration_payload=$(docker run \
+            -v "$keystore_dir:/keystore" \
+            public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v0.1.0_78466f4 bls-helper generate-operator-data \
+            --keyfile-path "/keystore/$keystore_filename" \
+            --key-password "$keystore_password" \
+            --rpc-url "$DOCKER_RPC_URL" \
+            --operator-address "$operator_address" \
+            --avs-registrar-address "$TASK_AVS_REGISTRAR" \
+            --socket "$operator_socket" 2>&1)
+        
+        # Check if the command was successful
+        if [ $? -ne 0 ]; then
+            log "Error generating registration data for operator $operator_address: $registration_payload"
+            exit 1
+        fi
+        
+        # Create the operator registration object
+        local registration_object=$(jq -n \
+            --arg address "$operator_address" \
+            --argjson operator_set_id "$set_id" \
+            --arg payload "$registration_payload" \
+            '{
+                address: $address,
+                operator_set_id: $operator_set_id,
+                payload: $payload
+            }')
+        
+        # Add to the list of registrations
+        OPERATOR_REGISTRATIONS=$(echo "$OPERATOR_REGISTRATIONS" | jq ". + [$registration_object]")
+    done
+}
+
+# Process both types of operators
+process_operators "aggregator"
+process_operators "executor"
+
+# Check if we have any registrations
+if [ "$(echo "$OPERATOR_REGISTRATIONS" | jq 'length')" -eq 0 ]; then
+    log "Error: No operator registrations were generated"
+    exit 1
+fi
+
+# Create the final JSON structure with operator_registrations key
+RESULT=$(jq -n --argjson registrations "$OPERATOR_REGISTRATIONS" '{ operator_registrations: $registrations }')
+
+# Print only the final JSON to stdout
+echo "$RESULT" | jq -c . 

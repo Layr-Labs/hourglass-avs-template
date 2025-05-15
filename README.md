@@ -1,116 +1,118 @@
 # hourglass-avs-template
 
-This template is for building an AVS with the EigenLayer Hourglass framework. It provides a basic structure and configuration files to get you started.
+This template is for building an AVS with the EigenLayer Hourglass framework. It's designed to be used with the devkit-cli.
 
-It is also compatibile with the devkit-cli which will help you build, test, and deploy your AVS.
+It provides a basic structure and configuration files to get you started out of the box.
 
 ## Basic Structure
 
-This template includes a basic Go program that uses the Hourglass framework to get you started along with some sample configs, a Dockerfile and basic build scripts.
+This template includes a basic Go program and smart contracts that uses the Hourglass framework to get you started along with some default configs.
 
 ```bash
 .
 |-- .gitignore
 |-- .gitmodules
+|-- .devkit
+|   |-- scripts
+|       |-- build
+|       |-- call
+|       |-- deployContracts
+|       |-- getOperatorRegistrationMetadata
+|       |-- getOperatorSets
+|       |-- init
+|       |-- run
 |-- .hourglass
 |   |-- build.yaml
+|   |-- docker-compose.yml
+|   |-- context
+|   |   |-- devnet.yaml
 |   |-- config
 |   |   |-- aggregator.yaml
-|   |   `-- executor.yaml
-|   `-- scripts
+|   |   |-- executor.yaml
+|   |-- scripts
 |       |-- build.sh
+|       |-- buildContainer.sh
 |       |-- init.sh
-|       `-- run.sh
+|       |-- run.sh
 |-- Dockerfile
 |-- Makefile
-|-- Makefile.Devkit
 |-- README.md
 |-- avs
-|   `-- cmd
-|       `-- main.go
-|-- bin
-|   `-- performer
-|-- config
-|   `-- README.md
+|   |-- cmd
+|       |-- main.go
 |-- contracts
+|   |-- lib
+|   |-- script
+|   |   |-- devnet
+|   |       |-- deploy
+|   |       |   |-- DeployAVSL1Contracts.s.sol
+|   |       |   |-- DeployAVSL2Contracts.s.sol
+|   |       |   |-- DeployTaskMailbox.s.sol
+|   |       |-- output
+|   |       |   |-- deploy_avs_l1_output.json
+|   |       |   |-- deploy_avs_l2_output.json
+|   |       |   |-- deploy_hourglass_core_output.json
+|   |       |-- run
+|   |       |   |-- CreateTask.s.sol
+|   |       |-- setup
+|   |       |   |-- SetupAVSL1.s.sol
+|   |       |   |-- SetupAVSTaskMailboxConfig.s.sol
+|   |-- src
+|   |   |-- l1-contracts
+|   |   |   |-- TaskAVSRegistrar.sol
+|   |   |-- l2-contracts
+|   |   |   |-- AVSTaskHook.sol
+|   |   |   |-- BN254CertificateVerifier.sol
+|   |-- test
+|   |   |-- TaskAVSRegistrar.t.sol
+|   |-- foundry.toml
+|   |-- Makefile
 |-- go.mod
-`-- go.sum
-
+|-- go.sum
 ```
-
-### Contracts
-
-The `/contracts` directory contains the Hourglass contracts template as a git submodule. This provides the smart contracts needed for your AVS to interact with EigenLayer. The contracts are maintained in a separate repository at [github.com/Layr-Labs/hourglass-contracts-template](https://github.com/Layr-Labs/hourglass-contracts-template).
-
 
 ## Getting Started
 
 Follow these steps to set up and run your AVS with the Hourglass framework:
 
-### 1. Install Dependencies
+### 0. Prerequisites
 
-Install all required Go and Foundry dependencies:
+Follow the instructions in the [devkit-cli](https://github.com/Layr-Labs/devkit-cli) README to install the devkit.
 
-```bash
-make deps
-```
+### 1. AVS Logic
 
-### 2. Build the Application
+Update the `avs/cmd/main.go` file to implement your offchain AVS logic. 
+Update the `TaskAVSRegistrar.sol` and `AVSTaskHook.sol` contracts in `contracts/src` to add any additional onchain logic (only if needed).
 
-Compile the application binaries and contracts:
+### 2. Build the AVS project
 
-```bash
-make build
-```
-
-This command creates the executable in the `./bin` directory.
-
-### 3. Local Development Environment
-
-Start a local forked Ethereum node with Anvil (requires a mainnet RPC URL):
+Build the project and the contracts:
 
 ```bash
-make anvil MAINNET_RPC_URL="<MAINNET_RPC_URL>"
+devkit avs build
 ```
 
-Keep this running in a separate terminal window.
+### 3. Update the AVS config
 
-### 4. Deploy Contracts
-
-Deploy all necessary contracts to your local development environment:
+Read or modify eigen.yaml configuration file to set the correct parameters for your AVS.
 
 ```bash
-make deploy
+devkit avs config
 ```
 
-This command:
-- Deploys the task mailbox
-- Deploys AVS L1 contracts with the specified AVS address
-- Sets up the AVS L1 with the EigenLayer core protocol
-- Deploys AVS L2 contracts
-- Configures the task mailbox with appropriate AVS addresses and configs.
+### 4. Start the AVS devnet
 
-### 5. Run a Task
-
-Create a task in the deployed contracts:
+Start the AVS devnet, deploy and set up the contracts, and run the AVS:
 
 ```bash
-make run
+devkit avs devnet start
 ```
 
-## Interacting with the aggregator
+### 5. Create a task
+
+Create a task on the TaskMailbox contract:
 
 ```bash
-curl -H 'content-type: application/json' -XPOST localhost:8081/events -d '{ 
-        "taskId": "0xtask1",
-        "avsAddress": "0xavs1...",
-        "operatorSetId": 1,
-        "callbackAddr": "0xcallmemaybe",
-        "deadline": 300,
-        "stakeRequired": 100,
-        "payload": "eyAibnVtYmVyVG9CZVNxdWFyZWQiOiA0IH0=",
-        "chainId": 1,
-        "blockNumber": 12345,
-        "blockHash": "0xblockHash"
-}'
+devkit avs call --params payload="<payload>"
 ```
+

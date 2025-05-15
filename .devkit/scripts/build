@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+# Function to log to stderr
+log() {
+    echo "$@" >&2
+}
+
+log "Building AVS performer and contracts..."
+
+# Check if required tools are available
+if ! command -v forge &> /dev/null; then
+    log "Error: forge not found. Please run 'avs create' first."
+    exit 1
+fi
+
+if ! command -v make &> /dev/null; then
+    log "Error: make not found. Please run 'avs create' first."
+    exit 1
+fi
+
+if ! command -v docker &> /dev/null; then
+    log "Error: docker not found. Please run 'avs create' first."
+    exit 1
+fi
+
+# Build the contracts and dependencies
+BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
+cd contracts && forge build >&2
+
+log "Build completed successfully." 
