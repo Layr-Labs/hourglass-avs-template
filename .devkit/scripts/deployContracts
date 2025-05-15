@@ -39,7 +39,6 @@ L2_RPC_URL=$(echo "$CONTEXT" | jq -r '.context.chains.l2.rpc_url')
 PRIVATE_KEY_DEPLOYER=$(echo "$CONTEXT" | jq -r '.context.deployer_private_key')
 PRIVATE_KEY_AVS=$(echo "$CONTEXT" | jq -r '.context.avs.avs_private_key')
 AVS_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.avs.address')
-METADATA_URI=$(echo "$CONTEXT" | jq -r '.context.avs.metadata_url')
 
 # Validate required fields exist in JSON
 if [ "$L1_RPC_URL" == "null" ] || [ -z "$L1_RPC_URL" ]; then
@@ -72,11 +71,6 @@ if [ "$AVS_ADDRESS" == "null" ] || [ -z "$AVS_ADDRESS" ]; then
     exit 1
 fi
 
-if [ "$METADATA_URI" == "null" ] || [ -z "$METADATA_URI" ]; then
-    log "Error: Missing avs.metadata_url in context"
-    exit 1
-fi
-
 # Check if the template-specific AVS environment YAML file exists
 ENVIRONMENT_YAML_FILE=".hourglass/context/${ENVIRONMENT}.yaml"
 if [ ! -f "$ENVIRONMENT_YAML_FILE" ]; then
@@ -105,32 +99,6 @@ fi
 
 if [ "$TASK_SLA" == "null" ]; then
     log "Error: Missing mailbox.taskSla in ${ENVIRONMENT_YAML_FILE}"
-    exit 1
-fi
-
-# Get strategies for aggregator and executor from YAML
-# yq query to extract the strategies array for the given operator set ID
-get_strategies_for_set_id() {
-    local set_id=$1
-    local yaml_file=$2
-    
-    # Use yq to extract the strategies as a JSON array
-    # -o=json ensures output is in JSON format
-    yq -o=json ".operatorSets[] | select(.id == $set_id) | .strategies" "$yaml_file"
-}
-
-# Extract strategies
-AGGREGATOR_STRATEGIES=$(get_strategies_for_set_id "$AGGREGATOR_OPERATOR_SET_ID" "$ENVIRONMENT_YAML_FILE")
-
-if [ "$AGGREGATOR_STRATEGIES" == "null" ] || [ -z "$AGGREGATOR_STRATEGIES" ]; then
-    log "Error: Could not extract aggregator strategies for operatorSetId ${AGGREGATOR_OPERATOR_SET_ID} in ${ENVIRONMENT_YAML_FILE}"
-    exit 1
-fi
-
-EXECUTOR_STRATEGIES=$(get_strategies_for_set_id "$EXECUTOR_OPERATOR_SET_ID" "$ENVIRONMENT_YAML_FILE")
-
-if [ "$EXECUTOR_STRATEGIES" == "null" ] || [ -z "$EXECUTOR_STRATEGIES" ]; then
-    log "Error: Could not extract executor strategies for operatorSetId ${EXECUTOR_OPERATOR_SET_ID} in ${ENVIRONMENT_YAML_FILE}"
     exit 1
 fi
 
@@ -177,7 +145,7 @@ log "Contract deployment completed successfully."
 # Process deployment output files
 OUTPUT_DIR="script/${ENVIRONMENT}/output"
 # Initialize an empty array
-result='[]'
+deployed_contracts='[]'
 
 # Default TaskMailbox address if not in devnet
 DEFAULT_TASK_MAILBOX='{"address":"0x0000000000000000000000000000000000000000","name":"TaskMailbox"}'
@@ -186,23 +154,23 @@ DEFAULT_TASK_MAILBOX='{"address":"0x0000000000000000000000000000000000000000","n
 if [ "$ENVIRONMENT" == "devnet" ]; then
     CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
     if [ -f "$CORE_FILE" ]; then
-        core_addresses=$(jq -c '[.addresses | to_entries[] | {"address": .value, "name": .key}]' "$CORE_FILE")
-        result=$(echo "$result" | jq ". + $core_addresses")
+        core_addresses=$(jq -c '[.addresses | to_entries[] | {"name": .key, "address": .value}]' "$CORE_FILE")
+        deployed_contracts=$(echo "$deployed_contracts" | jq ". + $core_addresses")
     else
         log "Warning: Core output file $CORE_FILE not found"
         # Add default TaskMailbox
-        result=$(echo "$result" | jq ". + [$DEFAULT_TASK_MAILBOX]")
+        deployed_contracts=$(echo "$deployed_contracts" | jq ". + [$DEFAULT_TASK_MAILBOX]")
     fi
 else
     # Add default TaskMailbox for non-devnet environments
-    result=$(echo "$result" | jq ". + [$DEFAULT_TASK_MAILBOX]")
+    deployed_contracts=$(echo "$deployed_contracts" | jq ". + [$DEFAULT_TASK_MAILBOX]")
 fi
 
 # Process the AVS L1 output file
 L1_FILE="${OUTPUT_DIR}/deploy_avs_l1_output.json"
 if [ -f "$L1_FILE" ]; then
-    l1_addresses=$(jq -c '[.addresses | to_entries[] | {"address": .value, "name": .key}]' "$L1_FILE")
-    result=$(echo "$result" | jq ". + $l1_addresses")
+    l1_addresses=$(jq -c '[.addresses | to_entries[] | {"name": .key, "address": .value}]' "$L1_FILE")
+    deployed_contracts=$(echo "$deployed_contracts" | jq ". + $l1_addresses")
 else
     log "Warning: AVS L1 output file $L1_FILE not found"
 fi
@@ -210,11 +178,14 @@ fi
 # Process the AVS L2 output file
 L2_FILE="${OUTPUT_DIR}/deploy_avs_l2_output.json"
 if [ -f "$L2_FILE" ]; then
-    l2_addresses=$(jq -c '[.addresses | to_entries[] | {"address": .value, "name": .key}]' "$L2_FILE")
-    result=$(echo "$result" | jq ". + $l2_addresses")
+    l2_addresses=$(jq -c '[.addresses | to_entries[] | {"name": .key, "address": .value}]' "$L2_FILE")
+    deployed_contracts=$(echo "$deployed_contracts" | jq ". + $l2_addresses")
 else
     log "Warning: AVS L2 output file $L2_FILE not found"
 fi
 
+# Create the final JSON structure with deployed_contracts key
+RESULT=$(jq -n --argjson contracts "$deployed_contracts" '{ deployed_contracts: $contracts }')
+
 # Print the combined JSON result - this is the ONLY stdout output
-echo "$result" | jq -c . 
+echo "$RESULT" | jq -c . 
