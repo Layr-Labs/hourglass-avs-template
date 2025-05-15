@@ -114,6 +114,6 @@ devkit avs devnet start
 Create a task on the TaskMailbox contract:
 
 ```bash
-devkit avs run PAYLOAD='<PAYLOAD>'
+devkit avs call --params payload="<payload>"
 ```
 
