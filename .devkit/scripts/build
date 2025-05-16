@@ -26,6 +26,6 @@ fi
 
 # Build the contracts and dependencies
 BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
-cd contracts && forge build >&2
+cd contracts && forge clean && forge build >&2
 
 log "Build completed successfully." 
