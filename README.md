@@ -1,8 +1,46 @@
 # hourglass-avs-template
 
-This template is for building an AVS with the EigenLayer Hourglass framework. It's designed to be used with the devkit-cli.
+## What is Hourglass?
 
-It provides a basic structure and configuration files to get you started out of the box.
+Hourglass is a framework for building an EigenLayer AVS, providing AVS developers a batteries-included experience to get started quickly. It includes a set of tools and libraries that simplify the process of building, deploying, and managing AVS projects.
+
+![](docs/images/hourglass-architecture_v.01.0.svg)
+
+Hourglass as a framework has three off chain components:
+
+### Aggregator
+
+The Aggregator is responsible for:
+
+* Listening to events from the Mailbox contract on chain for new tasks
+* Discovering Executors by querying the AVSRegistrar contract (via the EigenLayer Allocation manager), retrieving their metadata containing a BLS public key and a "socket" (url) endpoint that references the Executor's gRPC server.
+* Distributing tasks to Executors by sending a gRPC request to the Executor's socket endpoint, including the task payload and a signature of the payload signed by the Aggregator. This is so the Executor can validate the message is coming from the expected Aggregator.
+* Aggregates results from Executors until a signing threshold has been met
+* Publish the result back to the Mailbox contract
+
+### Executor
+
+The Executor is responsible for:
+* Launching and managing Performer containers that execute the tasks
+* Listening to gRPC requests from the Aggregator for new tasks
+* Forwarding the task to the correct Performer
+* Signing the result of the task with its BLS private key and sending it back to the Aggregator
+
+
+### Performer
+
+The Performer is the component the AVS is responsible for building. At a high level, it is a simple gRPC server that listens for tasks, runs them and returns the results to the Executor.
+
+The Hourglass framework provides all of the boilerplate and server code for your Performer; you simply need to fill in the logic to handle tasks for your AVS!
+
+## What does this template give me?
+
+This template provides a basic structure for building an AVS with the Hourglass framework. It includes:
+
+* A stub of Go code for your Performer to get you started. Simply fill in the commented out areas with your own AVS logic
+* A docker-compose stack to run an Aggregator and Executor locally to test your AVS. Both the Aggregator and Executor will be run by EigenLayer Operators when you launch your AVS, so we've given you the full stack to run locally to make development and testing easier.
+* Hooks that integrate with the Devkit CLI. The Devkit CLI is a command line tool that will make your development experience faster and easier by automating common tasks like building, deploying, and running your AVS.
+
 
 ## Basic Structure
 
