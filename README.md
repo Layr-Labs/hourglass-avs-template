@@ -159,7 +159,7 @@ Follow the instructions in the [devkit-cli](https://github.com/Layr-Labs/devkit-
 
 ### 1. AVS Logic
 
-Update the `avs/cmd/main.go` file to implement your offchain AVS logic. 
+Update the `cmd/main.go` file to implement your offchain AVS logic. 
 Update the `TaskAVSRegistrar.sol` and `AVSTaskHook.sol` contracts in `contracts/src` to add any additional onchain logic (only if needed).
 
 ### 2. Build the AVS project

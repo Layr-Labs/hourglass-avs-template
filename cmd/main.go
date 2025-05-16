@@ -6,8 +6,6 @@ import (
 	performerV1 "github.com/Layr-Labs/hourglass-monorepo/ponos/gen/protos/eigenlayer/hourglass/v1/performer"
 	"github.com/Layr-Labs/hourglass-monorepo/ponos/pkg/performer/server"
 	"go.uber.org/zap"
-	"math/big"
-	"strings"
 	"time"
 )
 
@@ -21,36 +19,13 @@ func NewTaskWorker(logger *zap.Logger) *TaskWorker {
 	}
 }
 
-func parseHexBytesToBigInt(payload []byte) (*big.Int, error) {
-	if len(payload) == 0 {
-		return nil, fmt.Errorf("payload is empty")
-	}
-
-	payloadStr := strings.TrimPrefix(string(payload), "0x")
-
-	i, success := new(big.Int).SetString(payloadStr, 16)
-	if !success {
-		return nil, fmt.Errorf("failed to convert hex string to big.Int")
-	}
-	return i, nil
-}
-
-func parseBigIntToHex(i *big.Int) []byte {
-	if i == nil {
-		return nil
-	}
-	hexStr := i.Text(16)
-	if len(hexStr)%2 != 0 {
-		hexStr = "0" + hexStr
-	}
-	return []byte("0x" + hexStr)
-}
-
 func (tw *TaskWorker) ValidateTask(t *performerV1.Task) error {
 	tw.logger.Sugar().Infow("Validating task",
 		zap.Any("task", t),
 	)
-	_ = new(big.Int).SetBytes(t.Payload)
+	// ------------------------------------------------------------------------
+	// Implement your AVS task validation logic here
+	// ------------------------------------------------------------------------
 
 	return nil
 }
@@ -59,18 +34,15 @@ func (tw *TaskWorker) HandleTask(t *performerV1.Task) (*performerV1.TaskResult, 
 	tw.logger.Sugar().Infow("Handling task",
 		zap.Any("task", t),
 	)
-	i := new(big.Int).SetBytes(t.Payload)
 
-	squaredNumber := new(big.Int).Exp(i, big.NewInt(2), nil)
-
-	tw.logger.Sugar().Infow("Task result",
-		zap.Uint64("originalInput", i.Uint64()),
-		zap.Uint64("squaredResult", squaredNumber.Uint64()),
-	)
+	// ------------------------------------------------------------------------
+	// Implement your AVS logic here
+	// ------------------------------------------------------------------------
+	var resultBytes []byte
 
 	return &performerV1.TaskResult{
 		TaskId: t.TaskId,
-		Result: squaredNumber.Bytes(),
+		Result: resultBytes,
 	}, nil
 }
 
