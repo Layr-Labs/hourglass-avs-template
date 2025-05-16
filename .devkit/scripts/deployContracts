@@ -37,8 +37,7 @@ process_output_file() {
         
         # Check if ABI file exists
         if [ ! -f "../$abi_path" ]; then
-            log "Error: ABI file $abi_path does not exist for contract $name. Run 'devkit avs build' first."
-            exit 1
+            log "Warning: ABI file $abi_path does not exist for contract $name. Run 'devkit avs build' first."
         fi
         
         contract_json=$(jq -n \
