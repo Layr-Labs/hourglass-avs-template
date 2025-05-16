@@ -2,13 +2,51 @@
 
 ## What is Hourglass?
 
-Hourglass is a framework for building an EigenLayer AVS, providing AVS developers a batteries-included experience to get started quickly. It includes a set of tools and libraries that simplify the process of building, deploying, and managing AVS projects.
+Hourglass is a framework for building a task-based EigenLayer AVS, providing AVS developers a batteries-included experience to get started quickly. It includes a set of tools and libraries that simplify the process of building, deploying, and managing AVS projects.
 
 ![](docs/images/hourglass-architecture_v.01.0.svg)
 
-Hourglass as a framework has three off chain components:
+Hourglass as a framework has onchain and offchain components that work together to enable a task-based AVS.
 
-### Aggregator
+### Onchain Components
+
+#### TaskMailbox
+
+The TaskMailbox is a singleton eigenlayer hourglass contract on L1 or L2 that is responsible for:
+
+* Allowing users/apps to create tasks.
+* Managing the lifecycle of tasks.
+* Verifying the results of tasks and making it available for users/apps to query.
+* Allowing AVSs to manage their TaskMailbox configurations.
+
+#### TaskAVSRegistrar
+
+The TaskAVSRegistrar is an instanced (per-AVS) eigenlayer middleware contract on L1 that is responsible for:
+
+* Handling operator registration for specific operator sets of your AVS.
+* Providing the offchain components with BLS public keys and socket endpoints for the Aggregator and Executor operators.
+
+It works by default, but can be extended to include additional onchain logic for your AVS.
+
+#### AVSTaskHook
+
+The AVSTaskHook is an instanced (per-AVS) eigenlayer hourglass contract on L1 or L2 that is responsible for:
+
+* Validating the task lifecycle.
+* Creating fee markets for your AVS.
+
+It's empty by default and works out of the box, but can be extended to include additional onchain validation logic for your AVS.
+
+#### CertificateVerifier
+
+The CertificateVerifier is an instanced (per-AVS) eigenlayer middleware contract on L1 or L2 that is responsible for:
+
+* Verifying the validity of operator certificates.
+* Verifying stake threshold requirements for operator sets.
+
+### Offchain Components
+
+#### Aggregator
 
 The Aggregator is responsible for:
 
@@ -18,7 +56,7 @@ The Aggregator is responsible for:
 * Aggregates results from Executors until a signing threshold has been met
 * Publish the result back to the Mailbox contract
 
-### Executor
+#### Executor
 
 The Executor is responsible for:
 * Launching and managing Performer containers that execute the tasks
@@ -27,7 +65,7 @@ The Executor is responsible for:
 * Signing the result of the task with its BLS private key and sending it back to the Aggregator
 
 
-### Performer
+#### Performer
 
 The Performer is the component the AVS is responsible for building. At a high level, it is a simple gRPC server that listens for tasks, runs them and returns the results to the Executor.
 
@@ -38,6 +76,8 @@ The Hourglass framework provides all of the boilerplate and server code for your
 This template provides a basic structure for building an AVS with the Hourglass framework. It includes:
 
 * A stub of Go code for your Performer to get you started. Simply fill in the commented out areas with your own AVS logic
+* Default `TaskAVSRegistrar` and `AVSTaskHook` avs contracts that work out of the box. Simply extend them if you need to add additional onchain logic.
+* All the dependent contracts for the framework to work and scripts to deploy them. The scripts will be managed by the Devkit CLI.
 * A docker-compose stack to run an Aggregator and Executor locally to test your AVS. Both the Aggregator and Executor will be run by EigenLayer Operators when you launch your AVS, so we've given you the full stack to run locally to make development and testing easier.
 * Hooks that integrate with the Devkit CLI. The Devkit CLI is a command line tool that will make your development experience faster and easier by automating common tasks like building, deploying, and running your AVS.
 
@@ -132,7 +172,7 @@ devkit avs build
 
 ### 3. Update the AVS config
 
-Read or modify eigen.yaml configuration file to set the correct parameters for your AVS.
+Read or modify the AVS configuration to set the correct parameters for your AVS.
 
 ```bash
 devkit avs config
