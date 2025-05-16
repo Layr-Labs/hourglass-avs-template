@@ -133,22 +133,22 @@ else
     log "Skipping TaskMailbox deployment for non-devnet environment"
 fi
 
-# Sleep for a second so that nonce can be pulled correctly
-sleep 1
+# Sleep for 5 seconds so that nonce can be pulled correctly
+sleep 5
 
 # Step 2: Deploy AVS L1 contracts
 log "2. Deploying AVS L1 contracts..."
 PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" >&2
 
-# Sleep for a second so that nonce can be pulled correctly
-sleep 1
+# Sleep for 5 seconds so that nonce can be pulled correctly
+sleep 5
 
 # Step 3: Deploy AVS L2 contracts
 log "3. Deploying AVS L2 contracts..."
 PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l2-contracts RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" >&2
 
-# Sleep for a second so that nonce can be pulled correctly
-sleep 1
+# Sleep for 5 seconds so that nonce can be pulled correctly
+sleep 5
 
 # Step 4: Set up AVS Task Mailbox configuration
 log "4. Setting up AVS Task Mailbox configuration..."
