@@ -9,20 +9,20 @@ log() {
 # Check if context parameter is provided
 if [ -z "$1" ]; then
     log "Error: Missing context parameter"
-    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' 0x<payload>"
+    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' '{\"payload\":\"0x<payload>\"}'"
     exit 1
 fi
 
-# Check if payload parameter is provided
+# Check if params parameter is provided
 if [ -z "$2" ]; then
-    log "Error: Missing payload parameter"
-    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' 0x<payload>"
+    log "Error: Missing params parameter"
+    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' '{\"payload\":\"0x<payload>\"}'"
     exit 1
 fi
 
-# Parse the JSON context and payload
+# Parse the JSON context and params
 CONTEXT="$1"
-PAYLOAD="$2"
+PARAMS="$2"
 
 # Check for required tools
 if ! command -v jq &> /dev/null; then
@@ -32,6 +32,14 @@ fi
 
 if ! command -v yq &> /dev/null; then
     log "Error: yq not found. Please run 'avs create' first."
+    exit 1
+fi
+
+# Extract payload from params JSON
+PAYLOAD=$(echo "$PARAMS" | jq -r '.payload')
+if [ "$PAYLOAD" == "null" ] || [ -z "$PAYLOAD" ]; then
+    log "Error: Missing payload in params"
+    log "Params must be in the format: '{\"payload\":\"0x<hex-string>\"}'"
     exit 1
 fi
 
