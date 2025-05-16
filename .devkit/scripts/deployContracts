@@ -6,6 +6,51 @@ log() {
     echo "$@" >&2
 }
 
+# Function to capitalize the first letter of a string
+capitalize_first_letter() {
+    local string="$1"
+    echo "$(tr '[:lower:]' '[:upper:]' <<< ${string:0:1})${string:1}"
+}
+
+# Function to get ABI path for a contract name (simple version)
+get_abi_path() {
+    local name="$1"
+    local contract_name=$(capitalize_first_letter "$name")
+    echo "./contracts/out/$contract_name.sol/$contract_name.json"
+}
+
+# Function to process deployment output file and add contracts to deployed_contracts array
+process_output_file() {
+    local file_path="$1"
+    local file_desc="$2"
+    
+    if [ ! -f "$file_path" ]; then
+        log "Error: $file_desc output file $file_path not found"
+        exit 1
+    fi
+    
+    # Extract entries with properly formatted abi paths
+    while read -r entry; do
+        name=$(echo "$entry" | jq -r '.name')
+        address=$(echo "$entry" | jq -r '.address')
+        abi_path=$(get_abi_path "$name")
+        
+        # Check if ABI file exists
+        if [ ! -f "../$abi_path" ]; then
+            log "Error: ABI file $abi_path does not exist for contract $name. Run 'devkit avs build' first."
+            exit 1
+        fi
+        
+        contract_json=$(jq -n \
+            --arg name "$name" \
+            --arg address "$address" \
+            --arg abi "$abi_path" \
+            '{ name: $name, address: $address, abi: $abi }')
+        
+        deployed_contracts=$(echo "$deployed_contracts" | jq ". + [$contract_json]")
+    done < <(jq -c '.addresses | to_entries[] | {name: .key, address: .value}' "$file_path")
+}
+
 # Check if context parameter is provided
 if [ -z "$1" ]; then
     log "Error: Missing context parameter"
@@ -125,24 +170,25 @@ log "Starting contract deployment using context for environment: $ENVIRONMENT"
 # Change to contracts directory
 cd contracts
 
-# Step 1: Deploy TaskMailbox contract (only for devnet environment)
+# Step 1: Deploy TaskMailbox contract
 if [ "$ENVIRONMENT" == "devnet" ]; then
-    log "1. Deploying TaskMailbox contract (devnet only)..."
+    log "Deploying TaskMailbox contract (devnet only)..."
     PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-task-mailbox RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" >&2
 else
-    log "Skipping TaskMailbox deployment for non-devnet environment"
+    log "Error: Only 'devnet' environment is currently supported for TaskMailbox deployment"
+    exit 1
 fi
 
 # Step 2: Deploy AVS L1 contracts
-log "2. Deploying AVS L1 contracts..."
+log "Deploying AVS L1 contracts..."
 PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" >&2
 
 # Step 3: Deploy AVS L2 contracts
-log "3. Deploying AVS L2 contracts..."
+log "Deploying AVS L2 contracts..."
 PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l2-contracts RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" >&2
 
 # Step 4: Set up AVS Task Mailbox configuration
-log "4. Setting up AVS Task Mailbox configuration..."
+log "Setting up AVS Task Mailbox configuration..."
 PRIVATE_KEY_AVS="${PRIVATE_KEY_AVS}" make setup-avs-task-mailbox-config RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AGGREGATOR_OPERATOR_SET_ID=${AGGREGATOR_OPERATOR_SET_ID} EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} TASK_SLA=${TASK_SLA} >&2
 
 log "Contract deployment completed successfully."
@@ -152,43 +198,17 @@ OUTPUT_DIR="script/${ENVIRONMENT}/output"
 # Initialize an empty array
 deployed_contracts='[]'
 
-# Default TaskMailbox address if not in devnet
-DEFAULT_TASK_MAILBOX='{"address":"0x0000000000000000000000000000000000000000","name":"TaskMailbox"}'
+# Process all output files
+HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
+AVS_L1_FILE="${OUTPUT_DIR}/deploy_avs_l1_output.json"
+AVS_L2_FILE="${OUTPUT_DIR}/deploy_avs_l2_output.json"
 
-# Process the core output file (only for devnet)
-if [ "$ENVIRONMENT" == "devnet" ]; then
-    CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
-    if [ -f "$CORE_FILE" ]; then
-        core_addresses=$(jq -c '[.addresses | to_entries[] | {"name": .key, "address": .value}]' "$CORE_FILE")
-        deployed_contracts=$(echo "$deployed_contracts" | jq ". + $core_addresses")
-    else
-        log "Error: Core output file $CORE_FILE not found"
-        exit 1
-    fi
-else
-    # Add default TaskMailbox for non-devnet environments
-    deployed_contracts=$(echo "$deployed_contracts" | jq ". + [$DEFAULT_TASK_MAILBOX]")
-fi
-
+# Process the core output file
+process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
 # Process the AVS L1 output file
-L1_FILE="${OUTPUT_DIR}/deploy_avs_l1_output.json"
-if [ -f "$L1_FILE" ]; then
-    l1_addresses=$(jq -c '[.addresses | to_entries[] | {"name": .key, "address": .value}]' "$L1_FILE")
-    deployed_contracts=$(echo "$deployed_contracts" | jq ". + $l1_addresses")
-else
-    log "Error: AVS L1 output file $L1_FILE not found"
-    exit 1
-fi
-
+process_output_file "$AVS_L1_FILE" "AVS L1"
 # Process the AVS L2 output file
-L2_FILE="${OUTPUT_DIR}/deploy_avs_l2_output.json"
-if [ -f "$L2_FILE" ]; then
-    l2_addresses=$(jq -c '[.addresses | to_entries[] | {"name": .key, "address": .value}]' "$L2_FILE")
-    deployed_contracts=$(echo "$deployed_contracts" | jq ". + $l2_addresses")
-else
-    log "Error: AVS L2 output file $L2_FILE not found"
-    exit 1
-fi
+process_output_file "$AVS_L2_FILE" "AVS L2"
 
 # Create the final JSON structure with deployed_contracts key
 RESULT=$(jq -n --argjson contracts "$deployed_contracts" '{ deployed_contracts: $contracts }')
