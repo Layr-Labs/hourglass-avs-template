@@ -47,13 +47,13 @@ ARGS=$(echo "$PARAMS" | jq -r '.args')
 # Validate signature and args
 if [ "$SIGNATURE" == "null" ] || [ -z "$SIGNATURE" ]; then
     log "Error: Missing signature in params"
-    log "Params must be in the format: '{\"signature\":\"<signature>\",\"args\":\"<args>\"}'"
+    log "Params must be in the format: '{\"signature\":\"(uint256,string)\",\"args\":\"(5,\"hello\")\"}'"
     exit 1
 fi
 
 if [ "$ARGS" == "null" ] || [ -z "$ARGS" ]; then
     log "Error: Missing args in params"
-    log "Params must be in the format: '{\"signature\":\"<signature>\",\"args\":\"<args>\"}'"
+    log "Params must be in the format: '{\"signature\":\"(uint256,string)\",\"args\":\"(5,\"hello\")\"}'"
     exit 1
 fi
 
