@@ -3,8 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
-	performerV1 "github.com/Layr-Labs/hourglass-monorepo/ponos/gen/protos/eigenlayer/hourglass/v1/performer"
 	"github.com/Layr-Labs/hourglass-monorepo/ponos/pkg/performer/server"
+	performerV1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/hourglass/v1/performer"
 	"go.uber.org/zap"
 	"time"
 )
@@ -19,7 +19,7 @@ func NewTaskWorker(logger *zap.Logger) *TaskWorker {
 	}
 }
 
-func (tw *TaskWorker) ValidateTask(t *performerV1.Task) error {
+func (tw *TaskWorker) ValidateTask(t *performerV1.TaskRequest) error {
 	tw.logger.Sugar().Infow("Validating task",
 		zap.Any("task", t),
 	)
@@ -30,7 +30,7 @@ func (tw *TaskWorker) ValidateTask(t *performerV1.Task) error {
 	return nil
 }
 
-func (tw *TaskWorker) HandleTask(t *performerV1.Task) (*performerV1.TaskResult, error) {
+func (tw *TaskWorker) HandleTask(t *performerV1.TaskRequest) (*performerV1.TaskResponse, error) {
 	tw.logger.Sugar().Infow("Handling task",
 		zap.Any("task", t),
 	)
@@ -40,7 +40,7 @@ func (tw *TaskWorker) HandleTask(t *performerV1.Task) (*performerV1.TaskResult, 
 	// ------------------------------------------------------------------------
 	var resultBytes []byte
 
-	return &performerV1.TaskResult{
+	return &performerV1.TaskResponse{
 		TaskId: t.TaskId,
 		Result: resultBytes,
 	}, nil
