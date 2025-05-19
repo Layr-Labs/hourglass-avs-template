@@ -26,15 +26,7 @@ PARAMS="$2"
 # Check for required tools
 ensureJq
 ensureYq
-# if ! command -v jq &> /dev/null; then
-#     log "Error: jq not found. Please run 'avs create' first."
-#     exit 1
-# fi
-#
-# if ! command -v yq &> /dev/null; then
-#     log "Error: yq not found. Please run 'avs create' first."
-#     exit 1
-# fi
+
 
 if ! command -v cast &> /dev/null; then
     log "Error: cast not found. Please run 'avs create' first."
