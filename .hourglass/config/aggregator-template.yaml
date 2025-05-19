@@ -1,0 +1,36 @@
+---
+debug: false
+
+serverConfig:
+  port: 9000
+  secureConnection: false
+  aggregatorUrl: "aggregator:9000"
+
+operator:
+  {{- $aggregator := index (ds "ctx").aggregator.operators 0 }}
+  address: "{{ $aggregator.address }}"
+  {{- range $i, $agg := (ds "ctx").context.operators }}
+  {{- if eq $aggregator.address $agg.address }}
+  operatorPrivateKey: "{{ $agg.ecdsa_key }}"
+  signingKeys:
+    bls:
+      keystore: |
+{{ toJSONPretty " " $agg.bls_key_contents | indent 8}}
+      password: "{{ $agg.bls_keystore_password }}"
+  {{- end}}
+  {{- end }}
+
+l1ChainId: {{ (ds "ctx").context.chains.l1.chain_id }}
+
+chains:
+  - name: "ethereum"
+    network: "mainnet"
+    chainId: {{ (ds "ctx").context.chains.l1.chain_id }}
+    rpcUrl: "{{ (ds "ctx").context.chains.l1.rpc_url }}"
+    pollIntervalSeconds: 10
+
+avss:
+  - address: "{{ (ds "ctx").context.avs.address }}"
+    responseTimeout: 3000
+    chainIds: [{{ (ds "ctx").context.chains.l1.chain_id }}]
+    signingCurve: "bn254"

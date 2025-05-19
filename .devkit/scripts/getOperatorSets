@@ -16,8 +16,8 @@ fi
 CONTEXT="$1"
 
 # Check for required tools
-ensureJq()
-ensureYq()
+ensureJq
+ensureYq
 # if ! command -v jq &> /dev/null; then
 #     log "Error: jq not found. Please run 'avs create' first."
 #     exit 1

@@ -16,31 +16,69 @@ fi
 CONTEXT="$1"
 
 # Check for required tools
-ensureJq()
-ensureYq()
+ensureJq
+ensureYq
+ensureGomplate
 
-# if ! command -v jq &> /dev/null; then
-#     log "Error: jq not found. Please run 'avs create' first."
-#     exit 1
-# fi
-#
-# if ! command -v docker &> /dev/null; then
-#     log "Error: Docker is not running or not installed. Please start Docker and try again."
-#     exit 1
-# fi
 
-# Extract required values from context
+echo $CONTEXT | jq '.'
+
 ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
-
-# Validate required fields exist in JSON
 if [ "$ENVIRONMENT" == "null" ] || [ -z "$ENVIRONMENT" ]; then
     log "Error: Missing name (environment) in context"
     exit 1
 fi
+hourglassContextConfigPath="$( dirname "${BASH_SOURCE[0]}" )/../../.hourglass/context/${ENVIRONMENT}.yaml"
+contextConfig="$(cat $hourglassContextConfigPath | yq -o json)"
 
 log "Starting AVS components for environment: $ENVIRONMENT"
 
+# extract aggregator and executor config values
+function extractOperatorContext() {
+    local address=$1
+
+    local operatorCount=$(echo $CONTEXT | jq -r ".context.operators | length")
+    for i in $(seq 0 $((operatorCount - 1))); do
+        local operatorAddress=$(echo $CONTEXT | jq -r ".context.operators[$i].address")
+        if [ "$operatorAddress" == "$address" ]; then
+            echo $(echo $CONTEXT | jq -r ".context.operators[$i]")
+            return
+        fi
+    done
+}
+
+function readOperatorBlsKeystore() {
+    cat $(realpath $1) | jq -r '.'
+}
+
+function loadBlsKeysForAllOperators() {
+    local operatorCount=$(echo $CONTEXT | jq -r ".context.operators | length")
+    for i in $(seq 0 $((operatorCount - 1))); do
+        local operatorAddress=$(echo $CONTEXT | jq -r ".context.operators[$i].address")
+        local blsKeystorePath=$(echo $CONTEXT | jq -r ".context.operators[$i].bls_keystore_path")
+        local blsKeyContents=$(echo $(readOperatorBlsKeystore $blsKeystorePath) | jq -c '.')
+        echo "blsKeyContents: $blsKeyContents"
+        # set the bls key contents in the context as a raw string
+        CONTEXT=$(echo $CONTEXT | jq --argjson blsKeyContents "$blsKeyContents" ".context.operators[$i].bls_key_contents = \$blsKeyContents")
+    done
+}
+
+# aggregatorInfo=$(extractOperatorContext $(echo $contextConfig | jq -r '.aggregator.operators[0].address'))
+# echo "aggregator info: $aggregatorInfo"
+#
+# blsKeyContents=$(readOperatorBlsKeystore $(echo $aggregatorInfo | jq -r '.bls_keystore_path'))
+# echo "bls key contents: $blsKeyContents"
+loadBlsKeysForAllOperators
+
+# set aggregator and executor
+CONTEXT=$(echo $CONTEXT | jq --argjson contextConfig "$contextConfig" '.aggregator = $contextConfig.aggregator')
+CONTEXT=$(echo $CONTEXT | jq --argjson contextConfig "$contextConfig" '.executor = $contextConfig.executor')
+
+echo "PRE RENDER\n"
+echo $CONTEXT | jq '.'
+echo $CONTEXT | gomplate -f .hourglass/config/aggregator-template.yaml -d 'ctx=stdin:/?type=application/json'
+
 # Run the Aggregator and Executor in docker containers
-./.hourglass/scripts/run.sh
+# ./.hourglass/scripts/run.sh
 
 log "AVS components started successfully." 

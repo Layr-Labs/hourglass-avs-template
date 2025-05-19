@@ -15,10 +15,10 @@ fi
 CONTEXT="$1"
 
 # Check for required tools
-ensureJq()
-ensureYq()
-ensureDocker()
-ensureRealpath()
+ensureJq
+ensureYq
+ensureDocker
+ensureRealpath
 
 # if ! command -v jq &> /dev/null; then
 #     log "Error: jq not found. Please run 'avs create' first."

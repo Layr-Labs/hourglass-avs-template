@@ -47,3 +47,10 @@ function ensureForge() {
         exit 1
     fi
 }
+
+function ensureGomplate() {
+    if ! command -v gomplate &> /dev/null; then
+        log "Error: gomplate not found. Please run 'avs create' first."
+        exit 1
+    fi
+}

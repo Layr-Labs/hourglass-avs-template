@@ -1,3 +1,5 @@
 .idea
 /bin
 .docker-build-tmp
+/config
+/keystores
