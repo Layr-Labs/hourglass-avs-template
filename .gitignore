@@ -3,3 +3,5 @@
 .docker-build-tmp
 /config
 /keystores
+.hourglass/config/aggregator.yaml
+.hourglass/config/executor.yaml

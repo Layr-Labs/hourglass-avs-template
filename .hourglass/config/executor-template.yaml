@@ -9,39 +9,31 @@
 {{- $taskMailbox = $contract.address }}
 {{- end }}
 {{- end }}
-debug: false
-serverConfig:
-  port: 9000
-  secureConnection: false
-  aggregatorUrl: "aggregator:9000"
-
+grpcPort: 9090
+performerNetworkName: "hourglass-local_hourglass-network"
 operator:
-  {{- $aggregator := index (ds "ctx").aggregator.operators 0 }}
-  address: "{{ $aggregator.address }}"
-  {{- range $i, $agg := (ds "ctx").context.operators }}
-  {{- if eq $aggregator.address $agg.address }}
-  operatorPrivateKey: "{{ $agg.ecdsa_key }}"
+  {{- $executor := index (ds "ctx").executor.operators 0 }}
+  address: "{{ $executor.address }}"
+  {{- range $i, $exec := (ds "ctx").context.operators }}
+  {{- if eq $executor.address $exec.address }}
+  operatorPrivateKey: "{{ $exec.ecdsa_key }}"
   signingKeys:
     bls:
       keystore: |
-{{ toJSONPretty " " $agg.bls_key_contents | indent 8}}
-      password: "{{ $agg.bls_keystore_password }}"
+{{ toJSONPretty " " $exec.bls_key_contents | indent 8}}
+      password: "{{ $exec.bls_keystore_password }}"
   {{- end}}
   {{- end }}
-
-l1ChainId: {{ (ds "ctx").context.chains.l1.chain_id }}
-
-chains:
-  - name: "ethereum"
-    network: "mainnet"
-    chainId: {{ (ds "ctx").context.chains.l1.chain_id }}
-    rpcUrl: "http://host.docker.internal:8545"
-    pollIntervalSeconds: 10
-
-avss:
-  - address: "{{ (ds "ctx").context.avs.address }}"
-    responseTimeout: 3000
-    chainIds: [{{ (ds "ctx").context.chains.l1.chain_id }}]
+l1Chain:
+  chainId: "{{ (ds "ctx").context.chains.l1.chain_id }}"
+  rpcUrl: "http://host.docker.internal:8545"
+avsPerformers:
+  - image:
+      repository: "my-avs"
+      tag: "latest"
+    processType: "server"
+    avsAddress: "{{ (ds "ctx").context.avs.address }}"
+    workerCount: 1
     signingCurve: "bn254"
     avsRegistrarAddress: "{{ $avsRegistrar }}"
 
