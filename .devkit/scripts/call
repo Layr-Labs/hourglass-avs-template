@@ -9,14 +9,14 @@ log() {
 # Check if context parameter is provided
 if [ -z "$1" ]; then
     log "Error: Missing context parameter"
-    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' '{\"payload\":\"0x<payload>\"}'"
+    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' '{\"signature\":\"(uint256,string,...)\",\"args\":\"(5,\"hello\",...)\"}'"
     exit 1
 fi
 
 # Check if params parameter is provided
 if [ -z "$2" ]; then
     log "Error: Missing params parameter"
-    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' '{\"payload\":\"0x<payload>\"}'"
+    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' '{\"signature\":\"(uint256,string,...)\",\"args\":\"(5,\"hello\",...)\"}'"
     exit 1
 fi
 
@@ -35,11 +35,42 @@ if ! command -v yq &> /dev/null; then
     exit 1
 fi
 
-# Extract payload from params JSON
-PAYLOAD=$(echo "$PARAMS" | jq -r '.payload')
-if [ "$PAYLOAD" == "null" ] || [ -z "$PAYLOAD" ]; then
-    log "Error: Missing payload in params"
-    log "Params must be in the format: '{\"payload\":\"0x<hex-string>\"}'"
+if ! command -v cast &> /dev/null; then
+    log "Error: cast not found. Please run 'avs create' first."
+    exit 1
+fi
+
+# Extract signature and args from params JSON
+SIGNATURE=$(echo "$PARAMS" | jq -r '.signature')
+ARGS=$(echo "$PARAMS" | jq -r '.args')
+
+# Validate signature and args
+if [ "$SIGNATURE" == "null" ] || [ -z "$SIGNATURE" ]; then
+    log "Error: Missing signature in params"
+    log "Params must be in the format: '{\"signature\":\"(uint256,string)\",\"args\":\"(5,\"hello\")\"}'"
+    exit 1
+fi
+
+if [ "$ARGS" == "null" ] || [ -z "$ARGS" ]; then
+    log "Error: Missing args in params"
+    log "Params must be in the format: '{\"signature\":\"(uint256,string)\",\"args\":\"(5,\"hello\")\"}'"
+    exit 1
+fi
+
+# Format the signature to f(<signature>)
+FORMATTED_SIGNATURE="f($SIGNATURE)"
+
+# Generate the payload using cast abi-encode
+set +e
+PAYLOAD=$(cast abi-encode "$FORMATTED_SIGNATURE" "$ARGS" 2> >(tee >&2))
+CAST_EXIT_CODE=$?
+set -e
+
+if [ $CAST_EXIT_CODE -ne 0 ]; then
+    log ""
+    log "Error: Failed to encode arguments using cast abi-encode"
+    log "Signature: $SIGNATURE"
+    log "Arguments: $ARGS"
     exit 1
 fi
 
@@ -92,11 +123,13 @@ fi
 
 # Validate payload is a hex string
 if [[ ! "$PAYLOAD" =~ ^0x[a-fA-F0-9]+$ ]]; then
-    log "Error: PAYLOAD must be a hex string (0x followed by hex characters)"
+    log "Error: Generated payload must be a hex string (0x followed by hex characters)"
+    log "Got: $PAYLOAD"
     exit 1
 fi
 
 log "Creating task on the TaskMailbox contract..."
+log "Using payload encoded from signature: $SIGNATURE, args: $ARGS"
 
 # Create a task on the TaskMailbox contract
 cd contracts && PRIVATE_KEY_APP="${PRIVATE_KEY_APP}" make create-task RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} PAYLOAD="${PAYLOAD}"
