@@ -61,12 +61,16 @@ fi
 FORMATTED_SIGNATURE="f($SIGNATURE)"
 
 # Generate the payload using cast abi-encode
-PAYLOAD=$(cast abi-encode "$FORMATTED_SIGNATURE" "$ARGS" 2>&1)
-if [ $? -ne 0 ]; then
+set +e
+PAYLOAD=$(cast abi-encode "$FORMATTED_SIGNATURE" "$ARGS" 2> >(tee >&2))
+CAST_EXIT_CODE=$?
+set -e
+
+if [ $CAST_EXIT_CODE -ne 0 ]; then
+    log ""
     log "Error: Failed to encode arguments using cast abi-encode"
-    log "Signature: $FORMATTED_SIGNATURE"
+    log "Signature: $SIGNATURE"
     log "Arguments: $ARGS"
-    log "Error: $PAYLOAD"
     exit 1
 fi
 
