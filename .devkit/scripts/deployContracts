@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-# Function to log to stderr
-log() {
-    echo "$@" >&2
-}
+# source in helper functions
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
+
 
 # Function to capitalize the first letter of a string
 capitalize_first_letter() {
@@ -61,25 +60,30 @@ fi
 CONTEXT="$1"
 
 # Check for required tools
-if ! command -v jq &> /dev/null; then
-    log "Error: jq not found. Please run 'avs create' first."
-    exit 1
-fi
+ensureJq()
+ensureYq()
+ensureMake()
+ensureForge()
 
-if ! command -v yq &> /dev/null; then
-    log "Error: yq not found. Please run 'avs create' first."
-    exit 1
-fi
-
-if ! command -v make &> /dev/null; then
-    log "Error: make not found. Please run 'avs create' first."
-    exit 1
-fi
-
-if ! command -v forge &> /dev/null; then
-    log "Error: forge not found. Please run 'avs create' first."
-    exit 1
-fi
+# if ! command -v jq &> /dev/null; then
+#     log "Error: jq not found. Please run 'avs create' first."
+#     exit 1
+# fi
+#
+# if ! command -v yq &> /dev/null; then
+#     log "Error: yq not found. Please run 'avs create' first."
+#     exit 1
+# fi
+#
+# if ! command -v make &> /dev/null; then
+#     log "Error: make not found. Please run 'avs create' first."
+#     exit 1
+# fi
+#
+# if ! command -v forge &> /dev/null; then
+#     log "Error: forge not found. Please run 'avs create' first."
+#     exit 1
+# fi
 
 # Extract required values from context
 ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')

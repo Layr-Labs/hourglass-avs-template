@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-# Function to log to stderr
-log() {
-    echo "$@" >&2
-}
+# source in helper functions
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
 
 log "Building AVS performer and contracts..."
 
