@@ -9,14 +9,14 @@ log() {
 # Check if context parameter is provided
 if [ -z "$1" ]; then
     log "Error: Missing context parameter"
-    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' '{\"signature\":\"<signature>\",\"args\":\"<args>\"}'"
+    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' '{\"signature\":\"(uint256,string,...)\",\"args\":\"(5,\"hello\",...)\"}'"
     exit 1
 fi
 
 # Check if params parameter is provided
 if [ -z "$2" ]; then
     log "Error: Missing params parameter"
-    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' '{\"signature\":\"<signature>\",\"args\":\"<args>\"}'"
+    log "Usage: ./call '{\"version\":\"0.0.1\",\"context\":{...}}' '{\"signature\":\"(uint256,string,...)\",\"args\":\"(5,\"hello\",...)\"}'"
     exit 1
 fi
 
