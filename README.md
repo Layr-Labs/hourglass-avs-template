@@ -151,40 +151,7 @@ This template includes a basic Go program and smart contracts that uses the Hour
 
 ## Getting Started
 
-Follow these steps to set up and run your AVS with the Hourglass framework:
-
-### 0. Prerequisites
-
-Follow the instructions in the [devkit-cli](https://github.com/Layr-Labs/devkit-cli) README to install the devkit.
-
-### 1. AVS Logic
-
-Update the `avs/cmd/main.go` file to implement your offchain AVS logic. 
-Update the `TaskAVSRegistrar.sol` and `AVSTaskHook.sol` contracts in `contracts/src` to add any additional onchain logic (only if needed).
-
-### 2. Build the AVS project
-
-Build the project and the contracts:
-
-```bash
-devkit avs build
-```
-
-### 3. Update the AVS config
-
-Read or modify the AVS configuration to set the correct parameters for your AVS.
-
-```bash
-devkit avs config
-```
-
-### 4. Start the AVS devnet
-
-Start the AVS devnet, deploy and set up the contracts, and run the AVS:
-
-```bash
-devkit avs devnet start
-```
+Follow the instructions steps to in the [devkit-cli](https://github.com/Layr-Labs/devkit-cli) README install DevKit and run your AVS with the Hourglass framework
 
 ### 5. Create a task
 
