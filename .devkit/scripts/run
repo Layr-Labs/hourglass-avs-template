@@ -1,10 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
-# Function to log to stderr
-log() {
-    echo "$@" >&2
-}
+# source in helper functions
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
+
 
 # Check if context parameter is provided
 if [ -z "$1" ]; then
@@ -17,26 +16,49 @@ fi
 CONTEXT="$1"
 
 # Check for required tools
-if ! command -v jq &> /dev/null; then
-    log "Error: jq not found. Please run 'avs create' first."
-    exit 1
-fi
+ensureJq
+ensureYq
+ensureGomplate
 
-if ! command -v docker &> /dev/null; then
-    log "Error: Docker is not running or not installed. Please start Docker and try again."
-    exit 1
-fi
-
-# Extract required values from context
 ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
-
-# Validate required fields exist in JSON
 if [ "$ENVIRONMENT" == "null" ] || [ -z "$ENVIRONMENT" ]; then
     log "Error: Missing name (environment) in context"
     exit 1
 fi
+hourglassContextConfigPath="$( dirname "${BASH_SOURCE[0]}" )/../../.hourglass/context/${ENVIRONMENT}.yaml"
+contextConfig="$(cat $hourglassContextConfigPath | yq -o json)"
 
 log "Starting AVS components for environment: $ENVIRONMENT"
+
+function readOperatorBlsKeystore() {
+    cat $(realpath $1) | jq -r '.'
+}
+
+function loadBlsKeysForAllOperators() {
+    local operatorCount=$(echo $CONTEXT | jq -r ".context.operators | length")
+    for i in $(seq 0 $((operatorCount - 1))); do
+        local operatorAddress=$(echo $CONTEXT | jq -r ".context.operators[$i].address")
+        local blsKeystorePath=$(echo $CONTEXT | jq -r ".context.operators[$i].bls_keystore_path")
+        local blsKeyContents=$(echo $(readOperatorBlsKeystore $blsKeystorePath) | jq -c '.')
+        # set the bls key contents in the context as a raw string
+        CONTEXT=$(echo $CONTEXT | jq --argjson blsKeyContents "$blsKeyContents" ".context.operators[$i].bls_key_contents = \$blsKeyContents")
+    done
+}
+
+loadBlsKeysForAllOperators
+
+# set aggregator and executor
+CONTEXT=$(echo $CONTEXT | jq --argjson contextConfig "$contextConfig" '.aggregator = $contextConfig.aggregator')
+CONTEXT=$(echo $CONTEXT | jq --argjson contextConfig "$contextConfig" '.executor = $contextConfig.executor')
+
+deployedContracts=$(echo $CONTEXT | jq -r '.context.deployed_contracts')
+if [ "$deployedContracts" == "null" ] || [ -z "$deployedContracts" ]; then
+    log "Error: Need to deploy contracts. Please run 'devkit avs devnet start'"
+    exit 1
+fi
+
+echo $CONTEXT | gomplate -f .hourglass/config/aggregator-template.yaml -d 'ctx=stdin:/?type=application/json' > .hourglass/config/aggregator.yaml
+echo $CONTEXT | gomplate -f .hourglass/config/executor-template.yaml -d 'ctx=stdin:/?type=application/json' > .hourglass/config/executor.yaml
 
 # Run the Aggregator and Executor in docker containers
 ./.hourglass/scripts/run.sh

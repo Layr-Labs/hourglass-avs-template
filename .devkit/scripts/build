@@ -1,28 +1,15 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
-# Function to log to stderr
-log() {
-    echo "$@" >&2
-}
+# source in helper functions
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
 
 log "Building AVS performer and contracts..."
 
 # Check if required tools are available
-if ! command -v forge &> /dev/null; then
-    log "Error: forge not found. Please run 'avs create' first."
-    exit 1
-fi
-
-if ! command -v make &> /dev/null; then
-    log "Error: make not found. Please run 'avs create' first."
-    exit 1
-fi
-
-if ! command -v docker &> /dev/null; then
-    log "Error: docker not found. Please run 'avs create' first."
-    exit 1
-fi
+ensureMake
+ensureForge
+ensureDocker
 
 # Build the contracts and dependencies
 BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2

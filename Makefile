@@ -13,7 +13,7 @@ OUT = ./bin
 build: deps
 	@mkdir -p $(OUT) || true
 	@echo "Building binaries..."
-	go build -o $(OUT)/performer ./avs/cmd/main.go
+	go build -o $(OUT)/performer ./cmd/main.go
 
 deps:
 	GOPRIVATE=github.com/Layr-Labs/* go mod tidy

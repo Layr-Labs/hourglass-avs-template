@@ -12,6 +12,7 @@ RUN mkdir -p ~/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts
 ENV GOPRIVATE=github.com/Layr-Labs/*
 ENV GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=accept-new"
 
+
 # Copy full source
 ADD . /build
 

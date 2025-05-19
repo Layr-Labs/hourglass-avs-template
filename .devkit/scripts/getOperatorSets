@@ -1,10 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
-# Function to log to stderr
-log() {
-    echo "$@" >&2
-}
+# source in helper functions
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
+
 
 # Check if context parameter is provided
 if [ -z "$1" ]; then
@@ -17,15 +16,8 @@ fi
 CONTEXT="$1"
 
 # Check for required tools
-if ! command -v jq &> /dev/null; then
-    log "Error: jq not found. Please run 'avs create' first."
-    exit 1
-fi
-
-if ! command -v yq &> /dev/null; then
-    log "Error: yq not found. Please run 'avs create' first."
-    exit 1
-fi
+ensureJq
+ensureYq
 
 # Extract environment from context
 ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
