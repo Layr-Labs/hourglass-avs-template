@@ -160,6 +160,14 @@ process_operators() {
             exit 1
         fi
         
+        # Validate registration payload format - should be lowercase hex without 0x prefix
+        if ! [[ "$registration_payload" =~ ^[0-9a-f]+$ ]]; then
+            log "Error: Registration payload for operator $operator_address has invalid format."
+            log "Expected a lowercase hexadecimal string without 0x prefix."
+            log "Got: $registration_payload"
+            exit 1
+        fi
+        
         # Create the operator registration object
         local registration_object=$(jq -n \
             --arg address "$operator_address" \
