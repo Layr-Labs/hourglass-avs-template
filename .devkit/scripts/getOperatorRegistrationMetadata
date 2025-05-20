@@ -42,8 +42,16 @@ if [ "$RPC_URL" == "null" ] || [ -z "$RPC_URL" ]; then
     exit 1
 fi
 
-# Replace localhost with host.docker.internal for Docker networking
-DOCKER_RPC_URL=$(echo "$RPC_URL" | sed 's/localhost/host.docker.internal/g' | sed 's/127.0.0.1/host.docker.internal/g')
+# Test if host.docker.internal resolves
+if getent hosts host.docker.internal >/dev/null; then
+    # Replace localhost with host.docker.internal for Docker networking
+    DOCKER_RPC_URL=$(echo "$RPC_URL" \
+        | sed 's/localhost/host.docker.internal/g' \
+        | sed 's/127.0.0.1/host.docker.internal/g')
+else
+    # When not available use localhost directly
+    DOCKER_RPC_URL="$RPC_URL"
+fi
 
 # Extract TaskAVSRegistrar contract address from deployed contracts (if available)
 TASK_AVS_REGISTRAR=$(echo "$CONTEXT" | jq -r '.context.deployed_contracts[] | select(.name=="taskAVSRegistrar") | .address')
