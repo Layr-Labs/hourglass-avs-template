@@ -198,6 +198,7 @@ deployed_contracts='[]'
 HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
 AVS_L1_FILE="${OUTPUT_DIR}/deploy_avs_l1_output.json"
 AVS_L2_FILE="${OUTPUT_DIR}/deploy_avs_l2_output.json"
+CUSTOM_CONTRACTS_FILE="${OUTPUT_DIR}/deploy_custom_contracts_output.json"
 
 # Process the core output file
 process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
@@ -205,6 +206,8 @@ process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
 process_output_file "$AVS_L1_FILE" "AVS L1"
 # Process the AVS L2 output file
 process_output_file "$AVS_L2_FILE" "AVS L2"
+# Process the custom contracts output file
+process_output_file "$CUSTOM_CONTRACTS_FILE" "Custom Contracts"
 
 # Create the final JSON structure with deployed_contracts key
 RESULT=$(jq -n --argjson contracts "$deployed_contracts" '{ deployed_contracts: $contracts }')
