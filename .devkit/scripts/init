@@ -128,16 +128,6 @@ install_docker() {
     fi
 }
 
-detect_os() {
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "macos"
-    elif [[ -f /etc/debian_version ]]; then
-        echo "debian"
-    else
-        echo "unknown"
-    fi
-}
-
 # Function to install Go on macOS
 install_go_macos() {
     if ! command -v go >/dev/null 2>&1; then
