@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 BUILD_CONTAINER=${BUILD_CONTAINER:-"false"}
 
