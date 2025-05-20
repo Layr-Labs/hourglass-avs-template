@@ -36,7 +36,7 @@ chains:
     network: "mainnet"
     chainId: {{ (ds "ctx").context.chains.l1.chain_id }}
     rpcUrl: "http://host.docker.internal:8545"
-    pollIntervalSeconds: 10
+    pollIntervalSeconds: 2
 
 avss:
   - address: "{{ (ds "ctx").context.avs.address }}"
