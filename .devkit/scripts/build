@@ -4,15 +4,16 @@ set -e
 # source in helper functions
 source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
 
-log "Building AVS performer and contracts..."
-
 # Check if required tools are available
 ensureMake
 ensureForge
 ensureDocker
 
 # Build the contracts and dependencies
+log "Building AVS performer..."
 BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
+
+log "Building AVS contracts..."
 cd contracts && forge clean && forge build >&2
 
 log "Build completed successfully." 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 buildParams=$(cat ./.hourglass/build.yaml)
 registry=$(echo "$buildParams" | yq -r '.container.registry')

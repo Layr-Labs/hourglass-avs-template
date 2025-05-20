@@ -128,21 +128,124 @@ install_docker() {
     fi
 }
 
+# Function to install Go on macOS
+install_go_macos() {
+    if ! command -v go >/dev/null 2>&1; then
+        log_info "Installing Go 1.23.6 on macOS..."
+
+        # Install Go using Homebrew
+        brew install go@1.23.6 || brew upgrade go@1.23.6
+
+        # Set up environment variables
+        echo 'export GOPATH=$HOME/go' >> ~/.bashrc
+        echo 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin' >> ~/.bashrc
+        source ~/.bashrc
+    else
+        log_info "golang is already installed."
+    fi
+}
+
+# Function to install Go on Debian/Ubuntu
+install_go_debian() {
+    if ! command -v go >/dev/null 2>&1; then
+        log_info "Installing Go 1.23.6 on Debian/Ubuntu..."
+
+        # Update package lists
+        sudo apt-get update
+
+        # Install dependencies
+        sudo apt-get install -y wget tar
+
+        # Download Go 1.23.6
+        wget https://golang.org/dl/go1.23.6.linux-amd64.tar.gz
+
+        # Remove any previous Go installation
+        sudo rm -rf /usr/local/go
+
+        # Extract the archive
+        sudo tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz
+
+        # Clean up
+        rm go1.23.6.linux-amd64.tar.gz
+
+        # Set up environment variables
+        echo 'export GOPATH=$HOME/go' >> ~/.bashrc
+        echo 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin' >> ~/.bashrc
+        source ~/.bashrc
+    else
+        log_info "golang is already installed."
+    fi
+}
+
+install_go_redhat() {
+    if ! command -v go >/dev/null 2>&1; then
+        log_info "Installing Go 1.23.6 on CentOS/RHEL/Fedora..."
+
+        # Update package lists
+        sudo yum -y update
+
+        # Install dependencies
+        sudo yum -y install wget tar
+
+        # Download Go 1.23.6
+        wget https://golang.org/dl/go1.23.6.linux-amd64.tar.gz
+
+        # Remove any previous Go installation
+        sudo rm -rf /usr/local/go
+
+        # Extract the archive
+        sudo tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz
+
+        # Clean up
+        rm go1.23.6.linux-amd64.tar.gz
+
+        # Set up environment variables
+        echo 'export GOPATH=$HOME/go' >> ~/.bashrc
+        echo 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin' >> ~/.bashrc
+        source ~/.bashrc
+
+        # For systems that use .bash_profile instead of .bashrc
+        if [[ -f ~/.bash_profile ]]; then
+            echo 'export GOPATH=$HOME/go' >> ~/.bash_profile
+            echo 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin' >> ~/.bash_profile
+            source ~/.bash_profile
+        fi
+    else
+        log_info "golang is already installed."
+    fi
+}
+
+function install_gomplate_linux() {
+    if ! command -v gomplate >/dev/null 2>&1; then
+        log_info "Installing gomplate..."
+        go install github.com/hairyhenderson/gomplate/v4/cmd/gomplate@latest
+        log_success "gomplate installed successfully"
+    else
+        log_info "gomplate is already installed"
+    fi
+}
+
+
 # Install dependencies based on platform
 if [[ "$PLATFORM" == "macos" ]]; then
     install_homebrew
+    install_with_brew coreutils
+    install_with_brew realpath
+    install_with_brew gomplate
+    install_with_brew make
     install_with_brew jq
     install_with_brew yq
-    install_with_brew make
-    install_with_brew coreutils realpath
     install_foundry
     install_docker
+    install_go_macos
 elif [[ "$PLATFORM" == "linux" ]]; then
     if [[ "$LINUX_FLAVOR" == "debian" ]]; then
         install_with_apt jq
         install_with_apt python3-pip pip3
         install_with_apt make
         install_with_apt coreutils realpath
+        install_go_debian
+        install_gomplate_linux
         # Install yq via pip
         if ! command -v yq >/dev/null 2>&1; then
             log_info "Installing yq..."
@@ -158,6 +261,8 @@ elif [[ "$PLATFORM" == "linux" ]]; then
         install_with_yum python3-pip pip3
         install_with_yum make
         install_with_yum coreutils realpath
+        install_go_redhat
+        install_gomplate_linux
         # Install yq via pip
         if ! command -v yq >/dev/null 2>&1; then
             log_info "Installing yq..."
@@ -176,6 +281,7 @@ elif [[ "$PLATFORM" == "linux" ]]; then
         log_warning "- realpath (from coreutils)"
         log_warning "- forge (from Foundry)"
         log_warning "- docker"
+        log_warning "- golang (1.23.6)"
     fi
 fi
 
@@ -188,7 +294,7 @@ log_info "Running dependency checks..."
 
 # Check if all dependencies are installed properly
 MISSING_DEPS=()
-for cmd in jq yq make realpath forge docker; do
+for cmd in jq yq make realpath forge docker go; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
         MISSING_DEPS+=("$cmd")
     fi
