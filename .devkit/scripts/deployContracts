@@ -16,7 +16,8 @@ get_abi_path() {
     elif [ "$name" == "bn254CertificateVerifier" ]; then
         echo "./contracts/out/BN254CertificateVerifier.sol/BN254CertificateVerifier.json"
     else
-    echo "./contracts/out/$contract_name.sol/$contract_name.json"
+        echo "./contracts/out/$name.sol/$name.json"
+    fi
 }
 
 # Function to process deployment output file and add contracts to deployed_contracts array
