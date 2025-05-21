@@ -311,4 +311,7 @@ else
     exit 1
 fi
 
+cat .devkit/templateGitignore >> .gitignore
+rm .devkit/templateGitignore
+
 log_info "Initialization complete. You can now run the other scripts in .devkit/scripts/" 
