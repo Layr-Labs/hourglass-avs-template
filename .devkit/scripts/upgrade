@@ -24,6 +24,15 @@ cp -rfv "${PROJECT_BASE_DIR}/.devkit" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/Dockerfile" $originalProjectDir
 
+# check if the contracts directory exists
+if [[ ! -d "${PROJECT_BASE_DIR}/contracts" ]]; then
+    log "Error: contracts directory not found in the project base directory."
+    exit 1
+fi
+
+log "Copying contracts directory to the original project directory..."
+rsync -avq --update "${PROJECT_BASE_DIR}/contracts" "${originalProjectDir}/contracts"
+
 log "Upgrade complete!"
 
 
