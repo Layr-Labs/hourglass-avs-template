@@ -42,10 +42,14 @@ if [ "$RPC_URL" == "null" ] || [ -z "$RPC_URL" ]; then
     exit 1
 fi
 
-# Use DOCKER_HOST from env if provided
-DOCKER_HOST=${DOCKER_HOST:-"host.docker.internal"}
+# Detect OS and default DOCKER_HOST when not provided
+if [[ "$(uname)" == "Linux" ]]; then
+  DOCKER_HOST=${DOCKER_HOST:-localhost}
+else
+  DOCKER_HOST=${DOCKER_HOST:-host.docker.internal}
+fi
 
-# Replace localhost with DOCKER_HOST for Docker networking
+# Replace localhost/127.0.0.1 in RPC_URL with docker equivalent for environment
 DOCKER_RPC_URL=$(echo "$RPC_URL" \
   | sed "s/localhost/${DOCKER_HOST}/g; s/127\.0\.0\.1/${DOCKER_HOST}/g")
 
