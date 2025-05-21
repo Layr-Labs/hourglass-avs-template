@@ -11,6 +11,5 @@ if [[ ! -z "$registry" ]]; then
 fi
 
 DOCKER_BUILDKIT=1 docker build \
-    --ssh default \
     --progress=plain \
     -t "${image}:${tag}" .
