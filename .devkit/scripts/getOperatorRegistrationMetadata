@@ -136,8 +136,7 @@ process_operators() {
         
         # Run the docker command to generate operator registration data
         set +e
-        local registration_payload=$(docker run --rm -i \
-            --network=host
+        local registration_payload=$(docker run --network=host --rm -i \
             -v "$keystore_dir:/keystore" \
             public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v0.1.0 bls-helper generate-operator-data \
             --keyfile-path "/keystore/$keystore_filename" \
