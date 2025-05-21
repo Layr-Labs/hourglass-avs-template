@@ -311,6 +311,8 @@ else
     exit 1
 fi
 
+rm -rf contracts/.git || true
+
 cat .devkit/templateGitignore >> .gitignore
 rm .devkit/templateGitignore
 
