@@ -1,0 +1,65 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Golang Rules for Hourglass AVS Template
+
+## Main Project Go Rules
+**/*.go
+
+This is a Go-based template for building a custom Actively Validated Service (AVS) on the Eigenlayer network, using the Hourglass framework. The project serves as a starting point for implementing your own AVS.
+
+Follow these conventions:
+- Use the import path `github.com/Layr-Labs/hourglass-avs-template` for imports from this module
+- The main application code is in the `cmd/` directory
+- Follow Go best practices: clear error handling, proper commenting, and consistent naming
+- Use the logger from zap for all logging needs (see import of `go.uber.org/zap`)
+- Keep functions small and focused on a single responsibility
+- Use dependency injection for testability
+
+## Task Worker Implementation
+cmd/*.go
+
+The main implementation focuses on the TaskWorker which implements the AVS performer interface. This handles task validation and execution for the AVS.
+
+Follow these conventions:
+- The TaskWorker should implement the performer interface from the Hourglass framework
+- Focus on implementing the two main methods: `ValidateTask` and `HandleTask`
+- Log task information using the zap logger
+- Keep task validation logic separate from task handling logic
+- Ensure proper error handling in both validation and execution flows
+- Return structured responses for task results
+
+## Test Rules
+**/*_test.go
+
+Test files in the codebase.
+
+Follow these conventions:
+- Use the standard Go testing package
+- Create comprehensive unit tests with clear setup and assertions
+- Add tests for both task validation and task handling
+- Mock external dependencies appropriately
+- Consider using table-driven tests for testing multiple scenarios
+
+## Build and Deployment Rules
+Makefile, Dockerfile
+
+Build and deployment configuration.
+
+When modifying Go code, consider:
+- Build targets in the Makefile
+- Container environment specified in the Dockerfile
+- Dependencies and versions in go.mod
+
+## External Dependencies
+The project has several key dependencies:
+- `github.com/Layr-Labs/hourglass-monorepo/ponos` - The Hourglass framework
+- `github.com/Layr-Labs/protocol-apis` - Protocol APIs for Eigenlayer
+- `go.uber.org/zap` - Structured logging
+
+When working with these dependencies:
+- Ensure version compatibility in go.mod
+- Follow the patterns and interfaces defined by the Hourglass framework
+- Use the protobuf-generated types from protocol-apis for task requests and responses

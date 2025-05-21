@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+set -e
+
+originalProjectDir=$1
+
+if [ -z "$originalProjectDir" ]; then
+    log "Usage: $0 <original_project_dir>"
+    exit 1
+fi
+
+# source in helper functions
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
+
+log "Starting template upgrade process..."
+
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Navigate to the parent directories to find .devkit
+PROJECT_BASE_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+
+cp -rfv "${PROJECT_BASE_DIR}/.devkit" $originalProjectDir
+cp -rfv "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
+
+log "Upgrade complete!"
+
+
+
