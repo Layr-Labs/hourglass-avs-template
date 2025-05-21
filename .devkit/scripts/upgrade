@@ -24,6 +24,8 @@ cp -rfv "${PROJECT_BASE_DIR}/.devkit" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/Dockerfile" $originalProjectDir
 
+rsync -av --update --dry-run "${PROJECT_BASE_DIR}/contracts" "${originalProjectDir}/contracts"
+
 log "Upgrade complete!"
 
 
