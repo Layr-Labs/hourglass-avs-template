@@ -11,6 +11,11 @@ Hourglass is a framework for building a task-based EigenLayer AVS, providing AVS
 
 Hourglass as a framework has onchain and offchain components that work together to enable a task-based AVS.
 
+<!-- ## Who is this for?
+Describe who this template is for, and who this ISN'T FOR, and what it helps you do.
+
+-->
+
 ### Onchain Components
 
 #### TaskMailbox
