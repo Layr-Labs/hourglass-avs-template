@@ -22,6 +22,7 @@ PROJECT_BASE_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
 cp -rfv "${PROJECT_BASE_DIR}/.devkit" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
+cp -rfv "${PROJECT_BASE_DIR}/Dockerfile" $originalProjectDir
 
 log "Upgrade complete!"
 
