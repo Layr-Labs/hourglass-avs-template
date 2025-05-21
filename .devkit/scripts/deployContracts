@@ -4,18 +4,20 @@ set -e
 # source in helper functions
 source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
 
-
-# Function to capitalize the first letter of a string
-capitalize_first_letter() {
-    local string="$1"
-    echo "$(tr '[:lower:]' '[:upper:]' <<< ${string:0:1})${string:1}"
-}
-
 # Function to get ABI path for a contract name (simple version)
 get_abi_path() {
     local name="$1"
-    local contract_name=$(capitalize_first_letter "$name")
-    echo "./contracts/out/$contract_name.sol/$contract_name.json"
+    if [ "$name" == "taskMailbox" ]; then
+        echo "./contracts/out/TaskMailbox.sol/TaskMailbox.json"
+    elif [ "$name" == "taskAVSRegistrar" ]; then
+        echo "./contracts/out/TaskAVSRegistrar.sol/TaskAVSRegistrar.json"
+    elif [ "$name" == "avsTaskHook" ]; then
+        echo "./contracts/out/AVSTaskHook.sol/AVSTaskHook.json"
+    elif [ "$name" == "bn254CertificateVerifier" ]; then
+        echo "./contracts/out/BN254CertificateVerifier.sol/BN254CertificateVerifier.json"
+    else
+        echo "./contracts/out/$name.sol/$name.json"
+    fi
 }
 
 # Function to process deployment output file and add contracts to deployed_contracts array
@@ -180,6 +182,12 @@ sleep 1
 log "Setting up AVS Task Mailbox configuration..."
 PRIVATE_KEY_AVS="${PRIVATE_KEY_AVS}" make setup-avs-task-mailbox-config RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AGGREGATOR_OPERATOR_SET_ID=${AGGREGATOR_OPERATOR_SET_ID} EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} TASK_SLA=${TASK_SLA} >&2
 
+# Sleep for a second so that nonce can be pulled correctly
+sleep 1
+# Step 5: Deploy custom contracts
+log "Deploying custom contracts..."
+make deploy-custom-contracts RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" CONTEXT="${CONTEXT}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" >&2
+
 log "Contract deployment completed successfully."
 
 # Process deployment output files
@@ -191,6 +199,7 @@ deployed_contracts='[]'
 HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
 AVS_L1_FILE="${OUTPUT_DIR}/deploy_avs_l1_output.json"
 AVS_L2_FILE="${OUTPUT_DIR}/deploy_avs_l2_output.json"
+CUSTOM_CONTRACTS_FILE="${OUTPUT_DIR}/deploy_custom_contracts_output.json"
 
 # Process the core output file
 process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
@@ -198,6 +207,8 @@ process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
 process_output_file "$AVS_L1_FILE" "AVS L1"
 # Process the AVS L2 output file
 process_output_file "$AVS_L2_FILE" "AVS L2"
+# Process the custom contracts output file
+process_output_file "$CUSTOM_CONTRACTS_FILE" "Custom Contracts"
 
 # Create the final JSON structure with deployed_contracts key
 RESULT=$(jq -n --argjson contracts "$deployed_contracts" '{ deployed_contracts: $contracts }')
