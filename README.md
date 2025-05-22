@@ -47,6 +47,61 @@ The CertificateVerifier is an instanced (per-AVS) eigenlayer middleware contract
 * Verifying the validity of operator certificates.
 * Verifying stake threshold requirements for operator sets.
 
+#### Custom Contracts
+
+If your AVS has custom contracts that need to be built and compiled, place them in the `./contracts/src` directory.
+
+```bash
+contracts
+|-- README.md
+|-- script
+|   `-- DeployMyContracts.s.sol
+|-- src
+|   |-- HelloWorld.sol
+|   |-- l1-contracts
+|   |   `-- TaskAVSRegistrar.sol
+|   `-- l2-contracts
+|       |-- AVSTaskHook.sol
+|       `-- BN254CertificateVerifier.sol
+`-- test
+    `-- TaskAVSRegistrar.t.sol
+```
+
+After adding your contracts, you'll need up update the `script/DeployMyContracts.s.sol` script to correctly instantiate and deploy your contracts. `DeployMyContracts.s.sol` is specifically called during the `devkit avs devnet start` command and will receive the context of the other contracts that have been deployed.
+
+As you can see in this HelloWorld example, we create new `HelloWorld` contract and then return some JSON output about it that is sent back to the Devkit CLI.
+
+```solidity
+function run(string memory environment, string memory _context, address /* allocationManager */) public {
+        // Read the context
+        Context memory context = _readContext(environment, _context);
+
+        vm.startBroadcast(context.deployerPrivateKey);
+        console.log("Deployer address:", vm.addr(context.deployerPrivateKey));
+
+        //TODO: Implement custom contracts deployment
+        // CustomContract customContract = new CustomContract();
+        // console.log("CustomContract deployed to:", address(customContract));
+        HelloWorld helloWorld = new HelloWorld();
+
+        vm.stopBroadcast();
+
+        vm.startBroadcast(context.avsPrivateKey);
+        console.log("AVS address:", context.avs);
+
+        //TODO: Implement any additional AVS setup
+
+        vm.stopBroadcast();
+
+        //TODO: Write to output file
+        Output[] memory outputs = new Output[](1);
+        // outputs[0] = Output({name: "CustomContract", address: address(customContract)});
+        // _writeOutputToJson(environment, outputs);
+        outputs[0] = Output({name: "HelloWorld", contractAddress: address(helloWorld)});
+        _writeOutputToJson(environment, outputs);
+    }
+```
+
 ### Offchain Components
 
 #### Aggregator
