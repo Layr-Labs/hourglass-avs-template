@@ -9,6 +9,7 @@ import {ITaskMailbox, ITaskMailboxTypes} from "@hourglass-monorepo/src/interface
 import {ITaskAVSRegistrar, ITaskAVSRegistrarTypes} from "@hourglass-monorepo/src/interfaces/avs/l1/ITaskAVSRegistrar.sol";
 import {IAVSTaskHook} from "@hourglass-monorepo/src/interfaces/avs/l2/IAVSTaskHook.sol";
 import {IBN254CertificateVerifier} from "@hourglass-monorepo/src/interfaces/avs/l2/IBN254CertificateVerifier.sol";
+import {HelloWorld} from "./HelloWorld.sol"; // Import your custom contract
 
 contract DeployMyContracts is Script {
     using stdJson for string;
@@ -38,6 +39,7 @@ contract DeployMyContracts is Script {
         //TODO: Implement custom contracts deployment
         // CustomContract customContract = new CustomContract();
         // console.log("CustomContract deployed to:", address(customContract));
+        HelloWorld helloWorld = new HelloWorld();
 
         vm.stopBroadcast();
 
@@ -49,9 +51,11 @@ contract DeployMyContracts is Script {
         vm.stopBroadcast();
 
         //TODO: Write to output file
-        // Output[] memory outputs = new Output[](1);
+        Output[] memory outputs = new Output[](1);
         // outputs[0] = Output({name: "CustomContract", address: address(customContract)});
         // _writeOutputToJson(environment, outputs);
+        outputs[0] = Output({name: "HelloWorld", contractAddress: address(helloWorld)});
+        _writeOutputToJson(environment, outputs);
     }
 
     function _readContext(
