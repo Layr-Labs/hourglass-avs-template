@@ -31,7 +31,7 @@ if [[ ! -d "${PROJECT_BASE_DIR}/contracts" ]]; then
 fi
 
 log "Copying contracts directory to the original project directory..."
-rsync -avq --update "${PROJECT_BASE_DIR}/contracts" "${originalProjectDir}/contracts"
+rsync -av --quiet --update "${PROJECT_BASE_DIR}/contracts" "${originalProjectDir}/contracts"
 
 log "Upgrade complete!"
 
