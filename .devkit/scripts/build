@@ -14,6 +14,6 @@ log "Building AVS performer..."
 BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
 
 log "Building AVS contracts..."
-cd contracts && forge clean && forge build >&2
+cd .devkit/contracts && forge clean && forge build >&2
 
 log "Build completed successfully." 
