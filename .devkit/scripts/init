@@ -320,6 +320,6 @@ log_info "Setting up git configuration..."
 git config --global core.symlinks true
 
 log_info "symlinking contracts directory..."
-ln -s $(pwd)/contracts .devkit/contracts/src/contracts
+cd .devkit/contracts/src && ln -s ../../../contracts .
 
 log_info "Initialization complete. You can now run the other scripts in .devkit/scripts/" 
