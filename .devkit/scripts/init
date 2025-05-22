@@ -316,4 +316,7 @@ rm -rf contracts/.git || true
 cat .devkit/templateGitignore >> .gitignore
 rm .devkit/templateGitignore
 
+log_info "Setting up git configuration..."
+git config --global core.symlinks true
+
 log_info "Initialization complete. You can now run the other scripts in .devkit/scripts/" 

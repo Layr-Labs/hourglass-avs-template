@@ -4,24 +4,36 @@ set -e
 # source in helper functions
 source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
 
+projectDir=$(pwd)
+devkitContractsPath=".devkit/contracts"
+contractsBasePath="${projectDir}/${devkitContractsPath}"
+
+# check if contractsBasePath ends with .devkit/contracts
+if [[ "$contractsBasePath" != *".devkit/contracts" ]]; then
+    log "Error: contractsBasePath should end with .devkit/contracts, got ${contractsBasePath}"
+    exit 1
+fi
+
 # Function to get ABI path for a contract name (simple version)
 get_abi_path() {
     local name="$1"
     if [ "$name" == "taskMailbox" ]; then
-        echo "./contracts/out/TaskMailbox.sol/TaskMailbox.json"
+        echo "${contractsBasePath}/out/TaskMailbox.sol/TaskMailbox.json"
     elif [ "$name" == "taskAVSRegistrar" ]; then
-        echo "./contracts/out/TaskAVSRegistrar.sol/TaskAVSRegistrar.json"
+        echo "${contractsBasePath}/out/TaskAVSRegistrar.sol/TaskAVSRegistrar.json"
     elif [ "$name" == "avsTaskHook" ]; then
-        echo "./contracts/out/AVSTaskHook.sol/AVSTaskHook.json"
+        echo "${contractsBasePath}/out/AVSTaskHook.sol/AVSTaskHook.json"
     elif [ "$name" == "bn254CertificateVerifier" ]; then
-        echo "./contracts/out/BN254CertificateVerifier.sol/BN254CertificateVerifier.json"
+        echo "${contractsBasePath}/out/BN254CertificateVerifier.sol/BN254CertificateVerifier.json"
     else
-        echo "./contracts/out/$name.sol/$name.json"
+        echo "${contractsBasePath}/out/$name.sol/$name.json"
     fi
 }
 
 # Function to process deployment output file and add contracts to deployed_contracts array
 process_output_file() {
+    log ""
+    log "Processing output file $2 - '$1'"
     local file_path="$1"
     local file_desc="$2"
     
@@ -35,12 +47,16 @@ process_output_file() {
         name=$(echo "$entry" | jq -r '.name')
         address=$(echo "$entry" | jq -r '.address')
         abi_path=$(get_abi_path "$name")
-        
+
         # Check if ABI file exists
-        if [ ! -f "../$abi_path" ]; then
+        if [ ! -f "$abi_path" ]; then
             log "Warning: ABI file $abi_path does not exist for contract $name. Run 'devkit avs build' first."
         fi
-        
+
+        # convert path back to relative to the project. take abi_path and remove $projectDir
+        abi_path=$(echo "$abi_path" | sed "s|$projectDir/||")
+
+
         contract_json=$(jq -n \
             --arg name "$name" \
             --arg address "$address" \
@@ -153,7 +169,7 @@ validate_eth_address "$ALLOCATION_MANAGER_ADDRESS" "ALLOCATION_MANAGER_ADDRESS"
 log "Starting contract deployment using context for environment: $ENVIRONMENT"
 
 # Change to contracts directory
-cd contracts
+cd $contractsBasePath
 
 # Step 1: Deploy TaskMailbox contract
 if [ "$ENVIRONMENT" == "devnet" ]; then
