@@ -32,7 +32,6 @@ get_abi_path() {
 
 # Function to process deployment output file and add contracts to deployed_contracts array
 process_output_file() {
-    log ""
     log "Processing output file $2 - '$1'"
     local file_path="$1"
     local file_desc="$2"
