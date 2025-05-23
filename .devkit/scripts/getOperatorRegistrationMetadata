@@ -42,16 +42,8 @@ if [ "$RPC_URL" == "null" ] || [ -z "$RPC_URL" ]; then
     exit 1
 fi
 
-# Detect OS and default DOCKERS_HOST when not provided
-if [[ "$(uname)" == "Linux" ]]; then
-  DOCKERS_HOST=${DOCKERS_HOST:-localhost}
-else
-  DOCKERS_HOST=${DOCKERS_HOST:-host.docker.internal}
-fi
-
 # Replace localhost/127.0.0.1 in RPC_URL with docker equivalent for environment
-DOCKER_RPC_URL=$(echo "$RPC_URL" \
-  | sed "s/localhost/${DOCKERS_HOST}/g; s/127\.0\.0\.1/${DOCKERS_HOST}/g")
+DOCKER_RPC_URL=$(ensureDockerHost "$RPC_URL")
 
 # Extract TaskAVSRegistrar contract address from deployed contracts (if available)
 TASK_AVS_REGISTRAR=$(echo "$CONTEXT" | jq -r '.context.deployed_contracts[] | select(.name=="taskAVSRegistrar") | .address')

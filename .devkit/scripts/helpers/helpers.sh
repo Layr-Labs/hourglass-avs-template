@@ -54,3 +54,20 @@ function ensureGomplate() {
         exit 1
     fi
 }
+
+# Pass in RPC_URL ($1)
+function ensureDockerHost() {
+    # Detect OS and default DOCKERS_HOST when not provided
+    if [[ "$(uname)" == "Linux" ]]; then
+        DOCKERS_HOST=${DOCKERS_HOST:-localhost}
+    else
+        DOCKERS_HOST=${DOCKERS_HOST:-host.docker.internal}
+    fi
+
+    # Replace localhost/127.0.0.1 in RPC_URL with docker equivalent for environment
+    DOCKER_RPC_URL=$(echo "$1" \
+        | sed "s/localhost/${DOCKERS_HOST}/g; s/127\.0\.0\.1/${DOCKERS_HOST}/g")
+
+    # Return properly formed RPC url
+    echo $DOCKER_RPC_URL
+}
