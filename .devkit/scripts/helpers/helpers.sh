@@ -65,8 +65,11 @@ function ensureDockerHost() {
     fi
 
     # Replace localhost/127.0.0.1 in RPC_URL with docker equivalent for environment
-    DOCKER_RPC_URL=$(echo "$1" \
-        | sed "s/localhost/${DOCKERS_HOST}/g; s/127\.0\.0\.1/${DOCKERS_HOST}/g")
+    DOCKER_RPC_URL=$(
+    echo "$1" |
+    sed -E \
+        -e "s#(https?://)(localhost|127\.0\.0\.1)(:[0-9]+)?#\1${DOCKERS_HOST}\3#g"
+    )
 
     # Return properly formed RPC url
     echo $DOCKER_RPC_URL
