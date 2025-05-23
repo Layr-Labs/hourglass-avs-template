@@ -125,6 +125,6 @@ log "Creating task on the TaskMailbox contract..."
 log "Using payload encoded from signature: $SIGNATURE, args: $ARGS"
 
 # Create a task on the TaskMailbox contract
-cd contracts && PRIVATE_KEY_APP="${PRIVATE_KEY_APP}" make create-task RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} PAYLOAD="${PAYLOAD}"
+cd ./.devkit/contracts && PRIVATE_KEY_APP="${PRIVATE_KEY_APP}" make create-task RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} PAYLOAD="${PAYLOAD}"
 
 log "Task created successfully." 
