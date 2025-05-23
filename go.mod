@@ -4,11 +4,12 @@ go 1.23.6
 
 require (
 	github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250516160557-195c62a908e3
-	github.com/Layr-Labs/protocol-apis v1.12.1
+	github.com/Layr-Labs/protocol-apis v1.14.0
 	go.uber.org/zap v1.27.0
 )
 
 require (
+	github.com/Layr-Labs/hourglass-monorepo v0.1.1-0.20250523011511-d5d1faf46351 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0 // indirect
 	go.uber.org/multierr v1.10.0 // indirect
