@@ -47,6 +47,16 @@ function loadBlsKeysForAllOperators() {
 
 loadBlsKeysForAllOperators
 
+# construct rpc_urls for environment
+L1_RPC_URL=$(echo $CONTEXT | jq -r '.context.chains.l1.rpc_url')
+L1_DOCKER_RPC_URL=$(ensureDockerHost "$L1_RPC_URL")
+L2_RPC_URL=$(echo $CONTEXT | jq -r '.context.chains.l2.rpc_url')
+L2_DOCKER_RPC_URL=$(ensureDockerHost "$L2_RPC_URL")
+
+# return rpc_urls to context
+CONTEXT=$(echo $CONTEXT | jq --arg url "$L1_DOCKER_RPC_URL" '.context.chains.l1.rpc_url = $url')
+CONTEXT=$(echo $CONTEXT | jq --arg url "$L2_DOCKER_RPC_URL" '.context.chains.l2.rpc_url = $url')
+
 # set aggregator and executor
 CONTEXT=$(echo $CONTEXT | jq --argjson contextConfig "$contextConfig" '.aggregator = $contextConfig.aggregator')
 CONTEXT=$(echo $CONTEXT | jq --argjson contextConfig "$contextConfig" '.executor = $contextConfig.executor')

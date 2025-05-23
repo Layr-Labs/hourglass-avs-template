@@ -35,7 +35,7 @@ chains:
   - name: "ethereum"
     network: "mainnet"
     chainId: {{ (ds "ctx").context.chains.l1.chain_id }}
-    rpcUrl: "http://host.docker.internal:8545"
+    rpcUrl: "{{ (ds "ctx").context.chains.l1.rpc_url }}"
     pollIntervalSeconds: 2
 
 avss:
