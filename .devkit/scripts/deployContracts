@@ -185,8 +185,13 @@ fi
 sleep 1
 
 # Step 2: Deploy AVSArtifactRegistry contract
-log "Deploying AVSArtifactRegistry contract..."
-PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-artifact-registry RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" >&2
+if [ "$ENVIRONMENT" == "devnet" ]; then
+    log "Deploying AVSArtifactRegistry contract..."
+    PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-artifact-registry RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" >&2
+else
+    log "Error: Only 'devnet' environment is currently supported for AVSArtifactRegistry deployment"
+    exit 1
+fi
 
 # Sleep for a second so that nonce can be pulled correctly
 sleep 1
