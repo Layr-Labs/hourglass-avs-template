@@ -12,8 +12,8 @@ import (
 
 // This offchain binary is run by Performer Operators.
 // It is responsible for ingesting tasks submitted by users to the TaskMailbox.
-// The aggregator forwards onchain tasks to Performers.
-// Performers execute the task, sign the result, and send it back to the aggregator.
+// The Aggregator forwards onchain tasks to Performers.
+// Performers execute the task, sign the result, and send it back to the Aggregator.
 
 type TaskWorker struct {
 	logger *zap.Logger
