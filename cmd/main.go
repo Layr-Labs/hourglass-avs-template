@@ -10,10 +10,12 @@ import (
 	"go.uber.org/zap"
 )
 
-// This offchain binary is run by Performer Operators.
-// It is responsible for ingesting tasks submitted by users to the TaskMailbox.
-// The Aggregator forwards onchain tasks to Performers.
-// Performers execute the task, sign the result, and send it back to the Aggregator.
+// This offchain binary is run by Operators running the Hourglass Executor. It contains
+// the business logic of the AVS and performs worked based on the tasked sent to it.
+// The Hourglass Aggregator ingests tasks from the TaskMailbox and distributes work
+// to Executors configured to run the AVS Performer. Performers execute the work and
+// return the result to the Executor where the result is signed and return to the
+// Aggregator to place in the outbox once the signing threshold is met.
 
 type TaskWorker struct {
 	logger *zap.Logger
