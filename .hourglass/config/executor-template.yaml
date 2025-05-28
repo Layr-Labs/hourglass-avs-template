@@ -26,7 +26,7 @@ operator:
   {{- end }}
 l1Chain:
   chainId: "{{ (ds "ctx").context.chains.l1.chain_id }}"
-  rpcUrl: "http://host.docker.internal:8545"
+  rpcUrl: "{{ (ds "ctx").context.chains.l1.rpc_url }}"
 avsPerformers:
   - image:
       repository: "my-avs"
