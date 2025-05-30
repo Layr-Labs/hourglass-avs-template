@@ -177,6 +177,28 @@ install_go_debian() {
     fi
 }
 
+# Function to install yq on Debian/Ubuntu from source
+install_yq_binary() {
+  if ! command -v yq &>/dev/null; then
+    VERSION=4.45.4
+    log_info "Installing yq v${VERSION}..."
+
+    # Detect current environment
+    ARCH=$(uname -m)
+    [[ $ARCH == x86_64 ]] && BIN=yq_linux_amd64 || BIN=yq_linux_arm64
+
+    # Install from github
+    curl -fsSL "https://github.com/mikefarah/yq/releases/download/v${VERSION}/yq_${BIN}" \
+      | sudo tee /usr/local/bin/yq > /dev/null
+
+    # Ensure executable
+    sudo chmod +x /usr/local/bin/yq
+    log_success "yq installed"
+  else
+    log_info "yq already present"
+  fi
+}
+
 install_go_redhat() {
     if ! command -v go >/dev/null 2>&1; then
         log_info "Installing Go 1.23.6 on CentOS/RHEL/Fedora..."
@@ -241,36 +263,20 @@ if [[ "$PLATFORM" == "macos" ]]; then
 elif [[ "$PLATFORM" == "linux" ]]; then
     if [[ "$LINUX_FLAVOR" == "debian" ]]; then
         install_with_apt jq
-        install_with_apt python3-pip pip3
         install_with_apt make
         install_with_apt coreutils realpath
         install_go_debian
         install_gomplate_linux
-        # Install yq via pip
-        if ! command -v yq >/dev/null 2>&1; then
-            log_info "Installing yq..."
-            pip3 install yq
-            log_success "yq installed successfully"
-        else
-            log_info "yq is already installed"
-        fi
+        install_yq_binary
         install_foundry
         install_docker
     elif [[ "$LINUX_FLAVOR" == "rhel" ]]; then
         install_with_yum jq
-        install_with_yum python3-pip pip3
         install_with_yum make
         install_with_yum coreutils realpath
         install_go_redhat
         install_gomplate_linux
-        # Install yq via pip
-        if ! command -v yq >/dev/null 2>&1; then
-            log_info "Installing yq..."
-            pip3 install yq
-            log_success "yq installed successfully"
-        else
-            log_info "yq is already installed"
-        fi
+        install_yq_binary
         install_foundry
         install_docker
     else
