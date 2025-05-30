@@ -1,24 +1,31 @@
 #!/usr/bin/env bash
 set -e
 
+# Set sudo for non-root user
+if [ "$EUID" -eq 0 ]; then
+  SUDO=""
+else
+  SUDO="sudo"
+fi
+
 # Function to log info messages
 log_info() {
-    echo -e "\033[0;34m[INFO]\033[0m $@"
+  printf '\033[0;34m[INFO]\033[0m %s\n' "$*" >&2
 }
 
 # Function to log success messages
 log_success() {
-    echo -e "\033[0;32m[SUCCESS]\033[0m $@"
+  printf '\033[0;32m[SUCCESS]\033[0m %s\n' "$*" >&2
 }
 
 # Function to log warning messages
 log_warning() {
-    echo -e "\033[0;33m[WARNING]\033[0m $@"
+  printf '\033[0;33m[WARNING]\033[0m %s\n' "$*" >&2
 }
 
 # Function to log error messages
 log_error() {
-    echo -e "\033[0;31m[ERROR]\033[0m $@"
+  printf '\033[0;31m[ERROR]\033[0m %s\n' "$*" >&2
 }
 
 # Check if we're running on macOS
@@ -41,6 +48,21 @@ else
 fi
 
 log_info "Detected platform: $PLATFORM $([ "$PLATFORM" == "linux" ] && echo "($LINUX_FLAVOR)")"
+
+add_to_path() {
+  local dir="$1"
+  local line="export PATH=\"\$PATH:$dir\""
+  for file in ~/.bashrc ~/.bash_profile; do
+    [[ -f $file ]] || continue
+    # append only if not already present
+    if ! grep -Fxq "$line" "$file"; then
+      echo "$line" >> "$file"
+    fi
+    # reload it
+    # shellcheck source=/dev/null
+    source "$file"
+  done
+}
 
 # Check and install Homebrew on macOS
 install_homebrew() {
@@ -77,14 +99,21 @@ install_with_brew() {
 install_with_apt() {
     local package=$1
     local command=${2:-$1}
-    
+
     if ! command -v "$command" >/dev/null 2>&1; then
         log_info "Installing $package..."
-        sudo apt-get update
-        sudo apt-get install -y "$package"
+        # update only once per session
+        if [ -z "$APT_UPDATED" ]; then
+            DEBIAN_FRONTEND=noninteractive APT_LISTCHANGES_FRONTEND=none \
+              $SUDO apt-get update -qq
+            APT_UPDATED=1
+        fi
+        # install package quietly and non-interactively
+        DEBIAN_FRONTEND=noninteractive APT_LISTCHANGES_FRONTEND=none \
+          $SUDO apt-get install -y -qq "$package"
         log_success "$package installed successfully"
     else
-        log_info "$package is already installed"
+        log_info "$package already present"
     fi
 }
 
@@ -95,8 +124,12 @@ install_with_yum() {
     
     if ! command -v "$command" >/dev/null 2>&1; then
         log_info "Installing $package..."
-        sudo yum update -y
-        sudo yum install -y "$package"
+        # update only once per session
+        if [ -z "$YUM_UPDATED" ]; then
+            $SUDO yum update -y
+            YUM_UPDATED=1
+        fi
+        $SUDO yum install -y "$package"
         log_success "$package installed successfully"
     else
         log_info "$package is already installed"
@@ -110,22 +143,121 @@ install_foundry() {
         curl -L https://foundry.paradigm.xyz | bash
         export PATH="$PATH:$HOME/.foundry/bin"
         foundryup
+
+        add_to_path "$HOME/.foundry/bin"
+        
         log_success "Foundry installed successfully"
     else
         log_info "Foundry is already installed"
     fi
 }
 
+# Install Docker for osx
+install_docker_macos() {
+  if ! command -v docker >/dev/null; then
+    log_info "Installing Docker Desktop via Homebrew..."
+    brew install --cask docker
+    log_info "Please open Docker.app to finish setup"
+  else
+    log_info "Docker Desktop already installed"
+  fi
+}
+
 # Install Docker
 install_docker() {
-    if ! command -v docker >/dev/null 2>&1; then
-        log_info "Docker not found. Please install Docker manually:"
-        log_info "macOS: https://docs.docker.com/desktop/install/mac-install/"
-        log_info "Linux: https://docs.docker.com/engine/install/"
-        log_warning "Docker installation skipped (manual installation required)"
-    else
-        log_info "Docker is already installed"
+  if command -v docker >/dev/null; then
+    log_info "Docker already installed"
+    return
+  fi
+
+  case "$LINUX_FLAVOR" in
+    debian)
+      # avoid interactive prompts (tzdata, etc)
+      export DEBIAN_FRONTEND=noninteractive
+      export TZ=Etc/UTC
+
+      log_info "Installing Docker on Debian/Ubuntu..."
+      $SUDO apt-get update
+      $SUDO apt-get install -y \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release
+
+      # preseed tzdata
+      echo "$TZ" > /etc/timezone
+      $SUDO apt-get install -y tzdata
+      $SUDO dpkg-reconfigure --frontend noninteractive tzdata
+
+      # Add Docker’s official GPG key
+      curl -fsSL https://download.docker.com/linux/$(. /etc/os-release; echo "$ID")/gpg \
+        | $SUDO gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+
+      # Set up the stable repo
+      echo \
+        "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] \
+        https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
+        $(lsb_release -cs) stable" \
+        | $SUDO tee /etc/apt/sources.list.d/docker.list > /dev/null
+      $SUDO apt-get update
+      $SUDO apt-get install -y docker-ce docker-ce-cli containerd.io
+      ;;
+
+    rhel)
+      log_info "Installing Docker on RHEL/CentOS..."
+      $SUDO yum install -y yum-utils
+      $SUDO yum-config-manager \
+        --add-repo \
+        https://download.docker.com/linux/centos/docker-ce.repo
+      $SUDO yum install -y docker-ce docker-ce-cli containerd.io
+      ;;
+
+    *)
+      log_warning "Unsupported distro; please install Docker manually"
+      return
+      ;;
+  esac
+
+  # Only enable+start via systemd if systemd is PID 1
+  if [ "$(ps -p 1 -o comm=)" = "systemd" ]; then
+    $SUDO systemctl enable --now docker
+    log_success "Docker enabled and started via systemd"
+  else
+    log_warning "Systemd not available - skipping service enable"
+    # Optionally start dockerd in background
+    if command -v dockerd &>/dev/null; then
+      log_info "Launching dockerd manually"
+      nohup dockerd >/var/log/dockerd.log 2>&1 & disown
+      log_success "dockerd running in background"
     fi
+  fi
+
+  log_success "docker installed successfully"
+}
+
+# Function to install yq on Debian/Ubuntu from source
+install_yq_binary() {
+  if ! command -v yq &>/dev/null; then
+    VERSION=4.35.1
+    log_info "Installing yq v${VERSION}..."
+
+    # Detect current environment
+    ARCH=$(uname -m)
+    [[ $ARCH == x86_64 ]] && ARCH_SUFFIX=amd64 || ARCH_SUFFIX=arm64
+
+    # Install from github
+    curl -Lo /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v${VERSION}/yq_linux_${ARCH_SUFFIX}"
+
+    # Ensure executable
+    $SUDO chmod +x /usr/local/bin/yq
+
+    # Add to bashrc/profile
+    add_to_path "/usr/local/bin"
+
+    log_success "yq installed successfully"
+  else
+    log_info "yq already present"
+  fi
 }
 
 # Function to install Go on macOS
@@ -138,8 +270,16 @@ install_go_macos() {
 
         # Set up environment variables
         echo 'export GOPATH=$HOME/go' >> ~/.bashrc
-        echo 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin' >> ~/.bashrc
-        source ~/.bashrc
+
+        # For systems that use .bash_profile instead of .bashrc
+        if [[ -f ~/.bash_profile ]]; then
+            echo 'export GOPATH=$HOME/go' >> ~/.bash_profile
+        fi
+
+        # Add to bashrc/profile
+        add_to_path "/usr/local/go/bin:$GOPATH/bin"
+
+        log_success "golang installed successfully"
     else
         log_info "golang is already installed."
     fi
@@ -151,52 +291,42 @@ install_go_debian() {
         log_info "Installing Go 1.23.6 on Debian/Ubuntu..."
 
         # Update package lists
-        sudo apt-get update
+        $SUDO apt-get update
 
         # Install dependencies
-        sudo apt-get install -y wget tar
+        $SUDO apt-get install -y wget tar
 
         # Download Go 1.23.6
         wget https://golang.org/dl/go1.23.6.linux-amd64.tar.gz
 
         # Remove any previous Go installation
-        sudo rm -rf /usr/local/go
+        $SUDO rm -rf /usr/local/go
 
         # Extract the archive
-        sudo tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz
+        $SUDO tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz
 
         # Clean up
         rm go1.23.6.linux-amd64.tar.gz
 
+        # Add to path to current session
+        export GOPATH="$HOME/go"
+        export PATH="/usr/local/go/bin:$GOPATH/bin:$PATH"
+        
         # Set up environment variables
         echo 'export GOPATH=$HOME/go' >> ~/.bashrc
-        echo 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin' >> ~/.bashrc
-        source ~/.bashrc
+
+        # For systems that use .bash_profile instead of .bashrc
+        if [[ -f ~/.bash_profile ]]; then
+            echo 'export GOPATH=$HOME/go' >> ~/.bash_profile
+        fi
+
+        # Add to bashrc/profile
+        add_to_path "/usr/local/go/bin:$GOPATH/bin"
+
+        log_success "golang installed successfully"
     else
         log_info "golang is already installed."
     fi
-}
-
-# Function to install yq on Debian/Ubuntu from source
-install_yq_binary() {
-  if ! command -v yq &>/dev/null; then
-    VERSION=4.45.4
-    log_info "Installing yq v${VERSION}..."
-
-    # Detect current environment
-    ARCH=$(uname -m)
-    [[ $ARCH == x86_64 ]] && BIN=yq_linux_amd64 || BIN=yq_linux_arm64
-
-    # Install from github
-    curl -fsSL "https://github.com/mikefarah/yq/releases/download/v${VERSION}/yq_${BIN}" \
-      | sudo tee /usr/local/bin/yq > /dev/null
-
-    # Ensure executable
-    sudo chmod +x /usr/local/bin/yq
-    log_success "yq installed"
-  else
-    log_info "yq already present"
-  fi
 }
 
 install_go_redhat() {
@@ -204,34 +334,35 @@ install_go_redhat() {
         log_info "Installing Go 1.23.6 on CentOS/RHEL/Fedora..."
 
         # Update package lists
-        sudo yum -y update
+        $SUDO yum -y update
 
         # Install dependencies
-        sudo yum -y install wget tar
+        $SUDO yum -y install wget tar
 
         # Download Go 1.23.6
         wget https://golang.org/dl/go1.23.6.linux-amd64.tar.gz
 
         # Remove any previous Go installation
-        sudo rm -rf /usr/local/go
+        $SUDO rm -rf /usr/local/go
 
         # Extract the archive
-        sudo tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz
+        $SUDO tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz
 
         # Clean up
         rm go1.23.6.linux-amd64.tar.gz
 
         # Set up environment variables
         echo 'export GOPATH=$HOME/go' >> ~/.bashrc
-        echo 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin' >> ~/.bashrc
-        source ~/.bashrc
 
         # For systems that use .bash_profile instead of .bashrc
         if [[ -f ~/.bash_profile ]]; then
             echo 'export GOPATH=$HOME/go' >> ~/.bash_profile
-            echo 'export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin' >> ~/.bash_profile
-            source ~/.bash_profile
         fi
+
+        # Add to bashrc/profile
+        add_to_path "/usr/local/go/bin:$GOPATH/bin"
+
+        log_success "golang installed successfully"
     else
         log_info "golang is already installed."
     fi
@@ -258,12 +389,14 @@ if [[ "$PLATFORM" == "macos" ]]; then
     install_with_brew jq
     install_with_brew yq
     install_foundry
-    install_docker
     install_go_macos
+    install_docker_macos
 elif [[ "$PLATFORM" == "linux" ]]; then
     if [[ "$LINUX_FLAVOR" == "debian" ]]; then
+        install_with_apt apt-utils
         install_with_apt jq
         install_with_apt make
+        install_with_apt iproute2
         install_with_apt coreutils realpath
         install_go_debian
         install_gomplate_linux
@@ -273,7 +406,9 @@ elif [[ "$PLATFORM" == "linux" ]]; then
     elif [[ "$LINUX_FLAVOR" == "rhel" ]]; then
         install_with_yum jq
         install_with_yum make
+        install_with_yum iproute
         install_with_yum coreutils realpath
+        install_with_yum procps-ng
         install_go_redhat
         install_gomplate_linux
         install_yq_binary
@@ -284,6 +419,7 @@ elif [[ "$PLATFORM" == "linux" ]]; then
         log_warning "- jq"
         log_warning "- yq"
         log_warning "- make"
+        log_warning "- iproute"
         log_warning "- realpath (from coreutils)"
         log_warning "- forge (from Foundry)"
         log_warning "- docker"

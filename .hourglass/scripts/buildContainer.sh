@@ -10,6 +10,6 @@ if [[ ! -z "$registry" ]]; then
     image="$registry/$image"
 fi
 
-DOCKER_BUILDKIT=1 docker build \
+docker build \
     --progress=plain \
     -t "${image}:${tag}" .
