@@ -130,7 +130,7 @@ process_operators() {
         set +e
         local registration_payload=$(docker run --network=host --rm -i \
             -v "$keystore_dir:/keystore" \
-            public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v0.1.0 bls-helper generate-operator-data \
+            public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v0.3.0 bls-helper generate-operator-data \
             --keyfile-path "/keystore/$keystore_filename" \
             --key-password "$keystore_password" \
             --rpc-url "$DOCKER_RPC_URL" \
