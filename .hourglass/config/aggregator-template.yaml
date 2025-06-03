@@ -36,12 +36,12 @@ chains:
     network: "mainnet"
     chainId: {{ (ds "ctx").context.chains.l1.chain_id }}
     rpcUrl: "{{ (ds "ctx").context.chains.l1.rpc_url }}"
-    pollIntervalSeconds: 2
+    pollIntervalSeconds: 10
   - name: "base"
-    network: "base"
+    network: "mainnet"
     chainId: {{ (ds "ctx").context.chains.l2.chain_id }}
     rpcUrl: "{{ (ds "ctx").context.chains.l2.rpc_url }}"
-    pollIntervalSeconds: 1
+    pollIntervalSeconds: 2
 
 avss:
   - address: "{{ (ds "ctx").context.avs.address }}"
