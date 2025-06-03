@@ -46,7 +46,7 @@ chains:
 avss:
   - address: "{{ (ds "ctx").context.avs.address }}"
     responseTimeout: 3000
-    chainIds: [{{ (ds "ctx").context.chains.l2.chain_id }}]
+    chainIds: [{{ (ds "ctx").context.chains.l1.chain_id }}]
     signingCurve: "bn254"
     avsRegistrarAddress: "{{ $avsRegistrar }}"
 
