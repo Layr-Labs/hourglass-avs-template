@@ -1,9 +1,9 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
-github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250516160557-195c62a908e3 h1:OxVCqHpHcmHYCnrI0UA9A4OeZiFTcB22GM/YA1EYhwc=
-github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250516160557-195c62a908e3/go.mod h1:bTe3VbD47ON8jva9ZwmnQanQOSFuJduQtqnzOEi+FPc=
-github.com/Layr-Labs/protocol-apis v1.12.1 h1:GbgpolOgEKzN10NXcwUlqNznKFY+RCpHo5Mq9JbZN5c=
-github.com/Layr-Labs/protocol-apis v1.12.1/go.mod h1:tyzQDWHu4/dmBSRKNRXi65wLic3j5B+7YQ8lMQB08aM=
+github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250530201420-ae8ff1382f1e h1:3Kn8HR0HZW9YcWF+d424ry6i3P3AM6zpQfjl21SZcag=
+github.com/Layr-Labs/hourglass-monorepo/ponos v0.0.0-20250530201420-ae8ff1382f1e/go.mod h1:QsNFNvY8hRPnyxxouRurlSxRhZLfH1uKQeOC2IxKTSw=
+github.com/Layr-Labs/protocol-apis v1.14.0 h1:tluZ3M53RN+Ql4uztfHwaT/OCqlaQFsmN/iv1YT/Wbg=
+github.com/Layr-Labs/protocol-apis v1.14.0/go.mod h1:tyzQDWHu4/dmBSRKNRXi65wLic3j5B+7YQ8lMQB08aM=
 github.com/benbjohnson/clock v1.1.0/go.mod h1:J11/hYXuz8f4ySSvYwY0FKfm+ezbsZBKZxNJlLklBHA=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
