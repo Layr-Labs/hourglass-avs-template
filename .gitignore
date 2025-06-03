@@ -5,3 +5,4 @@
 /keystores
 .hourglass/config/aggregator.yaml
 .hourglass/config/executor.yaml
+contracts/outputs
