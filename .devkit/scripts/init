@@ -36,23 +36,23 @@ elif [[ "$(uname)" == "Linux" ]]; then
     # Check if we're on Ubuntu/Debian
     if command -v apt-get >/dev/null 2>&1; then
         LINUX_FLAVOR="debian"
-    elif command -v yum >/dev/null 2>&1; then
-        LINUX_FLAVOR="rhel"
     else
         log_warning "Unsupported Linux distribution. You may need to install dependencies manually."
         LINUX_FLAVOR="unknown"
     fi
 else
-    log_error "Unsupported platform: $(uname). Only macOS and Linux are supported."
+    log_error "Unsupported platform: $(uname). Only macOS and Debian based linux are supported."
     exit 1
 fi
 
 log_info "Detected platform: $PLATFORM $([ "$PLATFORM" == "linux" ] && echo "($LINUX_FLAVOR)")"
 
+# Check if given dir is in path
 inpath() {
     echo $PATH | tr ':' '\n' | grep -qx "$1" && echo "$1 is in PATH" || echo "$1 is NOT in PATH"
 }
 
+# Add the given dir to the user path and profile
 add_to_path() {
   local dir="$1"
   local line="export PATH=\"\$PATH:$dir\""
@@ -142,25 +142,6 @@ install_with_apt() {
     fi
 }
 
-# Install a package with yum
-install_with_yum() {
-    local package=$1
-    local command=${2:-$1}
-
-    if ! command -v "$command" >/dev/null 2>&1; then
-        log_info "Installing $package..."
-        # update only once per session
-        if [ -z "$YUM_UPDATED" ]; then
-            $SUDO yum update -y
-            YUM_UPDATED=1
-        fi
-        $SUDO yum install -y "$package"
-        log_success "$package installed successfully"
-    else
-        log_info "$package is already installed"
-    fi
-}
-
 # Install Foundry (forge, cast, anvil)
 install_foundry() {
     if ! command -v forge >/dev/null 2>&1; then
@@ -195,8 +176,7 @@ install_docker() {
         return
     fi
 
-    case "$LINUX_FLAVOR" in
-    debian)
+    if [[ "$LINUX_FLAVOR" == "debian" ]]; then
         # avoid interactive prompts (tzdata, etc)
         export DEBIAN_FRONTEND=noninteractive
         export TZ=Etc/UTC
@@ -232,22 +212,10 @@ install_docker() {
             $SUDO tee /etc/apt/sources.list.d/docker.list >/dev/null
         $SUDO apt-get update
         $SUDO apt-get install -y docker-ce docker-ce-cli containerd.io
-        ;;
-
-    rhel)
-        log_info "Installing Docker on RHEL/CentOS..."
-        $SUDO yum install -y yum-utils
-        $SUDO yum-config-manager \
-            --add-repo \
-            https://download.docker.com/linux/centos/docker-ce.repo
-        $SUDO yum install -y docker-ce docker-ce-cli containerd.io
-        ;;
-
-    *)
+    else
         log_warning "Unsupported distro; please install Docker manually"
         return
-        ;;
-    esac
+    fi
 
     # Only enable+start via systemd if systemd is PID 1
     if [ "$(ps -p 1 -o comm=)" = "systemd" ]; then
@@ -361,46 +329,7 @@ install_go_debian() {
     fi
 }
 
-install_go_redhat() {
-    if ! command -v go >/dev/null 2>&1; then
-        log_info "Installing Go 1.23.6 on CentOS/RHEL/Fedora..."
-
-        # Update package lists
-        $SUDO yum -y update
-
-        # Install dependencies
-        $SUDO yum -y install wget tar
-
-        # Download Go 1.23.6
-        wget https://golang.org/dl/go1.23.6.linux-amd64.tar.gz
-
-        # Remove any previous Go installation
-        $SUDO rm -rf /usr/local/go
-
-        # Extract the archive
-        $SUDO tar -C /usr/local -xzf go1.23.6.linux-amd64.tar.gz
-
-        # Clean up
-        rm go1.23.6.linux-amd64.tar.gz
-
-        # Set up environment variables
-        echo 'export GOPATH=$HOME/go' >>~/.bashrc
-
-        # For systems that use .bash_profile instead of .bashrc
-        if [[ -f ~/.bash_profile ]]; then
-            echo 'export GOPATH=$HOME/go' >>~/.bash_profile
-        fi
-
-        # Add to bashrc/profile
-        add_to_path "/usr/local/go/bin:$GOPATH/bin"
-
-        log_success "golang installed successfully"
-    else
-        log_info "golang is already installed."
-    fi
-}
-
-function install_gomplate_linux() {
+install_gomplate_linux() {
     if ! command -v gomplate >/dev/null 2>&1; then
         log_info "Installing gomplate..."
         go install github.com/hairyhenderson/gomplate/v4/cmd/gomplate@latest
@@ -430,17 +359,6 @@ elif [[ "$PLATFORM" == "linux" ]]; then
         install_with_apt iproute2
         install_with_apt coreutils realpath
         install_go_debian
-        install_gomplate_linux
-        install_yq_binary
-        install_foundry
-        install_docker
-    elif [[ "$LINUX_FLAVOR" == "rhel" ]]; then
-        install_with_yum jq
-        install_with_yum make
-        install_with_yum iproute
-        install_with_yum coreutils realpath
-        install_with_yum procps-ng
-        install_go_redhat
         install_gomplate_linux
         install_yq_binary
         install_foundry
