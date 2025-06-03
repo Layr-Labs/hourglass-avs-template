@@ -9,11 +9,11 @@ ensureMake
 ensureForge
 ensureDocker
 
-# Build the contracts and dependencies
-log "Building AVS performer..."
-BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
 
 log "Building contracts..."
-cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol >&2
+cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol >&2 && cd -
+
+log "Building AVS performer..."
+BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
 
 log "Build completed successfully." 
