@@ -1,8 +1,4 @@
-# syntax=docker/dockerfile:1.3
-
 FROM golang:1.23.6-bookworm AS build
-
-RUN apt-get update
 
 WORKDIR /build
 

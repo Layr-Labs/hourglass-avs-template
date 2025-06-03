@@ -59,7 +59,8 @@ function ensureGomplate() {
 function ensureDockerHost() {
     # Detect OS and default DOCKERS_HOST when not provided
     if [[ "$(uname)" == "Linux" ]]; then
-        DOCKERS_HOST=${DOCKERS_HOST:-172.17.0.1}
+        # Lookup the host using iproute
+        DOCKERS_HOST=${DOCKERS_HOST:-$(ip addr show docker0 | awk '/inet /{print $2}' | cut -d/ -f1)}
     else
         DOCKERS_HOST=${DOCKERS_HOST:-host.docker.internal}
     fi
