@@ -235,29 +235,44 @@ install_docker() {
     log_success "docker installed successfully"
 }
 
-# Function to install yq on Debian/Ubuntu from source
+# Function to install/upgrade yq on Debian/Ubuntu from source
 install_yq_binary() {
-    if ! command -v yq &>/dev/null; then
-        VERSION=4.35.1
-        log_info "Installing yq v${VERSION}..."
+    TARGET_VERSION="4.35.1"
 
-        # Detect current environment
-        ARCH=$(uname -m)
-        [[ $ARCH == x86_64 ]] && ARCH_SUFFIX=amd64 || ARCH_SUFFIX=arm64
+    if command -v yq &>/dev/null; then
+        # Extract version field
+        RAW_VERSION=$(yq --version | awk '{print $2}')
+        if [[ "$RAW_VERSION" == "(https://github.com/mikefarah/yq/)" ]]; then
+            INSTALLED_VERSION=$(yq --version | awk '{print $4}' | sed 's/^v//')
+        else
+            INSTALLED_VERSION="$RAW_VERSION"
+        fi
 
-        # Install from github
-        curl -Lo /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v${VERSION}/yq_linux_${ARCH_SUFFIX}"
-
-        # Ensure executable
-        $SUDO chmod +x /usr/local/bin/yq
-
-        # Add to bashrc/profile
-        add_to_path "/usr/local/bin"
-
-        log_success "yq installed successfully"
+        # Compare using sort -V: if INSTALLED < TARGET, upgrade; else skip
+        if [[ "$(printf '%s\n%s' "$INSTALLED_VERSION" "$TARGET_VERSION" | sort -V | head -n1)" == "$TARGET_VERSION" ]]; then
+            log_info "yq v${INSTALLED_VERSION} meets requirement (>= v${TARGET_VERSION}); skipping install"
+            return
+        else
+            log_info "yq v${INSTALLED_VERSION} is older than v${TARGET_VERSION}; upgrading..."
+        fi
     else
-        log_info "yq already present"
+        log_info "yq not found; installing v${TARGET_VERSION}..."
     fi
+
+    # Detect current environment
+    ARCH=$(uname -m)
+    [[ $ARCH == x86_64 ]] && ARCH_SUFFIX=amd64 || ARCH_SUFFIX=arm64
+
+    # Install from github
+    curl -Lo /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/v${TARGET_VERSION}/yq_linux_${ARCH_SUFFIX}"
+
+    # Ensure executable
+    $SUDO chmod +x /usr/local/bin/yq
+
+    # Add to bashrc/profile
+    add_to_path "/usr/local/bin"
+
+    log_success "yq installed successfully"
 }
 
 # Function to install Go on macOS
