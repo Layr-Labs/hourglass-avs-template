@@ -129,7 +129,7 @@ if [ ! -f "$ENVIRONMENT_YAML_FILE" ]; then
 fi
 
 # Read values from the environment YAML file using yq
-ALLOCATION_MANAGER_ADDRESS="0x948a420b8CC1d6BFd0B6087C2E7c344a2CD0bc39"  # Example default, could be read from YAML if present
+ALLOCATION_MANAGER_ADDRESS="0x78469728304326CBc65f8f95FA756B0B73164462"  # Example default, could be read from YAML if present
 
 # Read operator sets from the YAML
 AGGREGATOR_OPERATOR_SET_ID=$(yq -r '.aggregator.operatorSetId' "$ENVIRONMENT_YAML_FILE")
