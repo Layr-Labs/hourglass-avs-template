@@ -5,10 +5,13 @@ import {Script, console} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 
 import {IAllocationManager} from "@eigenlayer-contracts/src/contracts/interfaces/IAllocationManager.sol";
-import {ITaskMailbox, ITaskMailboxTypes} from "@hourglass-monorepo/src/interfaces/core/ITaskMailbox.sol";
-import {ITaskAVSRegistrar, ITaskAVSRegistrarTypes} from "@hourglass-monorepo/src/interfaces/avs/l1/ITaskAVSRegistrar.sol";
-import {IAVSTaskHook} from "@hourglass-monorepo/src/interfaces/avs/l2/IAVSTaskHook.sol";
-import {IBN254CertificateVerifier} from "@hourglass-monorepo/src/interfaces/avs/l2/IBN254CertificateVerifier.sol";
+import {IKeyRegistrar} from "@eigenlayer-contracts/src/contracts/interfaces/IKeyRegistrar.sol";
+import {IBN254CertificateVerifier} from
+    "@eigenlayer-contracts/src/contracts/interfaces/IBN254CertificateVerifier.sol";
+import {ITaskMailbox} from "@hourglass-monorepo/src/interfaces/core/ITaskMailbox.sol";
+
+import {TaskAVSRegistrar} from "@project/l1-contracts/TaskAVSRegistrar.sol";
+import {AVSTaskHook} from "@project/l2-contracts/AVSTaskHook.sol";
 import {HelloWorld} from "@project/HelloWorld.sol"; // Import your custom contract
 
 contract DeployMyContracts is Script {
@@ -18,10 +21,12 @@ contract DeployMyContracts is Script {
         address avs;
         uint256 avsPrivateKey;
         uint256 deployerPrivateKey;
-        ITaskMailbox taskMailbox;
-        ITaskAVSRegistrar taskAVSRegistrar;
-        IAVSTaskHook taskHook;
+        IAllocationManager allocationManager;
+        IKeyRegistrar keyRegistrar;
         IBN254CertificateVerifier certificateVerifier;
+        ITaskMailbox taskMailbox;
+        TaskAVSRegistrar taskAVSRegistrar;
+        AVSTaskHook taskHook;
     }
 
     struct Output {
@@ -29,7 +34,7 @@ contract DeployMyContracts is Script {
         address contractAddress;
     }
 
-    function run(string memory environment, string memory _context, address /* allocationManager */) public {
+    function run(string memory environment, string memory _context) public {
         // Read the context
         Context memory context = _readContext(environment, _context);
 
@@ -40,6 +45,7 @@ contract DeployMyContracts is Script {
         // CustomContract customContract = new CustomContract();
         // console.log("CustomContract deployed to:", address(customContract));
         HelloWorld helloWorld = new HelloWorld();
+        console.log("HelloWorld deployed to:", address(helloWorld));
 
         vm.stopBroadcast();
 
@@ -67,10 +73,12 @@ contract DeployMyContracts is Script {
         context.avs = stdJson.readAddress(_context, ".context.avs.address");
         context.avsPrivateKey = uint256(stdJson.readBytes32(_context, ".context.avs.avs_private_key"));
         context.deployerPrivateKey = uint256(stdJson.readBytes32(_context, ".context.deployer_private_key"));
+        context.allocationManager = IAllocationManager(stdJson.readAddress(_context, ".context.eigenlayer.l1.allocation_manager"));
+        context.keyRegistrar = IKeyRegistrar(stdJson.readAddress(_context, ".context.eigenlayer.l1.key_registrar"));
+        context.certificateVerifier = IBN254CertificateVerifier(stdJson.readAddress(_context, ".context.eigenlayer.l2.bn254_certificate_verifier"));
         context.taskMailbox = ITaskMailbox(_readHourglassConfigAddress(environment, "taskMailbox"));
-        context.taskAVSRegistrar = ITaskAVSRegistrar(_readAVSL1ConfigAddress(environment, "taskAVSRegistrar"));
-        context.taskHook = IAVSTaskHook(_readAVSL2ConfigAddress(environment, "avsTaskHook"));
-        context.certificateVerifier = IBN254CertificateVerifier(_readAVSL2ConfigAddress(environment, "bn254CertificateVerifier"));
+        context.taskAVSRegistrar = TaskAVSRegistrar(_readAVSL1ConfigAddress(environment, "taskAVSRegistrar"));
+        context.taskHook = AVSTaskHook(_readAVSL2ConfigAddress(environment, "avsTaskHook"));
 
         return context;
     }
