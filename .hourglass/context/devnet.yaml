@@ -1,8 +1,8 @@
 operatorSets:
   - id: 0
-    strategies: ["0x43252609bff8a13dFe5e057097f2f45A24387a84","0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3"] # Eigen and StETH strategies
+    strategies: ["0x5C8b55722f421556a2AAfb7A3EA63d4c3e514312"] # StETH strategy
   - id: 1
-    strategies: ["0x43252609bff8a13dFe5e057097f2f45A24387a84","0x7D704507b76571a51d9caE8AdDAbBFd0ba0e63d3"] # Eigen and StETH strategies
+    strategies: ["0x5C8b55722f421556a2AAfb7A3EA63d4c3e514312"] # StETH strategy
 
 aggregator:
   operatorSetId: 0
