@@ -130,13 +130,14 @@ process_operators() {
         set +e
         local registration_payload=$(docker run --network=host --rm -i \
             -v "$keystore_dir:/keystore" \
-            public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v0.1.0 bls-helper generate-operator-data \
+            public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v0.3.0_2acb13e bls-helper generate-operator-data \
             --keyfile-path "/keystore/$keystore_filename" \
             --key-password "$keystore_password" \
             --rpc-url "$DOCKER_RPC_URL" \
             --operator-address "$operator_address" \
-            --avs-registrar-address "$TASK_AVS_REGISTRAR" \
-            --socket "$operator_socket" 2> >(tee >&2))
+            --avs-address "$TASK_AVS_REGISTRAR" \
+            --socket "$operator_socket" \
+            --operator-set-id "$set_id" 2> >(tee >&2))
         DOCKER_EXIT_CODE=$?
         set -e
         
