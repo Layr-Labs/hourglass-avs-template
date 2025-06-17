@@ -55,6 +55,13 @@ function ensureGomplate() {
     fi
 }
 
+function ensureCast() {
+    if ! command -v cast &> /dev/null; then
+        log "Error: cast not found. Please run 'avs create' first."
+        exit 1
+    fi
+}
+
 # Pass in RPC_URL ($1)
 function ensureDockerHost() {
     # Detect OS and default DOCKERS_HOST when not provided
