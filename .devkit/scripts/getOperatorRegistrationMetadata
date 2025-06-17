@@ -95,6 +95,7 @@ process_operators() {
         fi
         
         # Use cast to ABI encode the socket string
+        # Disable nightly warnings for cast
         set +e
         local registration_payload_with_prefix=$(FOUNDRY_DISABLE_NIGHTLY_WARNING=1 cast abi-encode "f(string)" "$operator_socket" 2>&1)
         CAST_EXIT_CODE=$?
