@@ -17,8 +17,7 @@ CONTEXT="$1"
 # Check for required tools
 ensureJq
 ensureYq
-ensureDocker
-ensureRealpath
+ensureCast
 
 # Extract environment from context
 ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
@@ -32,23 +31,6 @@ fi
 ENVIRONMENT_YAML_FILE=".hourglass/context/${ENVIRONMENT}.yaml"
 if [ ! -f "$ENVIRONMENT_YAML_FILE" ]; then
     log "Error: AVS environment file ${ENVIRONMENT_YAML_FILE} does not exist"
-    exit 1
-fi
-
-# Extract RPC URL from context
-RPC_URL=$(echo "$CONTEXT" | jq -r '.context.chains.l1.rpc_url')
-if [ "$RPC_URL" == "null" ] || [ -z "$RPC_URL" ]; then
-    log "Error: Missing L1 RPC URL in context"
-    exit 1
-fi
-
-# Replace localhost/127.0.0.1 in RPC_URL with docker equivalent for environment
-DOCKER_RPC_URL=$(ensureDockerHost "$RPC_URL")
-
-# Extract TaskAVSRegistrar contract address from deployed contracts (if available)
-TASK_AVS_REGISTRAR=$(echo "$CONTEXT" | jq -r '.context.deployed_contracts[] | select(.name=="taskAVSRegistrar") | .address')
-if [ "$TASK_AVS_REGISTRAR" == "null" ] || [ -z "$TASK_AVS_REGISTRAR" ]; then
-    log "Error: TaskAVSRegistrar address not found in context"
     exit 1
 fi
 
@@ -104,49 +86,29 @@ process_operators() {
             exit 1
         fi
         
-        # Extract keystore info
-        local keystore_path=$(echo "$context_operator" | jq -r '.bls_keystore_path')
-        local keystore_password=$(echo "$context_operator" | jq -r '.bls_keystore_password')
-        
-        if [ "$keystore_path" == "null" ] || [ -z "$keystore_path" ]; then
-            log "Error: Missing keystore information for operator $operator_address"
-            exit 1
-        fi
-
-        # Check if the keystore file exists
-        if [ ! -f "$keystore_path" ]; then
-            log "Error: Keystore file $(realpath "$keystore_path") does not exist"
-            exit 1
-        fi
-        
         log "Generating registration data for ${operator_type} operator: $operator_address"
         
-        # Resolve the absolute path of the keystore file
-        local absolute_keystore_path=$(realpath "$keystore_path")
-        local keystore_dir=$(dirname "$absolute_keystore_path")
-        local keystore_filename=$(basename "$absolute_keystore_path")
+        # Validate socket format before encoding
+        if [ -z "$operator_socket" ] || [ "$operator_socket" == "null" ]; then
+            log "Error: Invalid socket for operator $operator_address"
+            exit 1
+        fi
         
-        # Run the docker command to generate operator registration data
+        # Use cast to ABI encode the socket string
         set +e
-        local registration_payload=$(docker run --network=host --rm -i \
-            -v "$keystore_dir:/keystore" \
-            public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v0.3.0_2acb13e bls-helper generate-operator-data \
-            --keyfile-path "/keystore/$keystore_filename" \
-            --key-password "$keystore_password" \
-            --rpc-url "$DOCKER_RPC_URL" \
-            --operator-address "$operator_address" \
-            --avs-address "$TASK_AVS_REGISTRAR" \
-            --socket "$operator_socket" \
-            --operator-set-id "$set_id" 2> >(tee >&2))
-        DOCKER_EXIT_CODE=$?
+        local registration_payload_with_prefix=$(cast abi-encode "f(string)" "$operator_socket" 2>&1)
+        CAST_EXIT_CODE=$?
         set -e
         
         # Check if the command was successful
-        if [ $DOCKER_EXIT_CODE -ne 0 ]; then
+        if [ $CAST_EXIT_CODE -ne 0 ]; then
             log ""
-            log "Error generating registration data for operator $operator_address: $registration_payload"
+            log "Error encoding socket for operator $operator_address: $registration_payload_with_prefix"
             exit 1
         fi
+        
+        # Remove 0x prefix if present
+        local registration_payload="${registration_payload_with_prefix#0x}"
         
         # Validate registration payload format - should be lowercase hex without 0x prefix
         if ! [[ "$registration_payload" =~ ^[0-9a-f]+$ ]]; then
