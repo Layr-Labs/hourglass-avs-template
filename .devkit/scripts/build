@@ -10,8 +10,7 @@ ensureForge
 ensureDocker
 
 log "Building contracts..."
-cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol >&2
-cd -
+cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol && cd - >&2
 
 # Build the contracts and dependencies
 log "Building AVS performer..."
