@@ -41,7 +41,7 @@ done
 # Copy the rest of the template
 cp -rfv "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/Dockerfile" $originalProjectDir
-cp -rfv "${PROJECT_BASE_DIR}/contracts" $originalProjectDir/contracts
+cp -rfv "${PROJECT_BASE_DIR}/contracts/" $originalProjectDir/contracts
 
 cd $PROJECT_BASE_DIR/.devkit/contracts
 git_repo=$(git config --get remote.origin.url | tr -d '\n')
