@@ -13,15 +13,17 @@ fi
 source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
 
 log "Starting template upgrade process..."
-
+set +e
 cd $originalProjectDir
 if [ -n "$(git status --porcelain)" ]; then
-    echo "Uncommitted changes found, please commit or stash them before upgrading"
+    log "Uncommitted changes found, please commit or stash them before upgrading"
     git status --short
     exit 1
 else
-    echo "Working directory clean, continuing with upgrade..."
+    log "Working directory clean, continuing with upgrade..."
 fi
+set -e
+
 cd -
 
 # Get the directory where the script is located
@@ -30,7 +32,6 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Navigate to the parent directories to find .devkit
 PROJECT_BASE_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
-# cp -rfv "${PROJECT_BASE_DIR}/.devkit" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/Dockerfile" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/contracts/" $originalProjectDir/contracts/
