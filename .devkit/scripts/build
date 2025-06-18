@@ -20,9 +20,9 @@ VERSION=$(yq eval '.container.version' .hourglass/build.yaml)
 
 LOCAL_IMAGE_NAME="${IMAGE_NAME}:${VERSION}"
 
-# Get the container digest of the local image
-log "Getting container digest..."
-DIGEST=$(docker inspect "$LOCAL_IMAGE_NAME" --format='{{.Id}}')
+# Get the docker image id
+log "Getting docker image id..."
+IMAGE_ID=$(docker inspect "$LOCAL_IMAGE_NAME" --format='{{.Id}}')
 
 log "Building contracts..."
 cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol >&2
@@ -36,11 +36,15 @@ fi
 
 # Create and output the JSON structure
 RESULT=$(jq -n \
-    --arg digest "$DIGEST" \
+    --arg component "performer" \
+    --arg artifactId "$IMAGE_ID" \
+    --arg digest "" \
     --arg registry "$REGISTRY_URL" \
     '{
         artifacts: {
-            image_digest: $digest,
+            component: $component,
+            artifactId: $artifactId,
+            digest: $digest,
             registry_url: $registry
         }
     }')
@@ -49,4 +53,4 @@ RESULT=$(jq -n \
 echo "$RESULT" | jq -c .
 
 log "Build completed successfully."
-log "Updated artifacts field in context with digest: $DIGEST"
+log "Updated artifacts field in context with image id: $IMAGE_ID"
