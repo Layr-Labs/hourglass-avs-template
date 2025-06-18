@@ -1,0 +1,981 @@
+{
+  "name": "taskMailbox",
+  "address": "0x0c8A72d89AA40B71Ee5F430E89E1681f944DAAc0",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        }
+      ],
+      "name": "avsConfigs",
+      "outputs": [
+        {
+          "internalType": "uint32",
+          "name": "aggregatorOperatorSetId",
+          "type": "uint32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "taskHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "cancelTask",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "refundCollector",
+              "type": "address"
+            },
+            {
+              "internalType": "uint96",
+              "name": "avsFee",
+              "type": "uint96"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "avs",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint32",
+                  "name": "id",
+                  "type": "uint32"
+                }
+              ],
+              "internalType": "struct OperatorSet",
+              "name": "executorOperatorSet",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes",
+              "name": "payload",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct ITaskMailboxTypes.TaskParams",
+          "name": "taskParams",
+          "type": "tuple"
+        }
+      ],
+      "name": "createTask",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "operatorSetKey",
+          "type": "bytes32"
+        }
+      ],
+      "name": "executorOperatorSetTaskConfigs",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "certificateVerifier",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IAVSTaskHook",
+          "name": "taskHook",
+          "type": "address"
+        },
+        {
+          "internalType": "contract IERC20",
+          "name": "feeToken",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "feeCollector",
+          "type": "address"
+        },
+        {
+          "internalType": "uint96",
+          "name": "taskSLA",
+          "type": "uint96"
+        },
+        {
+          "internalType": "uint16",
+          "name": "stakeProportionThreshold",
+          "type": "uint16"
+        },
+        {
+          "internalType": "bytes",
+          "name": "taskMetadata",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        }
+      ],
+      "name": "getAvsConfig",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "aggregatorOperatorSetId",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32[]",
+              "name": "executorOperatorSetIds",
+              "type": "uint32[]"
+            }
+          ],
+          "internalType": "struct ITaskMailboxTypes.AvsConfig",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "avs",
+              "type": "address"
+            },
+            {
+              "internalType": "uint32",
+              "name": "id",
+              "type": "uint32"
+            }
+          ],
+          "internalType": "struct OperatorSet",
+          "name": "operatorSet",
+          "type": "tuple"
+        }
+      ],
+      "name": "getExecutorOperatorSetTaskConfig",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "certificateVerifier",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IAVSTaskHook",
+              "name": "taskHook",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IERC20",
+              "name": "feeToken",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "feeCollector",
+              "type": "address"
+            },
+            {
+              "internalType": "uint96",
+              "name": "taskSLA",
+              "type": "uint96"
+            },
+            {
+              "internalType": "uint16",
+              "name": "stakeProportionThreshold",
+              "type": "uint16"
+            },
+            {
+              "internalType": "bytes",
+              "name": "taskMetadata",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct ITaskMailboxTypes.ExecutorOperatorSetTaskConfig",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "taskHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getTaskInfo",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "creator",
+              "type": "address"
+            },
+            {
+              "internalType": "uint96",
+              "name": "creationTime",
+              "type": "uint96"
+            },
+            {
+              "internalType": "enum ITaskMailboxTypes.TaskStatus",
+              "name": "status",
+              "type": "uint8"
+            },
+            {
+              "internalType": "address",
+              "name": "avs",
+              "type": "address"
+            },
+            {
+              "internalType": "uint32",
+              "name": "executorOperatorSetId",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32",
+              "name": "aggregatorOperatorSetId",
+              "type": "uint32"
+            },
+            {
+              "internalType": "address",
+              "name": "refundCollector",
+              "type": "address"
+            },
+            {
+              "internalType": "uint96",
+              "name": "avsFee",
+              "type": "uint96"
+            },
+            {
+              "internalType": "uint16",
+              "name": "feeSplit",
+              "type": "uint16"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "address",
+                  "name": "certificateVerifier",
+                  "type": "address"
+                },
+                {
+                  "internalType": "contract IAVSTaskHook",
+                  "name": "taskHook",
+                  "type": "address"
+                },
+                {
+                  "internalType": "contract IERC20",
+                  "name": "feeToken",
+                  "type": "address"
+                },
+                {
+                  "internalType": "address",
+                  "name": "feeCollector",
+                  "type": "address"
+                },
+                {
+                  "internalType": "uint96",
+                  "name": "taskSLA",
+                  "type": "uint96"
+                },
+                {
+                  "internalType": "uint16",
+                  "name": "stakeProportionThreshold",
+                  "type": "uint16"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "taskMetadata",
+                  "type": "bytes"
+                }
+              ],
+              "internalType": "struct ITaskMailboxTypes.ExecutorOperatorSetTaskConfig",
+              "name": "executorOperatorSetTaskConfig",
+              "type": "tuple"
+            },
+            {
+              "internalType": "bytes",
+              "name": "payload",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "result",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct ITaskMailboxTypes.Task",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "taskHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getTaskResult",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "taskHash",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getTaskStatus",
+      "outputs": [
+        {
+          "internalType": "enum ITaskMailboxTypes.TaskStatus",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        }
+      ],
+      "name": "isAvsRegistered",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "isRegistered",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "operatorSetKey",
+          "type": "bytes32"
+        }
+      ],
+      "name": "isExecutorOperatorSetRegistered",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "isRegistered",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        },
+        {
+          "internalType": "bool",
+          "name": "isRegistered",
+          "type": "bool"
+        }
+      ],
+      "name": "registerAvs",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "aggregatorOperatorSetId",
+              "type": "uint32"
+            },
+            {
+              "internalType": "uint32[]",
+              "name": "executorOperatorSetIds",
+              "type": "uint32[]"
+            }
+          ],
+          "internalType": "struct ITaskMailboxTypes.AvsConfig",
+          "name": "config",
+          "type": "tuple"
+        }
+      ],
+      "name": "setAvsConfig",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "avs",
+              "type": "address"
+            },
+            {
+              "internalType": "uint32",
+              "name": "id",
+              "type": "uint32"
+            }
+          ],
+          "internalType": "struct OperatorSet",
+          "name": "operatorSet",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "certificateVerifier",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IAVSTaskHook",
+              "name": "taskHook",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IERC20",
+              "name": "feeToken",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "feeCollector",
+              "type": "address"
+            },
+            {
+              "internalType": "uint96",
+              "name": "taskSLA",
+              "type": "uint96"
+            },
+            {
+              "internalType": "uint16",
+              "name": "stakeProportionThreshold",
+              "type": "uint16"
+            },
+            {
+              "internalType": "bytes",
+              "name": "taskMetadata",
+              "type": "bytes"
+            }
+          ],
+          "internalType": "struct ITaskMailboxTypes.ExecutorOperatorSetTaskConfig",
+          "name": "config",
+          "type": "tuple"
+        }
+      ],
+      "name": "setExecutorOperatorSetTaskConfig",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "taskHash",
+          "type": "bytes32"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint32",
+              "name": "referenceTimestamp",
+              "type": "uint32"
+            },
+            {
+              "internalType": "bytes32",
+              "name": "messageHash",
+              "type": "bytes32"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256",
+                  "name": "X",
+                  "type": "uint256"
+                },
+                {
+                  "internalType": "uint256",
+                  "name": "Y",
+                  "type": "uint256"
+                }
+              ],
+              "internalType": "struct BN254.G1Point",
+              "name": "signature",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint256[2]",
+                  "name": "X",
+                  "type": "uint256[2]"
+                },
+                {
+                  "internalType": "uint256[2]",
+                  "name": "Y",
+                  "type": "uint256[2]"
+                }
+              ],
+              "internalType": "struct BN254.G2Point",
+              "name": "apk",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "uint32",
+                  "name": "operatorIndex",
+                  "type": "uint32"
+                },
+                {
+                  "internalType": "bytes",
+                  "name": "operatorInfoProof",
+                  "type": "bytes"
+                },
+                {
+                  "components": [
+                    {
+                      "components": [
+                        {
+                          "internalType": "uint256",
+                          "name": "X",
+                          "type": "uint256"
+                        },
+                        {
+                          "internalType": "uint256",
+                          "name": "Y",
+                          "type": "uint256"
+                        }
+                      ],
+                      "internalType": "struct BN254.G1Point",
+                      "name": "pubkey",
+                      "type": "tuple"
+                    },
+                    {
+                      "internalType": "uint256[]",
+                      "name": "weights",
+                      "type": "uint256[]"
+                    }
+                  ],
+                  "internalType": "struct IBN254TableCalculatorTypes.BN254OperatorInfo",
+                  "name": "operatorInfo",
+                  "type": "tuple"
+                }
+              ],
+              "internalType": "struct IBN254CertificateVerifierTypes.BN254OperatorInfoWitness[]",
+              "name": "nonSignerWitnesses",
+              "type": "tuple[]"
+            }
+          ],
+          "internalType": "struct IBN254CertificateVerifierTypes.BN254Certificate",
+          "name": "cert",
+          "type": "tuple"
+        },
+        {
+          "internalType": "bytes",
+          "name": "result",
+          "type": "bytes"
+        }
+      ],
+      "name": "submitResult",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "aggregatorOperatorSetId",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32[]",
+          "name": "executorOperatorSetIds",
+          "type": "uint32[]"
+        }
+      ],
+      "name": "AvsConfigSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "bool",
+          "name": "isRegistered",
+          "type": "bool"
+        }
+      ],
+      "name": "AvsRegistered",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "caller",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "uint32",
+          "name": "executorOperatorSetId",
+          "type": "uint32"
+        },
+        {
+          "components": [
+            {
+              "internalType": "address",
+              "name": "certificateVerifier",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IAVSTaskHook",
+              "name": "taskHook",
+              "type": "address"
+            },
+            {
+              "internalType": "contract IERC20",
+              "name": "feeToken",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "feeCollector",
+              "type": "address"
+            },
+            {
+              "internalType": "uint96",
+              "name": "taskSLA",
+              "type": "uint96"
+            },
+            {
+              "internalType": "uint16",
+              "name": "stakeProportionThreshold",
+              "type": "uint16"
+            },
+            {
+              "internalType": "bytes",
+              "name": "taskMetadata",
+              "type": "bytes"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct ITaskMailboxTypes.ExecutorOperatorSetTaskConfig",
+          "name": "config",
+          "type": "tuple"
+        }
+      ],
+      "name": "ExecutorOperatorSetTaskConfigSet",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "creator",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "taskHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "executorOperatorSetId",
+          "type": "uint32"
+        }
+      ],
+      "name": "TaskCanceled",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "creator",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "taskHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "executorOperatorSetId",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "refundCollector",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint96",
+          "name": "avsFee",
+          "type": "uint96"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "taskDeadline",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "payload",
+          "type": "bytes"
+        }
+      ],
+      "name": "TaskCreated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "aggregator",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "taskHash",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "avs",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint32",
+          "name": "executorOperatorSetId",
+          "type": "uint32"
+        },
+        {
+          "indexed": false,
+          "internalType": "bytes",
+          "name": "result",
+          "type": "bytes"
+        }
+      ],
+      "name": "TaskVerified",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "AvsNotRegistered",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "CertificateVerificationFailed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "DuplicateExecutorOperatorSetId",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ExecutorOperatorSetNotRegistered",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "ExecutorOperatorSetTaskConfigNotSet",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAddressZero",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidAggregatorOperatorSetId",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidTaskCreator",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "enum ITaskMailboxTypes.TaskStatus",
+          "name": "expected",
+          "type": "uint8"
+        },
+        {
+          "internalType": "enum ITaskMailboxTypes.TaskStatus",
+          "name": "actual",
+          "type": "uint8"
+        }
+      ],
+      "name": "InvalidTaskStatus",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "PayloadIsEmpty",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TaskSLAIsZero",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "TimestampAtCreation",
+      "type": "error"
+    }
+  ]
+}
