@@ -63,7 +63,7 @@ if [[ ! -d "${originalProjectDir}/.devkit/contracts/.git" ]]; then
         log "Removing existing .devkit/contracts directory from git cache"
         rm -rf .devkit/contracts
         git rm -rf --cached .devkit/contracts
-        git commit -m "Remove improperly added .devkit/contracts directory"
+        git commit -m "fix: remove improperly added .devkit/contracts directory"
     else
         log "No existing .devkit/contracts found, creating new submodule"
     fi
