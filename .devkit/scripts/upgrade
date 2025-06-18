@@ -20,15 +20,35 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Navigate to the parent directories to find .devkit
 PROJECT_BASE_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
-cp -rfv "${PROJECT_BASE_DIR}/.devkit" $originalProjectDir
+# cp -rfv "${PROJECT_BASE_DIR}/.devkit" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/Dockerfile" $originalProjectDir
 
-# check if the contracts directory exists
-if [[ ! -d "${PROJECT_BASE_DIR}/contracts" ]]; then
-    log "Error: contracts directory not found in the project base directory."
-    exit 1
+cd $PROJECT_BASE_DIR/.devkit/contracts
+git_repo=$(git config --get remote.origin.url | tr -d '\n')
+git_ref=$(git rev-parse HEAD | tr -d '\n')
+cd -
+
+# first check to see if the .devkit/contracts directory is already a submodule
+if [[ ! -d "${originalProjectDir}/.devkit/contracts/.git" ]]; then
+    log "Contracts directory is not a submodule, making it one"
+
+    git mv $originalProjectDir/.devkit/contracts $originalProjectDir/.oldcontracts
+
+    cd $originalProjectDir
+    git submodule add $git_repod .devkit/contracts
+    cd .devkit/contracts && git checkout $git_ref && cd -
 fi
+
+log "Updating contracts submodule to desired commit..."
+cd $originalProjectDir/.devkit/contracts
+git fetch
+git checkout $git_ref
+
+cd $originalProjectDir
+
+log "Updating submodules..."
+git submodule update --init --recursive
 
 log "Upgrade complete!"
 
