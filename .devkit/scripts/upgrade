@@ -104,7 +104,7 @@ git submodule update --init --recursive
 log "Upgrade complete!"
 
 git add .
-git commit -m "feat: upgrade template ${currentVersion} to ${targetVersion}"
+git commit -m "feat: upgrade template ${currentVersion} to ${requestedVersion}"
 
 if [[ -n "$migratedContracts" ]]; then
     log "Successfully migrated your .devkit/contracts to a submodule."
