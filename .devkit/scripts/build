@@ -9,6 +9,9 @@ ensureMake
 ensureForge
 ensureDocker
 
+log "Building contracts..."
+cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol >&2
+
 # Build the contracts and dependencies
 log "Building AVS performer..."
 BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
@@ -23,9 +26,6 @@ LOCAL_IMAGE_NAME="${IMAGE_NAME}:${VERSION}"
 # Get the docker image id
 log "Getting docker image id..."
 IMAGE_ID=$(docker inspect "$LOCAL_IMAGE_NAME" --format='{{.Id}}')
-
-log "Building contracts..."
-cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol >&2
 
 # If empty , log it 
 if [ "$REGISTRY" == "null" ] || [ -z "$REGISTRY" ]; then
