@@ -1,4 +1,4 @@
 [submodule ".devkit/contracts"]
 	path = .devkit/contracts
-	url = https://github.com/Layr-Labs/hourglass-contracts-template
+	url = git@github.com:Layr-Labs/hourglass-contracts-template.git
 	branch = master

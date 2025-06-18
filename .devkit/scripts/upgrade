@@ -14,6 +14,16 @@ source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
 
 log "Starting template upgrade process..."
 
+cd $originalProjectDir
+if [ -n "$(git status --porcelain)" ]; then
+    echo "Uncommitted changes found, please commit or stash them before upgrading"
+    git status --short
+    exit 1
+else
+    echo "Working directory clean, continuing with upgrade..."
+fi
+cd -
+
 # Get the directory where the script is located
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
@@ -23,21 +33,56 @@ PROJECT_BASE_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 # cp -rfv "${PROJECT_BASE_DIR}/.devkit" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/Dockerfile" $originalProjectDir
+cp -rfv "${PROJECT_BASE_DIR}/contracts/" $originalProjectDir/contracts/
 
 cd $PROJECT_BASE_DIR/.devkit/contracts
 git_repo=$(git config --get remote.origin.url | tr -d '\n')
 git_ref=$(git rev-parse HEAD | tr -d '\n')
 cd -
 
+migratedContracts=""
+
+# -----------------------------------------------------------------------------
+# In order for forge to play nice with things, .devkit/contracts needs to
+# remain as a proper git submodule. Until this logic was added, it was not
+# a submodule, but just a simple directory. This caused some funky behavior
+# like requiring the end-user to commit and track everything in .devkit/contracts
+# which is not ideal nor necessary anymore. In fact, the user shouldnt be modifying
+# anything in .devkit/contracts at all.
+# -----------------------------------------------------------------------------
 # first check to see if the .devkit/contracts directory is already a submodule
 if [[ ! -d "${originalProjectDir}/.devkit/contracts/.git" ]]; then
     log "Contracts directory is not a submodule, making it one"
 
-    git mv $originalProjectDir/.devkit/contracts $originalProjectDir/.oldcontracts
-
     cd $originalProjectDir
-    git submodule add $git_repod .devkit/contracts
-    cd .devkit/contracts && git checkout $git_ref && cd -
+    if [[ -d ".devkit/contracts" ]]; then
+        log "Moving existing .devkit/contracts to .oldcontracts"
+        cp -r $originalProjectDir/.devkit/contracts $originalProjectDir/.oldcontracts
+
+        log "Removing existing .devkit/contracts directory from git cache"
+        rm -rf .devkit/contracts
+        git rm -rf --cached .devkit/contracts
+        git commit -m "Remove improperly added .devkit/contracts directory"
+    else
+        log "No existing .devkit/contracts found, creating new submodule"
+    fi
+
+    log "repo url: $git_repo"
+    log "repo ref: $git_ref"
+
+    if [[ ! -d ".devkit/contracts" ]]; then
+        log "Creating .devkit/contracts directory"
+    fi
+
+    log "Adding .devkit/contracts as a submodule..."
+    git submodule add --force $git_repo .devkit/contracts
+
+    migratedContracts="1"
+
+    cd $originalProjectDir/.devkit/contracts && git checkout $git_ref && cd -
+
+    # cleanup
+    rm -rf $originalProjectDir/.oldcontracts || true
 fi
 
 log "Updating contracts submodule to desired commit..."
@@ -51,6 +96,11 @@ log "Updating submodules..."
 git submodule update --init --recursive
 
 log "Upgrade complete!"
+
+if [[ -n "$migratedContracts" ]]; then
+    log "Successfully migrated your .devkit/contracts to a submodule."
+    log "Please run 'git add .devkit/contracts' to stage the changes."
+fi
 
 
 
