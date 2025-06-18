@@ -30,7 +30,9 @@ cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/
 # If empty , log it 
 if [ "$REGISTRY" == "null" ] || [ -z "$REGISTRY" ]; then
     log "Registry Url empty in .hourglass/build.yaml.Passing empty registry url to context. Provide registry url explicitly while calling `devkit avs release publish`"
+    REGISTRY_URL=""
 else
+    REGISTRY_URL="${REGISTRY}"
 fi
 
 # Create and output the JSON structure
@@ -38,7 +40,7 @@ RESULT=$(jq -n \
     --arg component "performer" \
     --arg artifactId "$IMAGE_ID" \
     --arg digest "" \
-    --arg registry "$$REGISTRY" \
+    --arg registry "$REGISTRY_URL" \
     '{
         artifacts: {
             component: $component,
