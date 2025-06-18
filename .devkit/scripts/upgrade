@@ -3,6 +3,8 @@
 set -e
 
 originalProjectDir=$1
+currentVersion=$2
+requestedVersion=$3
 
 if [ -z "$originalProjectDir" ]; then
     log "Usage: $0 <original_project_dir>"
@@ -41,6 +43,8 @@ cd -
 
 migratedContracts=""
 
+log "checking ${originalProjectDir}/.devkit/contracts/.git"
+
 # -----------------------------------------------------------------------------
 # In order for forge to play nice with things, .devkit/contracts needs to
 # remain as a proper git submodule. Until this logic was added, it was not
@@ -61,7 +65,6 @@ if [[ ! -d "${originalProjectDir}/.devkit/contracts/.git" ]]; then
         log "Removing existing .devkit/contracts directory from git cache"
         rm -rf .devkit/contracts
         git rm -rf --cached .devkit/contracts
-        git commit -m "Remove improperly added .devkit/contracts directory"
     else
         log "No existing .devkit/contracts found, creating new submodule"
     fi
@@ -82,6 +85,10 @@ if [[ ! -d "${originalProjectDir}/.devkit/contracts/.git" ]]; then
 
     # cleanup
     rm -rf $originalProjectDir/.oldcontracts || true
+
+    # commit .devkit/contracts fix
+    git add .devkit/contracts
+    git commit -m "fix: remove improperly added .devkit/contracts directory"
 fi
 
 log "Updating contracts submodule to desired commit..."
@@ -96,9 +103,11 @@ git submodule update --init --recursive
 
 log "Upgrade complete!"
 
+git add .
+git commit -m "feat: upgrade template ${currentVersion} to ${targetVersion}"
+
 if [[ -n "$migratedContracts" ]]; then
     log "Successfully migrated your .devkit/contracts to a submodule."
-    log "Please run 'git add .devkit/contracts' to stage the changes."
 fi
 
 
