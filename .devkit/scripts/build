@@ -13,37 +13,40 @@ ensureDocker
 log "Building AVS performer..."
 BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
 
-# Get container info from build.yaml
-buildParams=$(cat ../.hourglass/build.yaml)
-registry=$(echo "$buildParams" | yq -r '.container.registry')
-image=$(echo "$buildParams" | yq -r '.container.image')
-tag=$(echo "$buildParams" | yq -r '.container.version')
+# Get the image name from build.yaml
+IMAGE_NAME=$(yq eval '.container.image' .hourglass/build.yaml)
+REGISTRY=$(yq eval '.container.registry' .hourglass/build.yaml)
+VERSION=$(yq eval '.container.version' .hourglass/build.yaml)
 
-# Construct full image name
-if [[ ! -z "$registry" ]]; then
-    full_image="${registry}/${image}:${tag}"
+# Construct the full image name
+if [ -z "$REGISTRY" ]; then
+    FULL_IMAGE_NAME="ghcr.io/${IMAGE_NAME}:${VERSION}"
+    REGISTRY_URL="ghcr.io"
 else
-    full_image="${image}:${tag}"
+    FULL_IMAGE_NAME="${REGISTRY}/${IMAGE_NAME}:${VERSION}"
+    REGISTRY_URL="${REGISTRY}"
 fi
 
-# Get the container digest
+# Get the container digest of the specific image
 log "Getting container digest..."
-DIGEST=$(docker inspect "$full_image" --format='{{.RepoDigests}}' | cut -d'@' -f2)
-
-# # Update the yaml file with the artifact digest
-# yaml_file="config/contexts/0.0.6.yaml"
-# if [ -f "$yaml_file" ]; then
-#     # Use yq to update the artifacts field
-#     yq e ".artifacts = \"$DIGEST\"" -i "$yaml_file"
-#     log "Updated artifacts field in $yaml_file with digest: $DIGEST"
-# else
-#     log "Error: $yaml_file not found"
-#     exit 1
-# fi
+DIGEST=$(docker inspect "$FULL_IMAGE_NAME" --format='{{.Id}}')
 
 log "Updated artifacts field in file with digest: $DIGEST"
-
 log "Building contracts..."
 cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol >&2
+
+# Create and output the JSON structure
+RESULT=$(jq -n \
+    --arg digest "$DIGEST" \
+    --arg registry "$REGISTRY_URL" \
+    '{
+        artifacts: {
+            image_digest: $digest,
+            registry_url: $registry
+        }
+    }')
+
+# Print the JSON to stdout
+echo "$RESULT" | jq -c .
 
 log "Build completed successfully."

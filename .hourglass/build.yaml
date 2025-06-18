@@ -1,4 +1,4 @@
 container:
-  registry: "" # optional, defaults to dockerhub
+  registry: "" # optional, defaults to ghcr
   image: "my-avs"
   version: "latest"
