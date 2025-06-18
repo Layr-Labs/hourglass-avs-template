@@ -16,11 +16,11 @@ log "Starting template upgrade process..."
 
 cd $originalProjectDir
 if [ -n "$(git status --porcelain)" ]; then
-    echo "Uncommitted changes found, please commit or stash them before upgrading"
+    log "Uncommitted changes found, please commit or stash them before upgrading"
     git status --short
     exit 1
 else
-    echo "Working directory clean, continuing with upgrade..."
+    log "Working directory clean, continuing with upgrade..."
 fi
 cd -
 
@@ -74,7 +74,7 @@ if [[ ! -d "${originalProjectDir}/.devkit/contracts/.git" ]]; then
     fi
 
     log "Adding .devkit/contracts as a submodule..."
-    git submodule add --force $git_repo .devkit/contracts
+    git submodule add --force --name ".devkit/contracts" $git_repo .devkit/contracts
 
     migratedContracts="1"
 
