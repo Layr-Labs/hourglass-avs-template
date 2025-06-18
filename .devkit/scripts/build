@@ -18,14 +18,12 @@ IMAGE_NAME=$(yq eval '.container.image' .hourglass/build.yaml)
 REGISTRY=$(yq eval '.container.registry' .hourglass/build.yaml)
 VERSION=$(yq eval '.container.version' .hourglass/build.yaml)
 
-# For local build, we'll use the local image name
 LOCAL_IMAGE_NAME="${IMAGE_NAME}:${VERSION}"
 
 # Get the container digest of the local image
 log "Getting container digest..."
 DIGEST=$(docker inspect "$LOCAL_IMAGE_NAME" --format='{{.Id}}')
 
-log "Updated artifacts field in file with digest: $DIGEST"
 log "Building contracts..."
 cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol >&2
 
@@ -51,3 +49,4 @@ RESULT=$(jq -n \
 echo "$RESULT" | jq -c .
 
 log "Build completed successfully."
+log "Updated artifacts field in context with digest: $DIGEST"
