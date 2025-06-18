@@ -27,11 +27,10 @@ IMAGE_ID=$(docker inspect "$LOCAL_IMAGE_NAME" --format='{{.Id}}')
 log "Building contracts..."
 cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol >&2
 
-# Set registry URL - use ghcr.io if REGISTRY is nil, otherwise use the specified registry
+# If empty , log it 
 if [ "$REGISTRY" == "null" ] || [ -z "$REGISTRY" ]; then
-    REGISTRY_URL="ghcr.io"
+    log "Registry Url empty in .hourglass/build.yaml.Passing empty registry url to context. Provide registry url explicitly while calling `devkit avs release publish`"
 else
-    REGISTRY_URL="${REGISTRY}"
 fi
 
 # Create and output the JSON structure
@@ -39,7 +38,7 @@ RESULT=$(jq -n \
     --arg component "performer" \
     --arg artifactId "$IMAGE_ID" \
     --arg digest "" \
-    --arg registry "$REGISTRY_URL" \
+    --arg registry "$$REGISTRY" \
     '{
         artifacts: {
             component: $component,
