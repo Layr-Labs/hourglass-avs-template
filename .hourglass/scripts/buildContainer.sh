@@ -10,6 +10,14 @@ if [[ ! -z "$registry" ]]; then
     image="$registry/$image"
 fi
 
-docker build \
+# Build single multi-platform OCI image index (creates one image ID for all platforms)
+echo "Building multi-platform OCI image index for: linux/amd64, linux/arm64, darwin/amd64, darwin/arm64"
+
+docker buildx build \
+    --platform linux/amd64,linux/arm64,darwin/amd64,darwin/arm64 \
     --progress=plain \
-    -t "${image}:${tag}" .
+    --tag "${image}:${tag}" \
+    .
+
+echo "Multi-platform OCI image index built successfully: ${image}:${tag}"
+echo "This single image ID contains all platform variants (linux/amd64, linux/arm64, darwin/amd64, darwin/arm64)"

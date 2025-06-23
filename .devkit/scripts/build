@@ -12,7 +12,7 @@ ensureDocker
 log "Building contracts..."
 (cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol && cd -) >&2
 
-# Build the contracts and dependencies
+# Build the contracts and dependencies (includes multi-arch container build)
 log "Building AVS performer..."
 BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
 
@@ -23,9 +23,10 @@ VERSION=$(yq eval '.container.version' .hourglass/build.yaml)
 
 LOCAL_IMAGE_NAME="${IMAGE_NAME}:${VERSION}"
 
-# Get the docker image id
-log "Getting docker image id..."
-IMAGE_ID=$(docker inspect "$LOCAL_IMAGE_NAME" --format='{{.Id}}')
+# Get the id  of the multi-platform image
+IMAGE_ID=$(docker buildx imagetools inspect "$LOCAL_IMAGE_NAME" --format='{{.Manifest.Id}}')
+
+log "Multi-platform image built with id: $IMAGE_ID"
 
 # If empty , log it 
 if [ "$REGISTRY" == "null" ] || [ -z "$REGISTRY" ]; then
