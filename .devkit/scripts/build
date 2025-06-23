@@ -12,7 +12,7 @@ ensureDocker
 log "Building contracts..."
 (cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol && cd -) >&2
 
-# Build the contracts and dependencies (includes multi-arch container build)
+# Build the contracts and dependencies
 log "Building AVS performer..."
 BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
 
@@ -23,39 +23,28 @@ VERSION=$(yq eval '.container.version' .hourglass/build.yaml)
 
 LOCAL_IMAGE_NAME="${IMAGE_NAME}:${VERSION}"
 
-# Read the individual platform image IDs and manifest digest
-if [ -f "/tmp/multiarch_image_ids" ]; then
-  source /tmp/multiarch_image_ids
-  log "Multi-platform images built:"
-  log "  AMD64: $AMD64_IMAGE_ID"
-  log "  ARM64: $ARM64_IMAGE_ID"
-else
-  # Fallback to image names if IDs not found
-  AMD64_IMAGE_ID="${LOCAL_IMAGE_NAME}-amd64"
-  ARM64_IMAGE_ID="${LOCAL_IMAGE_NAME}-arm64"
-  MANIFEST_DIGEST=""
-fi
+# Get the docker image id
+log "Getting docker image id..."
+IMAGE_ID=$(docker inspect "$LOCAL_IMAGE_NAME" --format='{{.Id}}')
 
 # If empty , log it 
 if [ "$REGISTRY" == "null" ] || [ -z "$REGISTRY" ]; then
-    log "Registry Url empty in .hourglass/build.yaml.Passing empty registry url to context. Provide registry url explicitly while calling `devkit avs release publish`"
+    log "Registry Url empty in .hourglass/build.yaml.Passing empty registry url to context. Provide registry url explicitly while calling \`devkit avs release publish\`"
     REGISTRY_URL=""
 else
     REGISTRY_URL="${REGISTRY}"
 fi
 
-# Create and output the JSON structure with both image IDs and manifest digest
+# Create and output the JSON structure
 RESULT=$(jq -n \
     --arg component "performer" \
-    --arg amd64Id "$AMD64_IMAGE_ID" \
-    --arg arm64Id "$ARM64_IMAGE_ID" \
-    --arg digest "$MANIFEST_DIGEST" \
+    --arg artifactId "$IMAGE_ID" \
+    --arg digest "" \
     --arg registry "$REGISTRY_URL" \
     '{
         artifacts: {
             component: $component,
-            amd64_image_id: $amd64Id,
-            arm64_image_id: $arm64Id,
+            artifactId: $artifactId,
             digest: $digest,
             registry_url: $registry
         }
@@ -65,5 +54,4 @@ RESULT=$(jq -n \
 echo "$RESULT" | jq -c .
 
 log "Build completed successfully."
-log "Updated artifacts field in context with image ids: AMD64=$AMD64_IMAGE_ID, ARM64=$ARM64_IMAGE_ID"
-log "Multi-platform manifest digest: $MANIFEST_DIGEST"
+log "Updated artifacts field in context with image id: $IMAGE_ID"
