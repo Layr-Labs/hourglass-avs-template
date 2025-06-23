@@ -23,10 +23,18 @@ VERSION=$(yq eval '.container.version' .hourglass/build.yaml)
 
 LOCAL_IMAGE_NAME="${IMAGE_NAME}:${VERSION}"
 
-# Get the id  of the multi-platform image
-IMAGE_ID=$(docker buildx imagetools inspect "$LOCAL_IMAGE_NAME" --format='{{.Manifest.Id}}')
-
-log "Multi-platform image built with id: $IMAGE_ID"
+# Read the individual platform image IDs and manifest digest
+if [ -f "/tmp/multiarch_image_ids" ]; then
+  source /tmp/multiarch_image_ids
+  log "Multi-platform images built:"
+  log "  AMD64: $AMD64_IMAGE_ID"
+  log "  ARM64: $ARM64_IMAGE_ID"
+else
+  # Fallback to image names if IDs not found
+  AMD64_IMAGE_ID="${LOCAL_IMAGE_NAME}-amd64"
+  ARM64_IMAGE_ID="${LOCAL_IMAGE_NAME}-arm64"
+  MANIFEST_DIGEST=""
+fi
 
 # If empty , log it 
 if [ "$REGISTRY" == "null" ] || [ -z "$REGISTRY" ]; then
@@ -36,16 +44,18 @@ else
     REGISTRY_URL="${REGISTRY}"
 fi
 
-# Create and output the JSON structure
+# Create and output the JSON structure with both image IDs and manifest digest
 RESULT=$(jq -n \
     --arg component "performer" \
-    --arg artifactId "$IMAGE_ID" \
-    --arg digest "" \
+    --arg amd64Id "$AMD64_IMAGE_ID" \
+    --arg arm64Id "$ARM64_IMAGE_ID" \
+    --arg digest "$MANIFEST_DIGEST" \
     --arg registry "$REGISTRY_URL" \
     '{
         artifacts: {
             component: $component,
-            artifactId: $artifactId,
+            amd64_image_id: $amd64Id,
+            arm64_image_id: $arm64Id,
             digest: $digest,
             registry_url: $registry
         }
@@ -55,4 +65,5 @@ RESULT=$(jq -n \
 echo "$RESULT" | jq -c .
 
 log "Build completed successfully."
-log "Updated artifacts field in context with image id: $IMAGE_ID"
+log "Updated artifacts field in context with image ids: AMD64=$AMD64_IMAGE_ID, ARM64=$ARM64_IMAGE_ID"
+log "Multi-platform manifest digest: $MANIFEST_DIGEST"
