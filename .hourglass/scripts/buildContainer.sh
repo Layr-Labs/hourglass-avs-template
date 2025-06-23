@@ -11,7 +11,7 @@ if [[ ! -z "$registry" ]]; then
 fi
 
 # Build single multi-platform OCI image index (creates one image ID for all platforms)
-echo "Building multi-platform OCI image index for: linux/amd64, linux/arm64
+echo "Building multi-platform OCI image index for: linux/amd64, linux/arm64"
 
 docker buildx build \
     --platform linux/amd64,linux/arm64 \
