@@ -49,55 +49,50 @@ echo "✅ Built multi-platform images:"
 echo "  linux/amd64: ${fullImage}-amd64 (ID: $AMD64_IMAGE_ID)"
 echo "  linux/arm64: ${fullImage}-arm64 (ID: $ARM64_IMAGE_ID)"
 
-# Create OCI compliant multi-platform manifest
+# Create the release manifest directly as an OCI layout
 echo ""
-echo "Creating OCI compliant multi-platform Image Index..."
+echo "Creating Release Manifest OCI layout..."
 
-# Build multi-platform with OCI output - keep files for easy inspection
-OCI_TAR="./oci-manifest.tar"
-OCI_DIR="./oci-manifest"
+RELEASE_OCI_DIR="./release-manifest"
+rm -rf "$RELEASE_OCI_DIR" 2>/dev/null || true
 
+# Build multi-platform image to tar, then extract to directory
+RELEASE_OCI_TAR="./release-manifest.tar"
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --tag "${fullImage}" \
-  --output type=oci,dest="$OCI_TAR" \
+  --output type=oci,dest="$RELEASE_OCI_TAR" \
   .
 
-# Extract the tar for inspection
-rm -rf "$OCI_DIR" 2>/dev/null || true
-mkdir -p "$OCI_DIR"
-tar -xf "$OCI_TAR" -C "$OCI_DIR"
+# Extract the tar to create the OCI layout directory
+mkdir -p "$RELEASE_OCI_DIR"
+tar -xf "$RELEASE_OCI_TAR" -C "$RELEASE_OCI_DIR"
 
-# Extract the manifest digest from the OCI index
-if [ -f "$OCI_DIR/index.json" ]; then
-  # The index.json contains a reference to the actual manifest list
-  # Get the digest of the actual manifest list (not the wrapper)
-  ACTUAL_MANIFEST_DIGEST=$(cat "$OCI_DIR/index.json" | jq -r '.manifests[0].digest')
+# Get the container manifest digest from the OCI layout
+CONTAINER_MANIFEST_DIGEST=""
+if [ -f "$RELEASE_OCI_DIR/index.json" ]; then
+  CONTAINER_MANIFEST_DIGEST=$(cat "$RELEASE_OCI_DIR/index.json" | jq -r '.manifests[0].digest')
+  echo "✅ Created Release Manifest OCI layout:"
+  echo "  Container Image: ${fullImage}"
+  echo "  Container Digest: $CONTAINER_MANIFEST_DIGEST"
   
-  # Find the actual manifest list file
-  MANIFEST_LIST_FILE="$OCI_DIR/blobs/$(echo $ACTUAL_MANIFEST_DIGEST | cut -d':' -f1)/$(echo $ACTUAL_MANIFEST_DIGEST | cut -d':' -f2)"
-  
-  if [ -f "$MANIFEST_LIST_FILE" ]; then
-    # This is the actual multi-platform manifest list with platform details
-    MANIFEST_DIGEST="$ACTUAL_MANIFEST_DIGEST"
-    
-    echo "✅ Created OCI compliant multi-platform Image Index:"
-    echo "  Manifest List: ${fullImage}"
-    echo "  Digest: $MANIFEST_DIGEST"
-    
-    echo ""
-    echo "=== OCI Multi-Platform Manifest List ==="
-    cat "$MANIFEST_LIST_FILE" | jq .
-  else
-    echo "❌ Failed to find manifest list file"
-    MANIFEST_DIGEST=""
-  fi
+  # Clean up the tar file
+  rm -f "$RELEASE_OCI_TAR"
 else
-  echo "❌ Failed to create OCI manifest"
-  MANIFEST_DIGEST=""
+  echo "❌ Failed to create Release Manifest OCI layout"
+  exit 1
 fi
 
-# Export all IDs for the build script to use
+# Export all IDs and digests for the build script to use
 echo "AMD64_IMAGE_ID=$AMD64_IMAGE_ID" > /tmp/multiarch_image_ids
 echo "ARM64_IMAGE_ID=$ARM64_IMAGE_ID" >> /tmp/multiarch_image_ids
+echo "CONTAINER_MANIFEST_DIGEST=$CONTAINER_MANIFEST_DIGEST" >> /tmp/multiarch_image_ids
+
+# For publishing, use the container manifest digest
+MANIFEST_DIGEST="$CONTAINER_MANIFEST_DIGEST"
 echo "MANIFEST_DIGEST=$MANIFEST_DIGEST" >> /tmp/multiarch_image_ids
+
+echo ""
+echo "🎉 Build completed successfully!"
+echo "   Container Image Digest: $CONTAINER_MANIFEST_DIGEST"
+echo "   Use Container Manifest Digest for publishing: $CONTAINER_MANIFEST_DIGEST" 
