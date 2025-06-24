@@ -76,8 +76,8 @@ if [ -n "$ARCHITECTURES" ]; then
   
   # Get the Image Index digest and create a digest-based tag
   echo "Getting Image Index digest..."
-  IMAGE_DIGEST=$(docker buildx imagetools inspect "$fullImage" --format '{{.Manifest.Digest}}')
-  DIGEST_TAG=$(echo "$IMAGE_DIGEST" | sed 's/sha256:/sha256-/')
+  IMAGE_DIGEST=$(docker buildx imagetools inspect "$fullImage" | grep "Digest:" | head -1 | awk '{print $2}')
+  DIGEST_TAG=$(echo "$IMAGE_DIGEST" | sed 's/sha256://')
   
   if [ -n "$FINAL_REGISTRY" ]; then
     fullImageWithDigestTag="${FINAL_REGISTRY}/${image}:${DIGEST_TAG}"
@@ -101,15 +101,38 @@ if [ -n "$ARCHITECTURES" ]; then
   echo "REGISTRY_URL=$FINAL_REGISTRY" >> /tmp/build_info
   
 else
-  # Single-arch local build
+  # Single-arch build - create Image Index locally (no push)
   echo "Building container for current platform..."
   
-  docker build -t "$fullImage" .
+  # Detect current platform
+  CURRENT_PLATFORM="linux/$(uname -m | sed 's/x86_64/amd64/')"
+  echo "Detected platform: $CURRENT_PLATFORM"
   
-  echo "✅ Built container locally: $fullImage"
+  # Setup buildx for consistency
+  if ! docker buildx inspect multiarch &>/dev/null; then
+    echo "Creating multi-platform builder..."
+    docker buildx create --name multiarch --driver docker-container --use
+    docker buildx inspect --bootstrap
+  else
+    docker buildx use multiarch
+  fi
   
-  # Export local info for build script
+  # Build single-platform as Image Index (LOCAL ONLY - no --push)
+  docker buildx build \
+    --platform "$CURRENT_PLATFORM" \
+    --tag "$fullImage" \
+    --load \
+    .
+  
+  echo "✅ Built single-platform Image Index locally: $fullImage"
+  echo "   Platform: $CURRENT_PLATFORM"
+  
+  # Get the local Image Index digest
+  echo "Getting local Image Index digest..."
+  IMAGE_DIGEST=$(docker buildx imagetools inspect "$fullImage" | grep "Digest:" | head -1 | awk '{print $2}')
+  
   echo "MULTI_ARCH=false" > /tmp/build_info
   echo "IMAGE_NAME=$fullImage" >> /tmp/build_info
+  echo "IMAGE_DIGEST=$IMAGE_DIGEST" >> /tmp/build_info
   echo "REGISTRY_URL=$FINAL_REGISTRY" >> /tmp/build_info
-fi 
+fi
