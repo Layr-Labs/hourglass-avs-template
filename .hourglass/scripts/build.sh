@@ -4,7 +4,8 @@ set -e
 BUILD_CONTAINER=${BUILD_CONTAINER:-"false"}
 
 if [[ "$BUILD_CONTAINER" == "true" ]]; then
-    ./.hourglass/scripts/buildContainer.sh
+    # Pass all arguments to buildContainer.sh
+    ./.hourglass/scripts/buildContainer.sh "$@"
 fi
 
 make build

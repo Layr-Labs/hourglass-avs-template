@@ -9,49 +9,102 @@ ensureMake
 ensureForge
 ensureDocker
 
+# Parse arguments for architectures flag
+ARCHITECTURES=""
+REGISTRY_URL=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --architectures)
+      ARCHITECTURES="$2"
+      shift 2
+      ;;
+    --registry-url)
+      REGISTRY_URL="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+  esac
+done
+
 log "Building contracts..."
 (cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol && cd -) >&2
 
-# Build the contracts and dependencies
+# Build the contracts and dependencies - pass through arguments
 log "Building AVS performer..."
-BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
-
-# Get the image name from build.yaml
-IMAGE_NAME=$(yq eval '.container.image' .hourglass/build.yaml)
-REGISTRY=$(yq eval '.container.registry' .hourglass/build.yaml)
-VERSION=$(yq eval '.container.version' .hourglass/build.yaml)
-
-LOCAL_IMAGE_NAME="${IMAGE_NAME}:${VERSION}"
-
-# Get the docker image id
-log "Getting docker image id..."
-IMAGE_ID=$(docker inspect "$LOCAL_IMAGE_NAME" --format='{{.Id}}')
-
-# If empty , log it 
-if [ "$REGISTRY" == "null" ] || [ -z "$REGISTRY" ]; then
-    log "Registry Url empty in .hourglass/build.yaml.Passing empty registry url to context. Provide registry url explicitly while calling \`devkit avs release publish\`"
-    REGISTRY_URL=""
+if [ -n "$ARCHITECTURES" ]; then
+  if [ -n "$REGISTRY_URL" ]; then
+    BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --architectures "$ARCHITECTURES" --registry-url "$REGISTRY_URL" >&2
+  else
+    BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --architectures "$ARCHITECTURES" >&2
+  fi
 else
-    REGISTRY_URL="${REGISTRY}"
+  BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
 fi
 
-# Create and output the JSON structure
-RESULT=$(jq -n \
-    --arg component "performer" \
-    --arg artifactId "$IMAGE_ID" \
-    --arg digest "" \
-    --arg registry "$REGISTRY_URL" \
-    '{
-        artifacts: {
-            component: $component,
-            artifactId: $artifactId,
-            digest: $digest,
-            registry_url: $registry
-        }
-    }')
+# Get the build info
+if [ -f "/tmp/build_info" ]; then
+  source /tmp/build_info
+else
+  echo "Error: Build info not found"
+  exit 1
+fi
+
+# Handle different build scenarios
+if [ "$MULTI_ARCH" = "true" ]; then
+  # Multi-arch build - image already in registry
+  log "Multi-architecture build completed"
+  log "Image in registry: $IMAGE_NAME"
+  
+  # Get the Image Index digest from registry
+  DIGEST=$(docker manifest inspect "$IMAGE_NAME" --verbose | jq -r '.[0].Descriptor.digest')
+  # Create JSON output for multi-arch (already in registry)
+  RESULT=$(jq -n \
+      --arg component "performer" \
+      --arg artifactId "$IMAGE_NAME" \
+      --arg digest "$DIGEST" \
+      --arg registry "$REGISTRY_URL" \
+      '{
+          artifacts: {
+              component: $component,
+              artifactId: $artifactId,
+              digest: $digest,
+              registry_url: $registry
+          }
+      }')
+  
+  log "Updated artifacts field with registry digest: $DIGEST"
+  
+else
+  # Single-arch local build
+  log "Local build completed"
+  log "Local image: $IMAGE_NAME"
+  
+  # Get the local docker image id
+  IMAGE_ID=$(docker inspect "$IMAGE_NAME" --format='{{.Id}}')
+  
+  # Create JSON output for local build
+  RESULT=$(jq -n \
+      --arg component "performer" \
+      --arg artifactId "$IMAGE_ID" \
+      --arg digest "" \
+      --arg registry "$REGISTRY_URL" \
+      '{
+          artifacts: {
+              component: $component,
+              artifactId: $artifactId,
+              digest: $digest,
+              registry_url: $registry
+          }
+      }')
+  
+  log "Updated artifacts field with local image id: $IMAGE_ID"
+fi
 
 # Print the JSON to stdout
 echo "$RESULT" | jq -c .
 
 log "Build completed successfully."
-log "Updated artifacts field in context with image id: $IMAGE_ID"
