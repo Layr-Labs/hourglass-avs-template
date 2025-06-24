@@ -59,19 +59,17 @@ if [ "$MULTI_ARCH" = "true" ]; then
   log "Multi-architecture build completed"
   log "Image in registry: $IMAGE_NAME"
   
-  # Use the Image Index digest from buildContainer.sh (already correct)
+  # Use the Image Index digest from buildContainer.sh
   DIGEST="$IMAGE_DIGEST"
   
   # Create JSON output for multi-arch (already in registry)
   RESULT=$(jq -n \
       --arg component "performer" \
-      --arg artifactId "$IMAGE_NAME" \
       --arg digest "$DIGEST" \
       --arg registry "$REGISTRY_URL" \
       '{
           artifacts: {
               component: $component,
-              artifactId: $artifactId,
               digest: $digest,
               registry_url: $registry
           }
