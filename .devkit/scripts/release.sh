@@ -40,11 +40,11 @@ echo "New Image ID: $NEW_IMAGE_ID"
 
 # Compare image IDs and set result
 if [ "$ORIGINAL_IMAGE_ID" = "$NEW_IMAGE_ID" ]; then
-  echo "✅ Image unchanged - no rebuild needed"
+  echo "Image unchanged - no rebuild needed"
   echo "Both images have the same ID: $ORIGINAL_IMAGE_ID"
   IMAGE_CHANGED="false"
 else
-  echo "⚠️  Image changed - rebuild detected"
+  echo "Image changed - rebuild detected"
   echo "Original: $ORIGINAL_IMAGE_ID"
   echo "New:      $NEW_IMAGE_ID"
   IMAGE_CHANGED="true"

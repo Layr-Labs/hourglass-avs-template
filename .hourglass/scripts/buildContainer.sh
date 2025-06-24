@@ -22,7 +22,7 @@ docker build -t "$fullImage" .
 # Get the image ID
 IMAGE_ID=$(docker images --format "table {{.ID}}" --no-trunc "$fullImage" | tail -1)
 
-echo "✅ Built container: $fullImage"
+echo "Built container: $fullImage"
 echo "📋 Image ID: $IMAGE_ID"
 
 # Export build info
