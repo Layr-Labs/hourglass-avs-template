@@ -59,8 +59,9 @@ if [ "$MULTI_ARCH" = "true" ]; then
   log "Multi-architecture build completed"
   log "Image in registry: $IMAGE_NAME"
   
-  # Get the Image Index digest from registry
-  DIGEST=$(docker manifest inspect "$IMAGE_NAME" --verbose | jq -r '.[0].Descriptor.digest')
+  # Use the Image Index digest from buildContainer.sh (already correct)
+  DIGEST="$IMAGE_DIGEST"
+  
   # Create JSON output for multi-arch (already in registry)
   RESULT=$(jq -n \
       --arg component "performer" \
@@ -107,4 +108,4 @@ fi
 # Print the JSON to stdout
 echo "$RESULT" | jq -c .
 
-log "Build completed successfully."
+log "Build completed successfully." 
