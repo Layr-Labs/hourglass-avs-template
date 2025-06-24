@@ -9,41 +9,12 @@ ensureMake
 ensureForge
 ensureDocker
 
-# Parse arguments for architectures flag
-ARCHITECTURES=""
-REGISTRY_URL=""
-
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    --architectures)
-      ARCHITECTURES="$2"
-      shift 2
-      ;;
-    --registry-url)
-      REGISTRY_URL="$2"
-      shift 2
-      ;;
-    *)
-      echo "Unknown option $1"
-      exit 1
-      ;;
-  esac
-done
-
 log "Building contracts..."
 (cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol && cd -) >&2
 
-# Build the contracts and dependencies - pass through arguments
+# Build the contracts and dependencies
 log "Building AVS performer..."
-if [ -n "$ARCHITECTURES" ]; then
-  if [ -n "$REGISTRY_URL" ]; then
-    BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --architectures "$ARCHITECTURES" --registry-url "$REGISTRY_URL" >&2
-  else
-    BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --architectures "$ARCHITECTURES" >&2
-  fi
-else
-  BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
-fi
+BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
 
 # Get the build info
 if [ -f "/tmp/build_info" ]; then
@@ -53,38 +24,19 @@ else
   exit 1
 fi
 
-# Handle different build scenarios
-if [ "$MULTI_ARCH" = "true" ]; then
-  # Multi-arch build - image already in registry
-  log "Multi-architecture build completed"
-  log "Image in registry: $IMAGE_NAME"
-  
-  # Use the Image Index digest from buildContainer.sh
-  DIGEST="$IMAGE_DIGEST"
-  
-  # Create JSON output for multi-arch (already in registry)
-  RESULT=$(jq -n \
-      --arg component "performer" \
-      --arg digest "$DIGEST" \
-      --arg registry "$REGISTRY_URL" \
-      '{
-          artifacts: {
-              component: $component,
-              digest: $digest,
-              registry_url: $registry
-          }
-      }')
-  
-  log "Updated artifacts field with registry digest: $DIGEST"
-  
-else
-  # Single-arch local build - return empty context
-  log "Local image: $IMAGE_NAME"
-  
-  RESULT=$(jq -n '{}')
-  
-  log "Returning empty context since not architecture was specified"
-fi
+log "Built container: $IMAGE_NAME"
+log "Image ID: $IMAGE_ID"
+
+# Create JSON output with artifactId
+RESULT=$(jq -n \
+    --arg component "performer" \
+    --arg artifactId "$IMAGE_ID" \
+    '{
+        artifacts: {
+            component: $component,
+            artifactId: $artifactId
+        }
+    }')
 
 # Print the JSON to stdout
 echo "$RESULT" | jq -c .
