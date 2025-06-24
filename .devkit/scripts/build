@@ -80,29 +80,12 @@ if [ "$MULTI_ARCH" = "true" ]; then
   log "Updated artifacts field with registry digest: $DIGEST"
   
 else
-  # Single-arch local build
-  log "Local build completed"
+  # Single-arch local build - return empty context
   log "Local image: $IMAGE_NAME"
   
-  # Get the local docker image id
-  IMAGE_ID=$(docker inspect "$IMAGE_NAME" --format='{{.Id}}')
+  RESULT=$(jq -n '{}')
   
-  # Create JSON output for local build
-  RESULT=$(jq -n \
-      --arg component "performer" \
-      --arg artifactId "$IMAGE_ID" \
-      --arg digest "" \
-      --arg registry "$REGISTRY_URL" \
-      '{
-          artifacts: {
-              component: $component,
-              artifactId: $artifactId,
-              digest: $digest,
-              registry_url: $registry
-          }
-      }')
-  
-  log "Updated artifacts field with local image id: $IMAGE_ID"
+  log "Returning empty context since not architecture was specified"
 fi
 
 # Print the JSON to stdout
