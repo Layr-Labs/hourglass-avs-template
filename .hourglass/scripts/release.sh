@@ -22,6 +22,42 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# Read operator set mappings from devnet.yaml
+echo "Reading operator set mappings from devnet.yaml..."
+
+# Extract aggregator info
+aggregator_operator_set_id=$(yq -r '.aggregator.operatorSetId' .hourglass/context/devnet.yaml)
+aggregator_digest=$(yq -r '.aggregator.digest' .hourglass/context/devnet.yaml)
+aggregator_registry_url=$(yq -r '.aggregator.registry_url' .hourglass/context/devnet.yaml)
+
+# Extract executor info
+executor_operator_set_id=$(yq -r '.executor.operatorSetId' .hourglass/context/devnet.yaml)
+executor_digest=$(yq -r '.executor.digest' .hourglass/context/devnet.yaml)
+executor_registry_url=$(yq -r '.executor.registry_url' .hourglass/context/devnet.yaml)
+
+# Create operator set mapping as JSON
+declare -A operator_set_mapping
+
+# Create JSON struct for aggregator
+aggregator_json=$(jq -n \
+  --arg digest "$aggregator_digest" \
+  --arg registry_url "$aggregator_registry_url" \
+  '{digest: $digest, registry_url: $registry_url}')
+
+# Create JSON struct for executor  
+executor_json=$(jq -n \
+  --arg digest "$executor_digest" \
+  --arg registry_url "$executor_registry_url" \
+  '{digest: $digest, registry_url: $registry_url}')
+
+# Build the mapping
+operator_set_mapping[$aggregator_operator_set_id]="[$aggregator_json]"
+operator_set_mapping[$executor_operator_set_id]="[$executor_json]"
+
+echo "Operator Set Mapping:"
+echo "  OperatorSet $aggregator_operator_set_id (aggregator): ${operator_set_mapping[$aggregator_operator_set_id]}"
+echo "  OperatorSet $executor_operator_set_id (executor): ${operator_set_mapping[$executor_operator_set_id]}"
+
 # Function to get cached version
 get_cached_version() {
   if [ -n "$CONFIG_DIR" ]; then
@@ -102,10 +138,23 @@ fi
 # Clean up temporary image
 docker rmi "$tempImage" || true
 
+# Create the final operator set mapping JSON output
+operator_set_mapping_json=$(jq -n \
+  --argjson operator_set_0 "${operator_set_mapping[$aggregator_operator_set_id]}" \
+  --argjson operator_set_1 "${operator_set_mapping[$executor_operator_set_id]}" \
+  '{
+    ($aggregator_operator_set_id | tostring): $operator_set_0,
+    ($executor_operator_set_id | tostring): $operator_set_1
+  }')
+
 # Export the result for the calling script
 echo "IMAGE_CHANGED=$IMAGE_CHANGED" > /tmp/release_result
 echo "ORIGINAL_IMAGE_ID=$ORIGINAL_IMAGE_ID" >> /tmp/release_result
 echo "NEW_IMAGE_ID=$NEW_IMAGE_ID" >> /tmp/release_result
+echo "OPERATOR_SET_MAPPING=$operator_set_mapping_json" >> /tmp/release_result
+
+# Output the operator set mapping as JSON to stdout
+echo "$operator_set_mapping_json"
 
 # Return the boolean result (0 = no change, 1 = changed)
 if [ "$IMAGE_CHANGED" = "true" ]; then

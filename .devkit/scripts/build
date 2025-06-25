@@ -17,8 +17,8 @@ log "Building AVS performer..."
 BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
 
 # Get the build info
-if [ -f "/tmp/build_info" ]; then
-  source /tmp/build_info
+if [ -f ".hourglass/context/release.yaml" ]; then
+  source .hourglass/context/release.yaml
 else
   echo "Error: Build info not found"
   exit 1
