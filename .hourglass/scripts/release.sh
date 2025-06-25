@@ -1,18 +1,13 @@
 #!/usr/bin/env bash
 set -e
 
-# Parse command line arguments for version support
-CONFIG_DIR=""
-VERSION_OVERRIDE=""
+# Parse command line arguments for version
+VERSION=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --config-dir)
-      CONFIG_DIR="$2"
-      shift 2
-      ;;
     --version)
-      VERSION_OVERRIDE="$2"
+      VERSION="$2"
       shift 2
       ;;
     *)
@@ -21,6 +16,12 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+# Ensure version is provided
+if [ -z "$VERSION" ]; then
+  echo "Error: --version is required" >&2
+  exit 1
+fi
 
 # Read operator set mappings from devnet.yaml
 echo "Reading operator set mappings from devnet.yaml..." >&2
@@ -50,39 +51,15 @@ echo "Operator Set Mapping:" >&2
 echo "  OperatorSet $aggregator_operator_set_id (aggregator): [$aggregator_json]" >&2
 echo "  OperatorSet $executor_operator_set_id (executor): [$executor_json]" >&2
 
-# Function to get cached version
-get_cached_version() {
-  if [ -n "$CONFIG_DIR" ]; then
-    local project_name=$(basename "$(pwd)")
-    local version_cache_file="$CONFIG_DIR/versions/${project_name}_version"
-    if [ -f "$version_cache_file" ]; then
-      cat "$version_cache_file"
-    else
-      echo ""
-    fi
-  else
-    echo ""
-  fi
-}
+
 
 # Build params
 buildParams=$(cat ./.hourglass/build.yaml)
 registry=$(echo "$buildParams" | yq -r '.container.registry')
 image=$(echo "$buildParams" | yq -r '.container.image')
-config_tag=$(echo "$buildParams" | yq -r '.container.version')
 
-# Determine final version/tag
-if [ -n "$VERSION_OVERRIDE" ]; then
-  tag="$VERSION_OVERRIDE"
-else
-  # Try to use cached version if available
-  cached_version=$(get_cached_version)
-  if [ -n "$cached_version" ]; then
-    tag="$cached_version"
-  else
-    tag="$config_tag"
-  fi
-fi
+# Use provided version
+tag="$VERSION"
 
 # Construct original and temporary image names
 if [ -n "$registry" ] && [ "$registry" != "null" ]; then
