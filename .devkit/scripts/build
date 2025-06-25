@@ -27,14 +27,12 @@ fi
 log "Built container: $IMAGE_NAME"
 log "Image ID: $IMAGE_ID"
 
-# Create JSON output with artifactId
+# Create JSON output with component
 RESULT=$(jq -n \
     --arg component "performer" \
-    --arg artifactId "$IMAGE_ID" \
     '{
         artifacts: {
-            component: $component,
-            artifactId: $artifactId
+            component: $component
         }
     }')
 
