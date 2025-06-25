@@ -87,7 +87,7 @@ if [[ ! -d "${originalProjectDir}/.git/modules/.devkit/contracts" ]]; then
 
     migratedContracts="1"
 
-    cd $originalProjectDir/.devkit/contracts && git checkout $git_ref && cd -
+    cd $originalProjectDir/.devkit/contracts && git fetch origin $git_ref && git checkout $git_ref && cd -
 
     # cleanup
     rm -rf $originalProjectDir/.oldcontracts || true
