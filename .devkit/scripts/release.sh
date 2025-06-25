@@ -1,11 +1,60 @@
 #!/usr/bin/env bash
 set -e
 
+# Parse command line arguments for version support
+CONFIG_DIR=""
+VERSION_OVERRIDE=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --config-dir)
+      CONFIG_DIR="$2"
+      shift 2
+      ;;
+    --version)
+      VERSION_OVERRIDE="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option $1"
+      exit 1
+      ;;
+  esac
+done
+
+# Function to get cached version
+get_cached_version() {
+  if [ -n "$CONFIG_DIR" ]; then
+    local project_name=$(basename "$(pwd)")
+    local version_cache_file="$CONFIG_DIR/versions/${project_name}_version"
+    if [ -f "$version_cache_file" ]; then
+      cat "$version_cache_file"
+    else
+      echo ""
+    fi
+  else
+    echo ""
+  fi
+}
+
 # Build params
 buildParams=$(cat ./.hourglass/build.yaml)
 registry=$(echo "$buildParams" | yq -r '.container.registry')
 image=$(echo "$buildParams" | yq -r '.container.image')
-tag=$(echo "$buildParams" | yq -r '.container.version')
+config_tag=$(echo "$buildParams" | yq -r '.container.version')
+
+# Determine final version/tag
+if [ -n "$VERSION_OVERRIDE" ]; then
+  tag="$VERSION_OVERRIDE"
+else
+  # Try to use cached version if available
+  cached_version=$(get_cached_version)
+  if [ -n "$cached_version" ]; then
+    tag="$cached_version"
+  else
+    tag="$config_tag"
+  fi
+fi
 
 # Construct original and temporary image names
 if [ -n "$registry" ] && [ "$registry" != "null" ]; then
