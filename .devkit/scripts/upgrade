@@ -59,7 +59,7 @@ migratedContracts=""
 # anything in .devkit/contracts at all.
 # -----------------------------------------------------------------------------
 # first check to see if the .devkit/contracts directory is already a submodule
-if [[ ! -d "${originalProjectDir}/.git/modules/.devkit/contracts" ]]; then
+if ! git -C "$originalProjectDir" ls-tree -r HEAD | grep -q "160000.*\.devkit/contracts$"; then
     log "Contracts directory is not a submodule, making it one"
 
     cd $originalProjectDir
@@ -87,21 +87,26 @@ if [[ ! -d "${originalProjectDir}/.git/modules/.devkit/contracts" ]]; then
 
     migratedContracts="1"
 
-    cd $originalProjectDir/.devkit/contracts && git checkout $git_ref && cd -
-
     # cleanup
     rm -rf $originalProjectDir/.oldcontracts || true
 fi
 
 log "Updating contracts submodule to desired commit..."
 cd $originalProjectDir/.devkit/contracts
-git fetch
+git fetch origin $git_ref
 git checkout $git_ref
 
 cd $originalProjectDir
 
 log "Updating submodules..."
-git submodule update --init --recursive
+
+# update submodules inside .devkit/contracts
+git -C .devkit/contracts submodule update --init --recursive
+
+# update all submodules at root except for .devkit/contracts
+for sub in $(git config --file .gitmodules --get-regexp path | awk '{print $2}' | grep -v '.devkit/contracts'); do
+    git submodule update --init "$sub"
+done
 
 log "Upgrade complete!"
 
