@@ -60,20 +60,25 @@ else
   BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" >&2
 fi
 
-# Get the build info
-if [ -f "/tmp/build_info" ]; then
-  source /tmp/build_info
-else
-  echo "Error: Build info not found"
+# Extract the JSON from the build output (it should be the last line)
+BUILD_JSON=$(echo "$BUILD_OUTPUT" | tail -n 1)
+
+# Parse the JSON to get image_id and image name
+IMAGE_ID=$(echo "$BUILD_JSON" | jq -r '.image_id')
+BUILT_IMAGE_NAME=$(echo "$BUILD_JSON" | jq -r '.image')
+
+if [ -z "$IMAGE_ID" ] || [ "$IMAGE_ID" = "null" ]; then
+  echo "Error: Failed to get image ID from build output" >&2
+  echo "Build output: $BUILD_OUTPUT" >&2
   exit 1
 fi
 
-log "Built container: $IMAGE_NAME"
+log "Built container: $BUILT_IMAGE_NAME"
 log "Image ID: $IMAGE_ID"
 
 # Create JSON output with component
 RESULT=$(jq -n \
-    --arg component "$IMAGE_NAME" \
+    --arg component "$BUILT_IMAGE_NAME" \
     --arg image_id "$IMAGE_ID" \
     '{
         artifact: {
