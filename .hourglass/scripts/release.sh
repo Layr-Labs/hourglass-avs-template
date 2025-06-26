@@ -169,11 +169,6 @@ operator_set_mapping_json=$(jq -n \
 # Output the operator set mapping to stdout
 echo "$operator_set_mapping_json"
 
-# Export build results to file
-echo "IMAGE_CHANGED=$IMAGE_CHANGED" > /tmp/release_result
-echo "ORIGINAL_IMAGE_ID=$ORIGINAL_IMAGE_ID" >> /tmp/release_result
-echo "NEW_IMAGE_ID=$NEW_IMAGE_ID" >> /tmp/release_result 
-
 # Return the boolean result (0 = no change, 1 = changed)
 if [ "$IMAGE_CHANGED" = "true" ]; then
   exit 1
