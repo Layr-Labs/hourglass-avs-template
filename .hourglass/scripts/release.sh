@@ -3,11 +3,16 @@ set -e
 
 # Parse command line arguments for version
 VERSION=""
+REGISTRY_URL=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     --version)
       VERSION="$2"
+      shift 2
+      ;;
+    --registry-url)
+      REGISTRY_URL="$2"
       shift 2
       ;;
     *)
@@ -52,10 +57,8 @@ echo "  OperatorSet $aggregator_operator_set_id (aggregator): [$aggregator_json]
 echo "  OperatorSet $executor_operator_set_id (executor): [$executor_json]" >&2
 
 
-
 # Build params
 buildParams=$(cat ./.hourglass/build.yaml)
-registry=$(echo "$buildParams" | yq -r '.container.registry')
 image=$(echo "$buildParams" | yq -r '.container.image')
 
 # Use provided version
@@ -63,11 +66,11 @@ tag="$VERSION"
 
 # Construct original and temporary image names
 if [ -n "$registry" ] && [ "$registry" != "null" ]; then
-  originalImage="${registry}/${image}:${tag}"
-  tempImage="${registry}/${image}:${tag}-release"
+  originalImage="${registry}/${image}"
+  tempImage="${registry}/${image}-release"
 else
-  originalImage="${image}:${tag}"
-  tempImage="${image}:${tag}-release"
+  originalImage="${image}"
+  tempImage="${image}-release"
 fi
 
 echo "Rebuilding container for release comparison..." >&2
@@ -119,7 +122,13 @@ fi
 # Build and push multi-arch performer image
 project_name=$(basename "$(pwd)")
 performer_image_name="${project_name}-performer-op-set-1"
-performer_full_image="${registry}/${performer_image_name}:${tag}"
+
+# Construct performer image name based on registry presence
+if [ -n "$REGISTRY_URL" ]; then
+  performer_full_image="${REGISTRY_URL}/${performer_image_name}:${tag}"
+else
+  performer_full_image="${performer_image_name}:${tag}"
+fi
 
 echo "Building multi-architecture performer image: ${performer_full_image}" >&2
 echo "Platforms: linux/amd64,linux/arm64" >&2
@@ -143,7 +152,7 @@ echo "📋 Performer Image Index Digest: $performer_digest" >&2
 # Create performer JSON
 performer_json=$(jq -n \
   --arg digest "$performer_digest" \
-  --arg registry_url "$registry" \
+  --arg registry_url "$REGISTRY_URL" \
   '{digest: $digest, registry_url: $registry_url}')
 
 # Create the final operator set mapping JSON output with performer
@@ -151,23 +160,19 @@ operator_set_mapping_json=$(jq -n \
   --arg agg_id "$aggregator_operator_set_id" \
   --argjson agg_data "[$aggregator_json]" \
   --arg exec_id "$executor_operator_set_id" \
-  --argjson exec_data "[$executor_json]" \
-  --arg perf_id "1" \
-  --argjson perf_data "[$performer_json]" \
+  --argjson exec_data "[$executor_json, $performer_json]" \
   '{
     ($agg_id): $agg_data,
-    ($exec_id): $exec_data,
-    ($perf_id): $perf_data
+    ($exec_id): $exec_data
   }')
 
-# Export the result for the calling script
+# Output the operator set mapping to stdout
+echo "$operator_set_mapping_json"
+
+# Export build results to file
 echo "IMAGE_CHANGED=$IMAGE_CHANGED" > /tmp/release_result
 echo "ORIGINAL_IMAGE_ID=$ORIGINAL_IMAGE_ID" >> /tmp/release_result
-echo "NEW_IMAGE_ID=$NEW_IMAGE_ID" >> /tmp/release_result
-echo "OPERATOR_SET_MAPPING=$operator_set_mapping_json" >> /tmp/release_result
-
-# Output the operator set mapping as JSON to stdout (ONLY this should go to stdout)
-echo "$operator_set_mapping_json"
+echo "NEW_IMAGE_ID=$NEW_IMAGE_ID" >> /tmp/release_result 
 
 # Return the boolean result (0 = no change, 1 = changed)
 if [ "$IMAGE_CHANGED" = "true" ]; then
