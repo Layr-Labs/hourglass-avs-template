@@ -59,7 +59,7 @@ migratedContracts=""
 # anything in .devkit/contracts at all.
 # -----------------------------------------------------------------------------
 # first check to see if the .devkit/contracts directory is already a submodule
-if [[ ! -d "${originalProjectDir}/.git/modules/.devkit/contracts" ]]; then
+if ! git -C "$originalProjectDir" ls-tree -r HEAD | grep -q "160000.*\.devkit/contracts$"; then
     log "Contracts directory is not a submodule, making it one"
 
     cd $originalProjectDir
