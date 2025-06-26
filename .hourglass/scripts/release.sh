@@ -107,15 +107,57 @@ fi
 # Clean up temporary image
 docker rmi "$tempImage" >/dev/null 2>&1 || true
 
-# Create the final operator set mapping JSON output
+# Setup buildx for multi-platform builds
+echo "Setting up multi-platform builder..." >&2
+if ! docker buildx inspect multiarch >/dev/null 2>&1; then
+  docker buildx create --name multiarch --driver docker-container --use >&2
+  docker buildx inspect --bootstrap >&2
+else
+  docker buildx use multiarch >&2
+fi
+
+# Build and push multi-arch performer image
+project_name=$(basename "$(pwd)")
+performer_image_name="${project_name}-performer-op-set-1"
+performer_full_image="${registry}/${performer_image_name}:${tag}"
+
+echo "Building multi-architecture performer image: ${performer_full_image}" >&2
+echo "Platforms: linux/amd64,linux/arm64" >&2
+
+# Build and push multi-arch
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --tag "$performer_full_image" \
+  --push \
+  . >&2
+
+# Get the Image Index digest
+echo "Getting Image Index digest..." >&2
+performer_digest=$(docker buildx imagetools inspect "$performer_full_image" | grep "Digest:" | head -n 1 | awk '{print $2}')
+if [ -z "$performer_digest" ]; then
+  echo "Error: Could not get performer image digest" >&2
+  exit 1
+fi
+echo "📋 Performer Image Index Digest: $performer_digest" >&2
+
+# Create performer JSON
+performer_json=$(jq -n \
+  --arg digest "$performer_digest" \
+  --arg registry_url "$registry" \
+  '{digest: $digest, registry_url: $registry_url}')
+
+# Create the final operator set mapping JSON output with performer
 operator_set_mapping_json=$(jq -n \
   --arg agg_id "$aggregator_operator_set_id" \
   --argjson agg_data "[$aggregator_json]" \
   --arg exec_id "$executor_operator_set_id" \
   --argjson exec_data "[$executor_json]" \
+  --arg perf_id "1" \
+  --argjson perf_data "[$performer_json]" \
   '{
     ($agg_id): $agg_data,
-    ($exec_id): $exec_data
+    ($exec_id): $exec_data,
+    ($perf_id): $perf_data
   }')
 
 # Export the result for the calling script
