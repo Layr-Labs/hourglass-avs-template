@@ -3,17 +3,12 @@ set -e
 
 # Parse command line arguments
 TAG=""
-REGISTRY=""
 IMAGE=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
     --tag)
       TAG="$2"
-      shift 2
-      ;;
-    --registry)
-      REGISTRY="$2"
       shift 2
       ;;
     --image)
@@ -33,16 +28,11 @@ if [ -z "$IMAGE" ]; then
   exit 1
 fi
 
-# Construct image name
-if [ -n "$REGISTRY" ] && [ "$REGISTRY" != "null" ]; then
-  fullImage="${REGISTRY}/${IMAGE}"
+# Construct image name with tag if provided
+if [ -n "$TAG" ]; then
+  fullImage="${IMAGE}:${TAG}"
 else
   fullImage="${IMAGE}"
-fi
-
-# Add tag if provided
-if [ -n "$TAG" ]; then
-  fullImage="${fullImage}:${TAG}"
 fi
 
 echo "Building container: $fullImage" >&2
@@ -55,7 +45,6 @@ IMAGE_ID=$(docker images --format "table {{.ID}}" --no-trunc "$fullImage" | tail
 
 echo "Built container: $fullImage" >&2
 echo "📋 Image ID: $IMAGE_ID" >&2
-
 
 # Export build info
 echo "IMAGE_NAME=$fullImage" > /tmp/build_info

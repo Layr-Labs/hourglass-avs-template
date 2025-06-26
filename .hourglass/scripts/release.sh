@@ -5,6 +5,7 @@ set -e
 VERSION=""
 REGISTRY_URL=""
 IMAGE=""
+ORIGINAL_IMAGE_ID=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -18,6 +19,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --image)
       IMAGE="$2"
+      shift 2
+      ;;
+    --original-image-id)
+      ORIGINAL_IMAGE_ID="$2"
       shift 2
       ;;
     *)
@@ -37,6 +42,15 @@ if [ -z "$IMAGE" ]; then
   echo "Error: --image is required" >&2
   exit 1
 fi
+
+if [ -z "$ORIGINAL_IMAGE_ID" ]; then
+  echo "Error: --original-image-id is required" >&2
+  exit 1
+fi
+
+
+# suffix the image  with -performer
+IMAGE="${IMAGE}-performer"
 
 # Read operator set mappings from devnet.yaml
 echo "Reading operator set mappings from devnet.yaml..." >&2
@@ -66,21 +80,10 @@ echo "Operator Set Mapping:" >&2
 echo "  OperatorSet $aggregator_operator_set_id (aggregator): [$aggregator_json]" >&2
 echo "  OperatorSet $executor_operator_set_id (executor): [$executor_json]" >&2
 
-# Build original image using buildContainer.sh
-echo "Building original image..." >&2
-build_cmd=".hourglass/scripts/buildContainer.sh --image $IMAGE" # We are not giving registry url intentionally. Since its not pushing to registry , we just want to compare
-original_build=$(bash -c "$build_cmd")
-ORIGINAL_IMAGE_ID=$(echo "$original_build" | jq -r '.image_id')
-originalImage=$(echo "$original_build" | jq -r '.image')
-
-if [ -z "$ORIGINAL_IMAGE_ID" ]; then
-  echo "Error: Original image build failed" >&2
-  exit 1
-fi
-
 # Build temporary image for comparison
 echo "Building temporary image for comparison..." >&2
-temp_build=$(bash -c "$build_cmd --tag release-temp")
+build_cmd=".hourglass/scripts/buildContainer.sh --image $IMAGE" # We are not giving registry url intentionally. Since its not pushing to registry , we just want to compare
+temp_build=$(bash -c "$build_cmd --tag ${VERSION}-release")
 NEW_IMAGE_ID=$(echo "$temp_build" | jq -r '.image_id')
 tempImage=$(echo "$temp_build" | jq -r '.image')
 

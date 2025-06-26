@@ -11,6 +11,7 @@ ensureDocker
 
 # Parse command line arguments
 IMAGE_NAME=""
+VERSION=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -22,6 +23,14 @@ while [[ $# -gt 0 ]]; do
       IMAGE_NAME="${1#*=}"
       shift 1
       ;;
+    --tag)
+      VERSION="$2"
+      shift 2
+      ;;
+    --tag=*)
+      VERSION="${1#*=}"
+      shift 1
+      ;;
     *)
       echo "Unknown option $1" >&2
       exit 1
@@ -29,11 +38,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Use provided image name or fallback to default
+# if image name is not provided , return error
 if [ -z "$IMAGE_NAME" ]; then
-  project_name=$(basename "$(pwd)")
-  IMAGE_NAME="${project_name}-performer-op-set-1"
+  echo "Error: Image name is required in .devkit/scripts/build" >&2
+  exit 1
 fi
+
+# suffix the image name with -performer
+IMAGE_NAME="${IMAGE_NAME}-performer"
 
 log "Building contracts..."
 (cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol && cd -) >&2
@@ -41,8 +53,12 @@ log "Building contracts..."
 # Build the contracts and dependencies
 log "Building AVS performer..."
 
-# Build the container
-BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" >&2
+# Build the container with tag if provided
+if [ -n "$VERSION" ]; then
+  BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" --tag "$VERSION" >&2
+else
+  BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" >&2
+fi
 
 # Get the build info
 if [ -f "/tmp/build_info" ]; then
