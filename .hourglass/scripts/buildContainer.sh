@@ -52,6 +52,6 @@ echo "IMAGE_ID=$IMAGE_ID" >> /tmp/build_info
 
 # Output build info as JSON to stdout
 jq -n \
-  --arg image "$fullImage" \
+  --arg image "$IMAGE" \
   --arg image_id "$IMAGE_ID" \
   '{image: $image, image_id: $image_id}'
