@@ -53,11 +53,11 @@ log "Building contracts..."
 # Build the contracts and dependencies
 log "Building AVS performer..."
 
-# Build the container with tag if provided
+# Build the container and capture the JSON output
 if [ -n "$VERSION" ]; then
-  BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" --tag "$VERSION" >&2
+  BUILD_OUTPUT=$(BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" --tag "$VERSION" 2>&1)
 else
-  BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" >&2
+  BUILD_OUTPUT=$(BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" 2>&1)
 fi
 
 # Extract the JSON from the build output (it should be the last line)
