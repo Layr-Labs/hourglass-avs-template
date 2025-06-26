@@ -49,9 +49,6 @@ if [ -z "$ORIGINAL_IMAGE_ID" ]; then
 fi
 
 
-# suffix the image  with -performer
-IMAGE="${IMAGE}-performer"
-
 # Read operator set mappings from devnet.yaml
 echo "Reading operator set mappings from devnet.yaml..." >&2
 
