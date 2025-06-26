@@ -113,9 +113,9 @@ fi
 
 # Construct performer image name based on registry presence
 if [ -n "$REGISTRY_URL" ]; then
-  performer_full_image="${REGISTRY_URL}/${IMAGE}:${VERSION}"
+  performer_full_image="${REGISTRY_URL}/${IMAGE}-${VERSION}"
 else
-  performer_full_image="${IMAGE}:${VERSION}"
+  performer_full_image="${IMAGE}-${VERSION}"
 fi
 
 echo "Building multi-architecture performer image: ${performer_full_image}" >&2
