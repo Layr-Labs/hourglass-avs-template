@@ -9,18 +9,40 @@ ensureMake
 ensureForge
 ensureDocker
 
+# Parse command line arguments
+IMAGE_NAME=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --image)
+      IMAGE_NAME="$2"
+      shift 2
+      ;;
+    --image=*)
+      IMAGE_NAME="${1#*=}"
+      shift 1
+      ;;
+    *)
+      echo "Unknown option $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# Use provided image name or fallback to default
+if [ -z "$IMAGE_NAME" ]; then
+  project_name=$(basename "$(pwd)")
+  IMAGE_NAME="${project_name}-performer-op-set-1"
+fi
+
 log "Building contracts..."
 (cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol && cd -) >&2
 
 # Build the contracts and dependencies
 log "Building AVS performer..."
 
-# Get project name from the current directory
-project_name=$(basename "$(pwd)")
-image_name="${project_name}-performer-op-set-1"
-
 # Build the container
-BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$image_name" >&2
+BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" >&2
 
 # Get the build info
 if [ -f "/tmp/build_info" ]; then
