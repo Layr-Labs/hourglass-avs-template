@@ -99,7 +99,11 @@ git checkout $git_ref
 cd $originalProjectDir
 
 log "Updating submodules..."
-# update all submodules except for .devkit/contracts
+
+# update submodules inside .devkit/contracts
+git -C .devkit/contracts submodule update --init --recursive
+
+# update all submodules at root except for .devkit/contracts
 for sub in $(git config --file .gitmodules --get-regexp path | awk '{print $2}' | grep -v '.devkit/contracts'); do
     git submodule update --init "$sub"
 done
