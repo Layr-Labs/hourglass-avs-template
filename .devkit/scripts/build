@@ -60,8 +60,15 @@ else
   BUILD_OUTPUT=$(BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" 2>&1)
 fi
 
-# Extract the JSON from the build output (it should be the last line)
-BUILD_JSON=$(echo "$BUILD_OUTPUT" | tail -n 1)
+# Debug: Show the captured output
+echo "DEBUG: Full build output:" >&2
+echo "$BUILD_OUTPUT" >&2
+
+# Extract the JSON from the build output (look for lines starting with { and ending with })
+BUILD_JSON=$(echo "$BUILD_OUTPUT" | awk '/^{/,/^}/' | tr -d '\n')
+
+# Debug: Show the extracted JSON
+echo "DEBUG: Extracted JSON: '$BUILD_JSON'" >&2
 
 # Parse the JSON to get image_id and image name
 IMAGE_ID=$(echo "$BUILD_JSON" | jq -r '.image_id')
