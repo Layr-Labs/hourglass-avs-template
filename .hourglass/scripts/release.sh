@@ -165,10 +165,3 @@ operator_set_mapping_json=$(jq -n \
 
 # Output the operator set mapping to stdout
 echo "$operator_set_mapping_json"
-
-# Return the boolean result (0 = no change, 1 = changed)
-if [ "$IMAGE_CHANGED" = "true" ]; then
-  exit 1
-else
-  exit 0
-fi 
