@@ -30,7 +30,7 @@ fi
 
 # Construct image name with tag if provided
 if [ -n "$VERSION" ]; then
-  fullImage="${IMAGE}-${TAG}"
+  fullImage="${IMAGE}-${VERSION}"
 else
   fullImage="${IMAGE}"
 fi
