@@ -144,7 +144,7 @@ if [ -z "$performer_digest" ]; then
   echo "Error: Could not get performer image digest" >&2
   exit 1
 fi
-echo "📋 Performer Image Index Digest: $performer_digest" >&2
+echo "Performer Image Index Digest: $performer_digest" >&2
 
 # Create performer JSON
 performer_json=$(jq -n \
