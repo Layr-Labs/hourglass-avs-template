@@ -14,7 +14,13 @@ log "Building contracts..."
 
 # Build the contracts and dependencies
 log "Building AVS performer..."
-BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
+
+# Get project name from the current directory
+project_name=$(basename "$(pwd)")
+image_name="${project_name}-performer-op-set-1"
+
+# Build the container
+BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$image_name" >&2
 
 # Get the build info
 if [ -f "/tmp/build_info" ]; then
