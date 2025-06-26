@@ -47,7 +47,7 @@ echo "Built container: $fullImage" >&2
 echo "Image ID: $IMAGE_ID" >&2
 
 # Export build info
-echo "IMAGE_NAME=$fullImage" > /tmp/build_info
+echo "IMAGE_NAME=$IMAGE" > /tmp/build_info
 echo "IMAGE_ID=$IMAGE_ID" >> /tmp/build_info
 
 # Output build info as JSON to stdout
