@@ -58,8 +58,10 @@ log "Image ID: $IMAGE_ID"
 # Create JSON output with component
 RESULT=$(jq -n \
     --arg component "performer" \
+    --arg image_id "$IMAGE_ID" \
     '{
         artifact: {
+            artifactId: $image_id,
             component: $component
         }
     }')
