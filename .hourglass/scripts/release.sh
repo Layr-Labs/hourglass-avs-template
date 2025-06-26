@@ -99,6 +99,15 @@ else
   IMAGE_CHANGED="true"
 fi
 
+# if image changed , return 1 and inform the user they need to  build again before performing a release.
+if [ "$IMAGE_CHANGED" = "true" ]; then
+  echo "Image changed - rebuild detected" >&2
+  echo "Original: $ORIGINAL_IMAGE_ID" >&2
+  echo "New:      $NEW_IMAGE_ID" >&2
+  echo "Please run build again before performing a release." >&2
+  exit 1
+fi
+
 # Clean up temporary image
 docker rmi "$tempImage" >/dev/null 2>&1 || true
 
