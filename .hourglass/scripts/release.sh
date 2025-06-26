@@ -4,6 +4,7 @@ set -e
 # Parse command line arguments for version
 VERSION=""
 REGISTRY_URL=""
+IMAGE=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -15,6 +16,10 @@ while [[ $# -gt 0 ]]; do
       REGISTRY_URL="$2"
       shift 2
       ;;
+    --image)
+      IMAGE="$2"
+      shift 2
+      ;;
     *)
       echo "Unknown option $1" >&2
       exit 1
@@ -22,9 +27,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Ensure version is provided
+# Ensure required arguments are provided
 if [ -z "$VERSION" ]; then
   echo "Error: --version is required" >&2
+  exit 1
+fi
+
+if [ -z "$IMAGE" ]; then
+  echo "Error: --image is required" >&2
   exit 1
 fi
 
@@ -56,43 +66,25 @@ echo "Operator Set Mapping:" >&2
 echo "  OperatorSet $aggregator_operator_set_id (aggregator): [$aggregator_json]" >&2
 echo "  OperatorSet $executor_operator_set_id (executor): [$executor_json]" >&2
 
-
-# Build params
-buildParams=$(cat ./.hourglass/build.yaml)
-image=$(echo "$buildParams" | yq -r '.container.image')
-
-# Use provided version
-tag="$VERSION"
-
-# Construct original and temporary image names
-if [ -n "$registry" ] && [ "$registry" != "null" ]; then
-  originalImage="${registry}/${image}"
-  tempImage="${registry}/${image}-release"
-else
-  originalImage="${image}"
-  tempImage="${image}-release"
-fi
-
-echo "Rebuilding container for release comparison..." >&2
-echo "Original image: $originalImage" >&2
-echo "Temporary image: $tempImage" >&2
-
-# Get the original image ID (from the build)
-ORIGINAL_IMAGE_ID=$(docker images --format "table {{.ID}}" --no-trunc "$originalImage" | tail -1)
+# Build original image using buildContainer.sh
+echo "Building original image..." >&2
+build_cmd=".hourglass/scripts/buildContainer.sh --image $IMAGE" # We are not giving registry url intentionally. Since its not pushing to registry , we just want to compare
+original_build=$(bash -c "$build_cmd")
+ORIGINAL_IMAGE_ID=$(echo "$original_build" | jq -r '.image_id')
+originalImage=$(echo "$original_build" | jq -r '.image')
 
 if [ -z "$ORIGINAL_IMAGE_ID" ]; then
-  echo "Error: Original image $originalImage not found. Run 'devkit avs build' first." >&2
+  echo "Error: Original image build failed" >&2
   exit 1
 fi
 
+# Build temporary image for comparison
+echo "Building temporary image for comparison..." >&2
+temp_build=$(bash -c "$build_cmd --tag release-temp")
+NEW_IMAGE_ID=$(echo "$temp_build" | jq -r '.image_id')
+tempImage=$(echo "$temp_build" | jq -r '.image')
+
 echo "Original Image ID: $ORIGINAL_IMAGE_ID" >&2
-
-# Build with temporary tag
-docker build -t "$tempImage" . >&2
-
-# Get the new image ID
-NEW_IMAGE_ID=$(docker images --format "table {{.ID}}" --no-trunc "$tempImage" | tail -1)
-
 echo "New Image ID: $NEW_IMAGE_ID" >&2
 
 # Compare image IDs and set result
@@ -125,9 +117,9 @@ performer_image_name="${project_name}-performer-op-set-1"
 
 # Construct performer image name based on registry presence
 if [ -n "$REGISTRY_URL" ]; then
-  performer_full_image="${REGISTRY_URL}/${performer_image_name}:${tag}"
+  performer_full_image="${REGISTRY_URL}/${performer_image_name}:${VERSION}"
 else
-  performer_full_image="${performer_image_name}:${tag}"
+  performer_full_image="${performer_image_name}:${VERSION}"
 fi
 
 echo "Building multi-architecture performer image: ${performer_full_image}" >&2

@@ -1,29 +1,63 @@
 #!/usr/bin/env bash
 set -e
 
-# Build params
-buildParams=$(cat ./.hourglass/build.yaml)
-registry=$(echo "$buildParams" | yq -r '.container.registry')
-image=$(echo "$buildParams" | yq -r '.container.image')
+# Parse command line arguments
+TAG=""
+REGISTRY=""
+IMAGE=""
 
-# Construct image name
-if [ -n "$registry" ] && [ "$registry" != "null" ]; then
-  fullImage="${registry}/${image}"
-else
-  fullImage="${image}"
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --tag)
+      TAG="$2"
+      shift 2
+      ;;
+    --registry)
+      REGISTRY="$2"
+      shift 2
+      ;;
+    --image)
+      IMAGE="$2"
+      shift 2
+      ;;
+    *)
+      echo "Unknown option $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# Ensure required arguments are provided
+if [ -z "$IMAGE" ]; then
+  echo "Error: --image is required" >&2
+  exit 1
 fi
 
-echo "Building container: $fullImage"
+# Construct image name
+if [ -n "$REGISTRY" ] && [ "$REGISTRY" != "null" ]; then
+  fullImage="${REGISTRY}/${IMAGE}"
+else
+  fullImage="${IMAGE}"
+fi
+
+# Add tag if provided
+if [ -n "$TAG" ]; then
+  fullImage="${fullImage}:${TAG}"
+fi
+
+echo "Building container: $fullImage" >&2
 
 # Simple docker build 
-docker build -t "$fullImage" .
+docker build -t "$fullImage" . >&2
 
 # Get the image ID
 IMAGE_ID=$(docker images --format "table {{.ID}}" --no-trunc "$fullImage" | tail -1)
 
-echo "Built container: $fullImage"
-echo "📋 Image ID: $IMAGE_ID"
+echo "Built container: $fullImage" >&2
+echo "📋 Image ID: $IMAGE_ID" >&2
 
-# Export build info
-echo "IMAGE_NAME=$fullImage" > /tmp/build_info
-echo "IMAGE_ID=$IMAGE_ID" >> /tmp/build_info
+# Output build info as JSON to stdout
+jq -n \
+  --arg image "$fullImage" \
+  --arg image_id "$IMAGE_ID" \
+  '{image: $image, image_id: $image_id}'
