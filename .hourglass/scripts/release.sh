@@ -121,8 +121,8 @@ else
 fi
 
 # Construct performer image name based on registry presence
-if [ -n "$registry" ]; then
-  performer_full_image="${registry}/${IMAGE}:${VERSION}"
+if [ -n "$REGISTRY" ]; then
+  performer_full_image="${REGISTRY}/${IMAGE}:${VERSION}"
 else
   performer_full_image="${IMAGE}:${VERSION}"
 fi
