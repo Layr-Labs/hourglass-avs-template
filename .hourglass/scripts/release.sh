@@ -3,7 +3,7 @@ set -e
 
 # Parse command line arguments for version
 VERSION=""
-REGISTRY_URL=""
+REGISTRY=""
 IMAGE=""
 ORIGINAL_IMAGE_ID=""
 
@@ -13,8 +13,8 @@ while [[ $# -gt 0 ]]; do
       VERSION="$2"
       shift 2
       ;;
-    --registry-url)
-      REGISTRY_URL="$2"
+    --registry)
+      REGISTRY="$2"
       shift 2
       ;;
     --image)
@@ -55,23 +55,23 @@ echo "Reading operator set mappings from devnet.yaml..." >&2
 # Extract aggregator info
 aggregator_operator_set_id=$(yq -r '.aggregator.operatorSetId' .hourglass/context/devnet.yaml)
 aggregator_digest=$(yq -r '.aggregator.digest' .hourglass/context/devnet.yaml)
-aggregator_registry_url=$(yq -r '.aggregator.registry_url' .hourglass/context/devnet.yaml)
+aggregator_registry=$(yq -r '.aggregator.registry' .hourglass/context/devnet.yaml)
 
 # Extract executor info
 executor_operator_set_id=$(yq -r '.executor.operatorSetId' .hourglass/context/devnet.yaml)
 executor_digest=$(yq -r '.executor.digest' .hourglass/context/devnet.yaml)
-executor_registry_url=$(yq -r '.executor.registry_url' .hourglass/context/devnet.yaml)
+executor_registry=$(yq -r '.executor.registry' .hourglass/context/devnet.yaml)
 
 # Create JSON structs for operator sets
 aggregator_json=$(jq -n \
   --arg digest "$aggregator_digest" \
-  --arg registry_url "$aggregator_registry_url" \
-  '{digest: $digest, registry_url: $registry_url}')
+  --arg registry "$aggregator_registry" \
+  '{digest: $digest, registry: $registry}')
 
 executor_json=$(jq -n \
   --arg digest "$executor_digest" \
-  --arg registry_url "$executor_registry_url" \
-  '{digest: $digest, registry_url: $registry_url}')
+  --arg registry "$executor_registry" \
+  '{digest: $digest, registry: $registry}')
 
 echo "Operator Set Mapping:" >&2
 echo "  OperatorSet $aggregator_operator_set_id (aggregator): [$aggregator_json]" >&2
@@ -121,8 +121,8 @@ else
 fi
 
 # Construct performer image name based on registry presence
-if [ -n "$REGISTRY_URL" ]; then
-  performer_full_image="${REGISTRY_URL}/${IMAGE}:${VERSION}"
+if [ -n "$registry" ]; then
+  performer_full_image="${registry}/${IMAGE}:${VERSION}"
 else
   performer_full_image="${IMAGE}:${VERSION}"
 fi
@@ -149,8 +149,8 @@ echo "Performer Image Index Digest: $performer_digest" >&2
 # Create performer JSON
 performer_json=$(jq -n \
   --arg digest "$performer_digest" \
-  --arg registry_url "$REGISTRY_URL" \
-  '{digest: $digest, registry_url: $registry_url}')
+  --arg registry "$registry" \
+  '{digest: $digest, registry: $registry}')
 
 # Create the final operator set mapping JSON output with performer
 operator_set_mapping_json=$(jq -n \
