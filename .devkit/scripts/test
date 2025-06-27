@@ -1,12 +1,8 @@
-#!/bin/bash
-
-# Test script for hourglass-avs-template
-# This script is called by devkit-cli as a hook
+#!/usr/bin/env bash
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+# Check if required tools are available
+ensureMake
 
-# Call the hourglass test script
-"${PROJECT_ROOT}/.hourglass/scripts/test.sh"
+./.hourglass/scripts/test.sh
