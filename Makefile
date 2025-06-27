@@ -21,5 +21,10 @@ deps:
 build/container:
 	./.hourglass/scripts/buildContainer.sh
 
-test:
+test: test-go test-forge
+
+test-go::
 	go test ./... -v -p 1
+
+test-forge:
+	cd .devkit/contracts && forge test
