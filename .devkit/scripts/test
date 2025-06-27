@@ -2,6 +2,8 @@
 
 set -e
 
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
+
 # Check if required tools are available
 ensureMake
 
