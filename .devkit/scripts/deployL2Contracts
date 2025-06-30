@@ -118,6 +118,11 @@ if [ "$BN254_CERTIFICATE_VERIFIER_ADDRESS" == "null" ] || [ -z "$BN254_CERTIFICA
     exit 1
 fi
 
+if [ "$ECDSA_CERTIFICATE_VERIFIER_ADDRESS" == "null" ] || [ -z "$ECDSA_CERTIFICATE_VERIFIER_ADDRESS" ]; then
+    log "Error: Missing eigenlayer.l2.ecdsa_certificate_verifier in context"
+    exit 1
+fi
+
 # Check if the template-specific AVS environment YAML file exists
 ENVIRONMENT_YAML_FILE=".hourglass/context/${ENVIRONMENT}.yaml"
 if [ ! -f "$ENVIRONMENT_YAML_FILE" ]; then
