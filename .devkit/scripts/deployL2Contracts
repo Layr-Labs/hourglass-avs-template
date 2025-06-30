@@ -1,0 +1,219 @@
+#!/usr/bin/env bash
+set -e
+
+# source in helper functions
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
+
+projectDir=$(pwd)
+devkitContractsPath=".devkit/contracts"
+contractsBasePath="${projectDir}/${devkitContractsPath}"
+
+# check if contractsBasePath ends with .devkit/contracts
+if [[ "$contractsBasePath" != *".devkit/contracts" ]]; then
+    log "Error: contractsBasePath should end with .devkit/contracts, got ${contractsBasePath}"
+    exit 1
+fi
+
+# Function to get ABI path for a contract name (simple version)
+get_abi_path() {
+    local name="$1"
+    if [ "$name" == "taskMailbox" ]; then
+        echo "${contractsBasePath}/out/TaskMailbox.sol/TaskMailbox.json"
+    elif [ "$name" == "avsTaskHook" ]; then
+        echo "${contractsBasePath}/out/AVSTaskHook.sol/AVSTaskHook.json"
+    else
+        echo "${contractsBasePath}/out/$name.sol/$name.json"
+    fi
+}
+
+# Function to process deployment output file and add contracts to deployed_contracts array
+process_output_file() {
+    log "Processing output file $2 - '$1'"
+    local file_path="$1"
+    local file_desc="$2"
+    
+    if [ ! -f "$file_path" ]; then
+        log "Error: $file_desc output file $file_path not found"
+        exit 1
+    fi
+    
+    # Extract entries with properly formatted abi paths
+    while read -r entry; do
+        name=$(echo "$entry" | jq -r '.name')
+        address=$(echo "$entry" | jq -r '.address')
+        abi_path=$(get_abi_path "$name")
+
+        # Check if ABI file exists
+        if [ ! -f "$abi_path" ]; then
+            log "Warning: ABI file $abi_path does not exist for contract $name. Run 'devkit avs build' first."
+        fi
+
+        # convert path back to relative to the project. take abi_path and remove $projectDir
+        abi_path=$(echo "$abi_path" | sed "s|$projectDir/||")
+
+
+        contract_json=$(jq -n \
+            --arg name "$name" \
+            --arg address "$address" \
+            --arg abi "$abi_path" \
+            '{ name: $name, address: $address, abi: $abi }')
+        
+        deployed_contracts=$(echo "$deployed_contracts" | jq ". + [$contract_json]")
+    done < <(jq -c '.addresses | to_entries[] | {name: .key, address: .value}' "$file_path")
+}
+
+# Check if context parameter is provided
+if [ -z "$1" ]; then
+    log "Error: Missing context parameter"
+    log "Usage: ./deployL2Contracts '{\"version\":\"0.0.1\",\"context\":{...}}'"
+    exit 1
+fi
+
+# Parse the JSON context
+CONTEXT="$1"
+
+# Check for required tools
+ensureJq
+ensureYq
+ensureMake
+ensureForge
+
+# Extract required values from context
+ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
+L2_RPC_URL=$(echo "$CONTEXT" | jq -r '.context.chains.l2.rpc_url')
+PRIVATE_KEY_DEPLOYER=$(echo "$CONTEXT" | jq -r '.context.deployer_private_key')
+PRIVATE_KEY_AVS=$(echo "$CONTEXT" | jq -r '.context.avs.avs_private_key')
+AVS_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.avs.address')
+BN254_CERTIFICATE_VERIFIER_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l2.bn254_certificate_verifier')
+ECDSA_CERTIFICATE_VERIFIER_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l2.ecdsa_certificate_verifier')
+
+# Validate required fields exist in JSON
+if [ "$L2_RPC_URL" == "null" ] || [ -z "$L2_RPC_URL" ]; then
+    log "Error: Missing L2_RPC_URL in context"
+    exit 1
+fi
+
+if [ "$PRIVATE_KEY_DEPLOYER" == "null" ] || [ -z "$PRIVATE_KEY_DEPLOYER" ]; then
+    log "Error: Missing deployer_private_key in context"
+    exit 1
+fi
+
+if [ "$PRIVATE_KEY_AVS" == "null" ] || [ -z "$PRIVATE_KEY_AVS" ]; then
+    log "Error: Missing avs.avs_private_key in context"
+    exit 1
+fi
+
+if [ "$ENVIRONMENT" == "null" ] || [ -z "$ENVIRONMENT" ]; then
+    log "Error: Missing name (environment) in context"
+    exit 1
+fi
+
+if [ "$AVS_ADDRESS" == "null" ] || [ -z "$AVS_ADDRESS" ]; then
+    log "Error: Missing avs.address in context"
+    exit 1
+fi
+
+if [ "$BN254_CERTIFICATE_VERIFIER_ADDRESS" == "null" ] || [ -z "$BN254_CERTIFICATE_VERIFIER_ADDRESS" ]; then
+    log "Error: Missing eigenlayer.l2.bn254_certificate_verifier in context"
+    exit 1
+fi
+
+if [ "$ECDSA_CERTIFICATE_VERIFIER_ADDRESS" == "null" ] || [ -z "$ECDSA_CERTIFICATE_VERIFIER_ADDRESS" ]; then
+    log "Error: Missing eigenlayer.l2.ecdsa_certificate_verifier in context"
+    exit 1
+fi
+
+# Check if the template-specific AVS environment YAML file exists
+ENVIRONMENT_YAML_FILE=".hourglass/context/${ENVIRONMENT}.yaml"
+if [ ! -f "$ENVIRONMENT_YAML_FILE" ]; then
+    log "Error: AVS environment file ${ENVIRONMENT_YAML_FILE} does not exist"
+    exit 1
+fi
+
+# Read operator sets from the YAML
+EXECUTOR_OPERATOR_SET_ID=$(yq -r '.executor.operatorSetId' "$ENVIRONMENT_YAML_FILE")
+TASK_SLA=$(yq -r '.mailbox.taskSla' "$ENVIRONMENT_YAML_FILE")
+
+# Validate YAML values
+if [ "$EXECUTOR_OPERATOR_SET_ID" == "null" ]; then
+    log "Error: Missing executor.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
+    exit 1
+fi
+
+if [ "$TASK_SLA" == "null" ]; then
+    log "Error: Missing mailbox.taskSla in ${ENVIRONMENT_YAML_FILE}"
+    exit 1
+fi
+
+# Validate Ethereum addresses (basic check)
+validate_eth_address() {
+    local addr=$1
+    local name=$2
+    if [[ ! "$addr" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+        log "Error: $name must be a valid Ethereum address (0x followed by 40 hex characters)"
+        exit 1
+    fi
+}
+
+validate_eth_address "$AVS_ADDRESS" "AVS_ADDRESS"
+validate_eth_address "$BN254_CERTIFICATE_VERIFIER_ADDRESS" "BN254_CERTIFICATE_VERIFIER_ADDRESS"
+
+log "Starting L2 contract deployment using context for environment: $ENVIRONMENT"
+
+# Change to contracts directory
+cd $contractsBasePath
+
+# Step 1: Deploy TaskMailbox contract
+if [ "$ENVIRONMENT" == "devnet" ]; then
+    log "Deploying TaskMailbox contract (devnet only)..."
+    PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-task-mailbox RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" BN254_CERTIFICATE_VERIFIER="${BN254_CERTIFICATE_VERIFIER_ADDRESS}" ECDSA_CERTIFICATE_VERIFIER="${ECDSA_CERTIFICATE_VERIFIER_ADDRESS}" >&2
+else
+    log "Error: Only 'devnet' environment is currently supported for TaskMailbox deployment"
+    exit 1
+fi
+
+# Sleep for a second so that nonce can be pulled correctly
+sleep 1
+
+# Step 2: Deploy AVS L2 contracts
+log "Deploying AVS L2 contracts..."
+PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l2-contracts RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" >&2
+
+# Sleep for a second so that nonce can be pulled correctly
+sleep 1
+
+# Step 3: Set up AVS Task Mailbox configuration with BN254 curve type
+log "Setting up AVS Task Mailbox configuration..."
+PRIVATE_KEY_AVS="${PRIVATE_KEY_AVS}" make setup-avs-task-mailbox-config RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} TASK_SLA=${TASK_SLA} CURVE_TYPE=2 >&2
+
+# Sleep for a second so that nonce can be pulled correctly
+sleep 1
+
+# Step 4: Deploy custom contracts
+log "Deploying custom L2 contracts..."
+PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-custom-contracts-l2 RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" CONTEXT="${CONTEXT}" >&2
+
+log "L2 contract deployment completed successfully."
+
+# Process deployment output files
+OUTPUT_DIR="script/${ENVIRONMENT}/output"
+# Initialize an empty array
+deployed_contracts='[]'
+
+# Process all output files
+HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
+AVS_L2_FILE="${OUTPUT_DIR}/deploy_avs_l2_output.json"
+CUSTOM_CONTRACTS_L2_FILE="${OUTPUT_DIR}/deploy_custom_contracts_l2_output.json"
+
+# Process the core output file (TaskMailbox)
+process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
+# Process the AVS L2 output file
+process_output_file "$AVS_L2_FILE" "AVS L2"
+# Process the custom contracts L2 output file
+process_output_file "$CUSTOM_CONTRACTS_L2_FILE" "Custom Contracts L2"
+
+# Create the final JSON structure with deployed_contracts key
+RESULT=$(jq -n --argjson contracts "$deployed_contracts" '{ deployed_l2_contracts: $contracts }')
+
+# Print the combined JSON result - this is the ONLY stdout output
+echo "$RESULT" | jq -c .
