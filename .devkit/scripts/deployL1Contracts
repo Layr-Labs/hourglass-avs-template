@@ -163,6 +163,15 @@ PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_
 
 log "L1 contract deployment completed successfully."
 
+# Sleep for a second so that nonce can be pulled correctly
+sleep 1
+
+# Deploy custom L1 contracts
+log "Deploying custom L1 contracts..."
+PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-custom-contracts-l1 RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" CONTEXT="${CONTEXT}" >&2
+
+log "Custom L1 contract deployment completed successfully."
+
 # Process deployment output files
 OUTPUT_DIR="script/${ENVIRONMENT}/output"
 # Initialize an empty array
@@ -170,9 +179,12 @@ deployed_contracts='[]'
 
 # Process all output files
 AVS_L1_FILE="${OUTPUT_DIR}/deploy_avs_l1_output.json"
+CUSTOM_CONTRACTS_L1_FILE="${OUTPUT_DIR}/deploy_custom_contracts_l1_output.json"
 
 # Process the AVS L1 output file
 process_output_file "$AVS_L1_FILE" "AVS L1"
+# Process the custom contracts L1 output file
+process_output_file "$CUSTOM_CONTRACTS_L1_FILE" "Custom Contracts L1"
 
 # Create the final JSON structure with deployed_contracts key
 RESULT=$(jq -n --argjson contracts "$deployed_contracts" '{ deployed_l1_contracts: $contracts }')

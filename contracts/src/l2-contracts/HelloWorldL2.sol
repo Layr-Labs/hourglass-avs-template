@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-contract HelloWorld {
-    string private message = "Hello World";
+contract HelloWorldL2 {
+    string private message = "Hello World from L2";
 
     // Function to get the hello world message
     function getMessage() public view returns (string memory) {

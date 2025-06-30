@@ -12,9 +12,9 @@ import {ITaskMailbox} from "@hourglass-monorepo/src/interfaces/core/ITaskMailbox
 
 import {TaskAVSRegistrar} from "@project/l1-contracts/TaskAVSRegistrar.sol";
 import {AVSTaskHook} from "@project/l2-contracts/AVSTaskHook.sol";
-import {HelloWorld} from "@project/HelloWorld.sol"; // Import your custom contract
+import {HelloWorldL2} from "@project/l2-contracts/HelloWorldL2.sol"; // Import your L2 custom contract
 
-contract DeployMyContracts is Script {
+contract DeployMyL2Contracts is Script {
     using stdJson for string;
 
     struct Context {
@@ -41,11 +41,11 @@ contract DeployMyContracts is Script {
         vm.startBroadcast(context.deployerPrivateKey);
         console.log("Deployer address:", vm.addr(context.deployerPrivateKey));
 
-        //TODO: Implement custom contracts deployment
-        // CustomContract customContract = new CustomContract();
-        // console.log("CustomContract deployed to:", address(customContract));
-        HelloWorld helloWorld = new HelloWorld();
-        console.log("HelloWorld deployed to:", address(helloWorld));
+        //TODO: Implement custom L2 contracts deployment
+        // CustomContractL2 customContractL2 = new CustomContractL2();
+        // console.log("CustomContractL2 deployed to:", address(customContractL2));
+        HelloWorldL2 helloWorldL2 = new HelloWorldL2();
+        console.log("HelloWorldL2 deployed to:", address(helloWorldL2));
 
         vm.stopBroadcast();
 
@@ -58,9 +58,9 @@ contract DeployMyContracts is Script {
 
         //TODO: Write to output file
         Output[] memory outputs = new Output[](1);
-        // outputs[0] = Output({name: "CustomContract", address: address(customContract)});
+        // outputs[0] = Output({name: "CustomContractL2", contractAddress: address(customContractL2)});
         // _writeOutputToJson(environment, outputs);
-        outputs[0] = Output({name: "HelloWorld", contractAddress: address(helloWorld)});
+        outputs[0] = Output({name: "HelloWorldL2", contractAddress: address(helloWorldL2)});
         _writeOutputToJson(environment, outputs);
     }
 
@@ -139,7 +139,7 @@ contract DeployMyContracts is Script {
             finalJson = vm.serializeString(finalJson, "chainInfo", chainInfo);
 
             // Write to output file
-            string memory outputFile = string.concat("script/", environment, "/output/deploy_custom_contracts_output.json");
+            string memory outputFile = string.concat("script/", environment, "/output/deploy_custom_contracts_l2_output.json");
             vm.writeJson(finalJson, outputFile);
         }
     }
