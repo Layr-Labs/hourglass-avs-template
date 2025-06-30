@@ -4,13 +4,11 @@ pragma solidity ^0.8.27;
 import {Script, console} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 
-import {IAllocationManager} from "@eigenlayer-contracts/src/contracts/interfaces/IAllocationManager.sol";
-import {IKeyRegistrar} from "@eigenlayer-contracts/src/contracts/interfaces/IKeyRegistrar.sol";
 import {IBN254CertificateVerifier} from
     "@eigenlayer-contracts/src/contracts/interfaces/IBN254CertificateVerifier.sol";
+import {IECDSACertificateVerifier} from "@eigenlayer-contracts/src/contracts/interfaces/IECDSACertificateVerifier.sol";
 import {ITaskMailbox} from "@hourglass-monorepo/src/interfaces/core/ITaskMailbox.sol";
 
-import {TaskAVSRegistrar} from "@project/l1-contracts/TaskAVSRegistrar.sol";
 import {AVSTaskHook} from "@project/l2-contracts/AVSTaskHook.sol";
 import {HelloWorldL2} from "@project/l2-contracts/HelloWorldL2.sol"; // Import your L2 custom contract
 
@@ -21,11 +19,9 @@ contract DeployMyL2Contracts is Script {
         address avs;
         uint256 avsPrivateKey;
         uint256 deployerPrivateKey;
-        IAllocationManager allocationManager;
-        IKeyRegistrar keyRegistrar;
         IBN254CertificateVerifier certificateVerifier;
+        IECDSACertificateVerifier ecdsaCertificateVerifier;
         ITaskMailbox taskMailbox;
-        TaskAVSRegistrar taskAVSRegistrar;
         AVSTaskHook taskHook;
     }
 
@@ -73,11 +69,9 @@ contract DeployMyL2Contracts is Script {
         context.avs = stdJson.readAddress(_context, ".context.avs.address");
         context.avsPrivateKey = uint256(stdJson.readBytes32(_context, ".context.avs.avs_private_key"));
         context.deployerPrivateKey = uint256(stdJson.readBytes32(_context, ".context.deployer_private_key"));
-        context.allocationManager = IAllocationManager(stdJson.readAddress(_context, ".context.eigenlayer.l1.allocation_manager"));
-        context.keyRegistrar = IKeyRegistrar(stdJson.readAddress(_context, ".context.eigenlayer.l1.key_registrar"));
         context.certificateVerifier = IBN254CertificateVerifier(stdJson.readAddress(_context, ".context.eigenlayer.l2.bn254_certificate_verifier"));
+        context.ecdsaCertificateVerifier = IECDSACertificateVerifier(stdJson.readAddress(_context, ".context.eigenlayer.l2.ecdsa_certificate_verifier"));
         context.taskMailbox = ITaskMailbox(_readHourglassConfigAddress(environment, "taskMailbox"));
-        context.taskAVSRegistrar = TaskAVSRegistrar(_readAVSL1ConfigAddress(environment, "taskAVSRegistrar"));
         context.taskHook = AVSTaskHook(_readAVSL2ConfigAddress(environment, "avsTaskHook"));
 
         return context;
@@ -94,15 +88,6 @@ contract DeployMyL2Contracts is Script {
 
         // Parse and return the address
         return stdJson.readAddress(hourglassConfig, string.concat(".addresses.", key));
-    }
-
-    function _readAVSL1ConfigAddress(string memory environment, string memory key) internal view returns (address) {
-        // Load the AVS L1 config file
-        string memory avsL1ConfigFile = string.concat("script/", environment, "/output/deploy_avs_l1_output.json");
-        string memory avsL1Config = vm.readFile(avsL1ConfigFile);
-
-        // Parse and return the address
-        return stdJson.readAddress(avsL1Config, string.concat(".addresses.", key));
     }
 
     function _readAVSL2ConfigAddress(string memory environment, string memory key) internal view returns (address) {
