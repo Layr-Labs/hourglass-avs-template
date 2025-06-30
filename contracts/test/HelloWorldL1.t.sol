@@ -13,7 +13,7 @@ contract HelloWorldL1Test is Test {
         helloWorldL1 = new HelloWorldL1();
     }
 
-    function testInitialMessage() public {
+    function testInitialMessage() view public {
         assertEq(helloWorldL1.getMessage(), "Hello World from L1");
     }
 
