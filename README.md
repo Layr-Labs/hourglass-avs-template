@@ -1,208 +1,59 @@
-## ⚠️ Warning: This is Alpha, non audited code ⚠️
-Hourglass is in active development and is not yet audited. Use at your own risk.
+# Hourglass AVS Template
 
-# hourglass-avs-template
+## Getting Started
+
+After generating this project with `devkit avs create`, follow these steps to build and run your AVS:
+
+```bash
+# Build your AVS Go code and contracts
+devkit avs build
+
+# Start the devnet (this will deploy contracts and start the Hourglass infrastructure). 
+# `--skip-avs-run` will skip running your AVS Performer locally, allowing you to run it separately.
+devkit avs devnet start [--skip-avs-run]
+
+# If you ran devnet start with `--skip-avs-run`, you can now run your AVS Performer separately:
+devkit avs run
+```
+
+## Where Your Code Goes
+
+### Go Code - `cmd/main.go`
+
+This is your AVS Performer implementation - the core business logic that processes tasks. The starter file includes the bare minimum needed to get you started:
+
+- `ValidateTask()` - Validate incoming task requests
+- `HandleTask()` - Process tasks and return results
+
+This is just a starting structure. Feel free to restructure the code however you see fit for your AVS requirements.
+
+### Smart Contracts - `contracts/src/`
+
+Your custom contracts go here. The template includes:
+
+- `HelloWorld.sol` - An example contract you can delete if not needed
+- `l1-contracts/TaskAVSRegistrar.sol` - L1 operator registration (extend as needed)
+- `l2-contracts/AVSTaskHook.sol` - Task lifecycle validation (extend as needed)
+
+#### Deploying Your Contracts
+
+Wire up your contracts in `contracts/script/DeployMyContracts.s.sol`. This script is automatically called during `devkit avs devnet start`:
+
+```solidity
+// Deploy your contract
+CustomContract customContract = new CustomContract();
+
+// Add it to the output so devkit can track it
+Output[] memory outputs = new Output[](1);
+outputs[0] = Output({name: "CustomContract", contractAddress: address(customContract)});
+_writeOutputToJson(environment, outputs);
+```
 
 ## What is Hourglass?
 
-Hourglass is a framework for building a task-based EigenLayer AVS, providing AVS developers a batteries-included experience to get started quickly. It includes a set of tools and libraries that simplify the process of building, deploying, and managing AVS projects.
+Hourglass is a framework for building task-based EigenLayer AVSs. It provides a batteries-included experience with onchain components (TaskMailbox, TaskAVSRegistrar, AVSTaskHook) and offchain components (Aggregator, Executor, Performer) that work together to handle task distribution, execution, and result aggregation.
 
-![](docs/images/hourglass-architecture_v.01.0.svg)
+For more details, visit the framework repository: https://github.com/Layr-Labs/hourglass-monorepo
 
-Hourglass as a framework has onchain and offchain components that work together to enable a task-based AVS.
-
-### Onchain Components
-
-#### TaskMailbox
-
-The TaskMailbox is a singleton eigenlayer hourglass contract on L1 or L2 that is responsible for:
-
-* Allowing users/apps to create tasks.
-* Managing the lifecycle of tasks.
-* Verifying the results of tasks and making it available for users/apps to query.
-* Allowing AVSs to manage their TaskMailbox configurations.
-
-#### TaskAVSRegistrar
-
-The TaskAVSRegistrar is an instanced (per-AVS) eigenlayer middleware contract on L1 that is responsible for:
-
-* Handling operator registration for specific operator sets of your AVS.
-* Providing the offchain components with BLS public keys and socket endpoints for the Aggregator and Executor operators.
-
-It works by default, but can be extended to include additional onchain logic for your AVS.
-
-#### AVSTaskHook
-
-The AVSTaskHook is an instanced (per-AVS) eigenlayer hourglass contract on L1 or L2 that is responsible for:
-
-* Validating the task lifecycle.
-* Creating fee markets for your AVS.
-
-It's empty by default and works out of the box, but can be extended to include additional onchain validation logic for your AVS.
-
-#### CertificateVerifier
-
-The CertificateVerifier is an instanced (per-AVS) eigenlayer middleware contract on L1 or L2 that is responsible for:
-
-* Verifying the validity of operator certificates.
-* Verifying stake threshold requirements for operator sets.
-
-#### Custom Contracts
-
-If your AVS has custom contracts that need to be built and compiled, place them in the `./contracts/src` directory.
-
-```bash
-contracts
-|-- README.md
-|-- script
-|   `-- DeployMyContracts.s.sol
-|-- src
-|   |-- HelloWorld.sol
-|   |-- l1-contracts
-|   |   `-- TaskAVSRegistrar.sol
-|   `-- l2-contracts
-|       |-- AVSTaskHook.sol
-|       `-- BN254CertificateVerifier.sol
-`-- test
-    `-- TaskAVSRegistrar.t.sol
-```
-
-After adding your contracts, you'll need up update the `script/DeployMyContracts.s.sol` script to correctly instantiate and deploy your contracts. `DeployMyContracts.s.sol` is specifically called during the `devkit avs devnet start` command and will receive the context of the other contracts that have been deployed.
-
-As you can see in this HelloWorld example, we create new `HelloWorld` contract and then return some JSON output about it that is sent back to the Devkit CLI.
-
-```solidity
-function run(string memory environment, string memory _context, address /* allocationManager */) public {
-        // Read the context
-        Context memory context = _readContext(environment, _context);
-
-        vm.startBroadcast(context.deployerPrivateKey);
-        console.log("Deployer address:", vm.addr(context.deployerPrivateKey));
-
-        //TODO: Implement custom contracts deployment
-        // CustomContract customContract = new CustomContract();
-        // console.log("CustomContract deployed to:", address(customContract));
-        HelloWorld helloWorld = new HelloWorld();
-
-        vm.stopBroadcast();
-
-        vm.startBroadcast(context.avsPrivateKey);
-        console.log("AVS address:", context.avs);
-
-        //TODO: Implement any additional AVS setup
-
-        vm.stopBroadcast();
-
-        //TODO: Write to output file
-        Output[] memory outputs = new Output[](1);
-        // outputs[0] = Output({name: "CustomContract", address: address(customContract)});
-        // _writeOutputToJson(environment, outputs);
-        outputs[0] = Output({name: "HelloWorld", contractAddress: address(helloWorld)});
-        _writeOutputToJson(environment, outputs);
-    }
-```
-
-### Offchain Components
-
-#### Aggregator
-
-The Aggregator is responsible for:
-
-* Listening to events from the Mailbox contract on chain for new tasks
-* Discovering Executors by querying the AVSRegistrar contract (via the EigenLayer Allocation manager), retrieving their metadata containing a BLS public key and a "socket" (url) endpoint that references the Executor's gRPC server.
-* Distributing tasks to Executors by sending a gRPC request to the Executor's socket endpoint, including the task payload and a signature of the payload signed by the Aggregator. This is so the Executor can validate the message is coming from the expected Aggregator.
-* Aggregates results from Executors until a signing threshold has been met
-* Publish the result back to the Mailbox contract
-
-#### Executor
-
-The Executor is responsible for:
-* Launching and managing Performer containers that execute the tasks
-* Listening to gRPC requests from the Aggregator for new tasks
-* Forwarding the task to the correct Performer
-* Signing the result of the task with its BLS private key and sending it back to the Aggregator
-
-
-#### Performer
-
-The Performer is the component the AVS is responsible for building. At a high level, it is a simple gRPC server that listens for tasks, runs them and returns the results to the Executor.
-
-The Hourglass framework provides all of the boilerplate and server code for your Performer; you simply need to fill in the logic to handle tasks for your AVS!
-
-## What does this template give me?
-
-This template provides a basic structure for building an AVS with the Hourglass framework. It includes:
-
-* A stub of Go code for your Performer to get you started. Simply fill in the commented out areas with your own AVS logic
-* Default `TaskAVSRegistrar` and `AVSTaskHook` avs contracts that work out of the box. Simply extend them if you need to add additional onchain logic.
-* All the dependent contracts for the framework to work and scripts to deploy them. The scripts will be managed by the Devkit CLI.
-* A docker-compose stack to run an Aggregator and Executor locally to test your AVS. Both the Aggregator and Executor will be run by EigenLayer Operators when you launch your AVS, so we've given you the full stack to run locally to make development and testing easier.
-* Hooks that integrate with the Devkit CLI. The Devkit CLI is a command line tool that will make your development experience faster and easier by automating common tasks like building, deploying, and running your AVS.
-
-
-## Basic Structure
-
-This template includes a basic Go program and smart contracts that uses the Hourglass framework to get you started along with some default configs.
-
-```bash
-.
-|-- .gitignore
-|-- .gitmodules
-|-- .devkit
-|   |-- scripts
-|       |-- build
-|       |-- call
-|       |-- deployContracts
-|       |-- getOperatorRegistrationMetadata
-|       |-- getOperatorSets
-|       |-- init
-|       |-- run
-|-- .hourglass
-|   |-- build.yaml
-|   |-- docker-compose.yml
-|   |-- context
-|   |   |-- devnet.yaml
-|   |-- config
-|   |   |-- aggregator.yaml
-|   |   |-- executor.yaml
-|   |-- scripts
-|       |-- build.sh
-|       |-- buildContainer.sh
-|       |-- init.sh
-|       |-- run.sh
-|-- Dockerfile
-|-- Makefile
-|-- README.md
-|-- avs
-|   |-- cmd
-|       |-- main.go
-|-- contracts
-|   |-- lib
-|   |-- script
-|   |   |-- devnet
-|   |       |-- deploy
-|   |       |   |-- DeployAVSL1Contracts.s.sol
-|   |       |   |-- DeployAVSL2Contracts.s.sol
-|   |       |   |-- DeployTaskMailbox.s.sol
-|   |       |-- output
-|   |       |   |-- deploy_avs_l1_output.json
-|   |       |   |-- deploy_avs_l2_output.json
-|   |       |   |-- deploy_hourglass_core_output.json
-|   |       |-- run
-|   |       |   |-- CreateTask.s.sol
-|   |       |-- setup
-|   |       |   |-- SetupAVSL1.s.sol
-|   |       |   |-- SetupAVSTaskMailboxConfig.s.sol
-|   |-- src
-|   |   |-- l1-contracts
-|   |   |   |-- TaskAVSRegistrar.sol
-|   |   |-- l2-contracts
-|   |   |   |-- AVSTaskHook.sol
-|   |   |   |-- BN254CertificateVerifier.sol
-|   |-- test
-|   |   |-- TaskAVSRegistrar.t.sol
-|   |-- foundry.toml
-|   |-- Makefile
-|-- go.mod
-|-- go.sum
-```
+## ⚠️ Warning: This is Alpha, non-audited code ⚠️
+Hourglass is in active development and is not yet audited. Use at your own risk.
