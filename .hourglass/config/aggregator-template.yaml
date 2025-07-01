@@ -1,10 +1,12 @@
 ---
 {{- $avsRegistrar := "" }}
 {{- $taskMailboxL2 := "" }}
-{{- range $i, $contract := (ds "ctx").context.deployed_contracts }}
+{{- range $i, $contract := (ds "ctx").context.deployed_l1_contracts }}
 {{- if eq $contract.name "taskAVSRegistrar" }}
 {{- $avsRegistrar = $contract.address }}
 {{- end }}
+{{- end }}
+{{- range $i, $contract := (ds "ctx").context.deployed_l2_contracts }}
 {{- if eq $contract.name "taskMailbox" }}
 {{- $taskMailboxL2 = $contract.address }}
 {{- end }}

@@ -61,8 +61,9 @@ CONTEXT=$(echo $CONTEXT | jq --arg url "$L2_DOCKER_RPC_URL" '.context.chains.l2.
 CONTEXT=$(echo $CONTEXT | jq --argjson contextConfig "$contextConfig" '.aggregator = $contextConfig.aggregator')
 CONTEXT=$(echo $CONTEXT | jq --argjson contextConfig "$contextConfig" '.executor = $contextConfig.executor')
 
-deployedContracts=$(echo $CONTEXT | jq -r '.context.deployed_contracts')
-if [ "$deployedContracts" == "null" ] || [ -z "$deployedContracts" ]; then
+deployedL1Contracts=$(echo $CONTEXT | jq -r '.context.deployed_l1_contracts')
+deployedL2Contracts=$(echo $CONTEXT | jq -r '.context.deployed_l2_contracts')
+if [ "$deployedL1Contracts" == "null" ] || [ -z "$deployedL1Contracts" ] || [ "$deployedL2Contracts" == "null" ] || [ -z "$deployedL2Contracts" ]; then
     log "Error: Need to deploy contracts. Please run 'devkit avs devnet start'"
     exit 1
 fi
