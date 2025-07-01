@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+set -e
+
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
+
+# Check if required tools are available
+ensureMake
+ensureForge
+
+# Create symlink for Forge test compatibility
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$( cd "$SCRIPT_DIR/../.." && pwd )"
+DEVKIT_CONTRACTS_DIR="$PROJECT_ROOT/.devkit/contracts"
+
+# Create the symlink if it doesn't already exist
+if [ ! -L "$DEVKIT_CONTRACTS_DIR/test" ]; then
+    # Create the symlink
+    ln -s "$PROJECT_ROOT/contracts" "$DEVKIT_CONTRACTS_DIR/test"
+fi
+
+./.hourglass/scripts/test.sh
