@@ -16,15 +16,15 @@ contract AVSTaskHook is IAVSTaskHook {
         //TODO: Implement
     }
 
-    function validatePostTaskCreation(
+    function handlePostTaskCreation(
         bytes32 /*taskHash*/
     ) external {
         //TODO: Implement
     }
 
-    function validateTaskResultSubmission(
+    function handleTaskResultSubmission(
         bytes32, /*taskHash*/
-        IBN254CertificateVerifierTypes.BN254Certificate memory /*cert*/
+        bytes memory /*cert*/
     ) external {
         //TODO: Implement
     }

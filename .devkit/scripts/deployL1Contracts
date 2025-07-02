@@ -1,0 +1,192 @@
+#!/usr/bin/env bash
+set -e
+
+# source in helper functions
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
+
+projectDir=$(pwd)
+devkitContractsPath=".devkit/contracts"
+contractsBasePath="${projectDir}/${devkitContractsPath}"
+
+# check if contractsBasePath ends with .devkit/contracts
+if [[ "$contractsBasePath" != *".devkit/contracts" ]]; then
+    log "Error: contractsBasePath should end with .devkit/contracts, got ${contractsBasePath}"
+    exit 1
+fi
+
+# Function to get ABI path for a contract name (simple version)
+get_abi_path() {
+    local name="$1"
+    if [ "$name" == "taskAVSRegistrar" ]; then
+        echo "${contractsBasePath}/out/TaskAVSRegistrar.sol/TaskAVSRegistrar.json"
+    else
+        echo "${contractsBasePath}/out/$name.sol/$name.json"
+    fi
+}
+
+# Function to process deployment output file and add contracts to deployed_contracts array
+process_output_file() {
+    log "Processing output file $2 - '$1'"
+    local file_path="$1"
+    local file_desc="$2"
+    
+    if [ ! -f "$file_path" ]; then
+        log "Error: $file_desc output file $file_path not found"
+        exit 1
+    fi
+    
+    # Extract entries with properly formatted abi paths
+    while read -r entry; do
+        name=$(echo "$entry" | jq -r '.name')
+        address=$(echo "$entry" | jq -r '.address')
+        abi_path=$(get_abi_path "$name")
+
+        # Check if ABI file exists
+        if [ ! -f "$abi_path" ]; then
+            log "Warning: ABI file $abi_path does not exist for contract $name. Run 'devkit avs build' first."
+        fi
+
+        # convert path back to relative to the project. take abi_path and remove $projectDir
+        abi_path=$(echo "$abi_path" | sed "s|$projectDir/||")
+
+
+        contract_json=$(jq -n \
+            --arg name "$name" \
+            --arg address "$address" \
+            --arg abi "$abi_path" \
+            '{ name: $name, address: $address, abi: $abi }')
+        
+        deployed_contracts=$(echo "$deployed_contracts" | jq ". + [$contract_json]")
+    done < <(jq -c '.addresses | to_entries[] | {name: .key, address: .value}' "$file_path")
+}
+
+# Check if context parameter is provided
+if [ -z "$1" ]; then
+    log "Error: Missing context parameter"
+    log "Usage: ./deployL1Contracts '{\"version\":\"0.0.1\",\"context\":{...}}'"
+    exit 1
+fi
+
+# Parse the JSON context
+CONTEXT="$1"
+
+# Check for required tools
+ensureJq
+ensureYq
+ensureMake
+ensureForge
+
+# Extract required values from context
+ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
+L1_RPC_URL=$(echo "$CONTEXT" | jq -r '.context.chains.l1.rpc_url')
+PRIVATE_KEY_DEPLOYER=$(echo "$CONTEXT" | jq -r '.context.deployer_private_key')
+AVS_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.avs.address')
+ALLOCATION_MANAGER_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l1.allocation_manager')
+KEY_REGISTRAR_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l1.key_registrar')
+
+# Validate required fields exist in JSON
+if [ "$L1_RPC_URL" == "null" ] || [ -z "$L1_RPC_URL" ]; then
+    log "Error: Missing L1_RPC_URL in context"
+    exit 1
+fi
+
+if [ "$PRIVATE_KEY_DEPLOYER" == "null" ] || [ -z "$PRIVATE_KEY_DEPLOYER" ]; then
+    log "Error: Missing deployer_private_key in context"
+    exit 1
+fi
+
+if [ "$ENVIRONMENT" == "null" ] || [ -z "$ENVIRONMENT" ]; then
+    log "Error: Missing name (environment) in context"
+    exit 1
+fi
+
+if [ "$AVS_ADDRESS" == "null" ] || [ -z "$AVS_ADDRESS" ]; then
+    log "Error: Missing avs.address in context"
+    exit 1
+fi
+
+if [ "$ALLOCATION_MANAGER_ADDRESS" == "null" ] || [ -z "$ALLOCATION_MANAGER_ADDRESS" ]; then
+    log "Error: Missing eigenlayer.l1.allocation_manager in context"
+    exit 1
+fi
+
+if [ "$KEY_REGISTRAR_ADDRESS" == "null" ] || [ -z "$KEY_REGISTRAR_ADDRESS" ]; then
+    log "Error: Missing eigenlayer.l1.key_registrar in context"
+    exit 1
+fi
+
+# Check if the template-specific AVS environment YAML file exists
+ENVIRONMENT_YAML_FILE=".hourglass/context/${ENVIRONMENT}.yaml"
+if [ ! -f "$ENVIRONMENT_YAML_FILE" ]; then
+    log "Error: AVS environment file ${ENVIRONMENT_YAML_FILE} does not exist"
+    exit 1
+fi
+
+# Read operator sets from the YAML
+AGGREGATOR_OPERATOR_SET_ID=$(yq -r '.aggregator.operatorSetId' "$ENVIRONMENT_YAML_FILE")
+EXECUTOR_OPERATOR_SET_ID=$(yq -r '.executor.operatorSetId' "$ENVIRONMENT_YAML_FILE")
+
+# Validate YAML values
+if [ "$AGGREGATOR_OPERATOR_SET_ID" == "null" ]; then
+    log "Error: Missing aggregator.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
+    exit 1
+fi
+
+if [ "$EXECUTOR_OPERATOR_SET_ID" == "null" ]; then
+    log "Error: Missing executor.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
+    exit 1
+fi
+
+# Validate Ethereum addresses (basic check)
+validate_eth_address() {
+    local addr=$1
+    local name=$2
+    if [[ ! "$addr" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+        log "Error: $name must be a valid Ethereum address (0x followed by 40 hex characters)"
+        exit 1
+    fi
+}
+
+validate_eth_address "$AVS_ADDRESS" "AVS_ADDRESS"
+validate_eth_address "$ALLOCATION_MANAGER_ADDRESS" "ALLOCATION_MANAGER_ADDRESS"
+validate_eth_address "$KEY_REGISTRAR_ADDRESS" "KEY_REGISTRAR_ADDRESS"
+
+log "Starting L1 contract deployment using context for environment: $ENVIRONMENT"
+
+# Change to contracts directory
+cd $contractsBasePath
+
+# Deploy AVS L1 contracts
+log "Deploying AVS L1 contracts..."
+PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" KEY_REGISTRAR_ADDRESS="${KEY_REGISTRAR_ADDRESS}" AGGREGATOR_OPERATOR_SET_ID="${AGGREGATOR_OPERATOR_SET_ID}" EXECUTOR_OPERATOR_SET_ID="${EXECUTOR_OPERATOR_SET_ID}" >&2
+
+log "L1 contract deployment completed successfully."
+
+# Sync nonce and sleep to prevent nonce conflicts
+sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L1_RPC_URL}" "deployer" 1
+
+# Deploy custom L1 contracts
+log "Deploying custom L1 contracts..."
+PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-custom-contracts-l1 RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" CONTEXT="${CONTEXT}" >&2
+
+log "Custom L1 contract deployment completed successfully."
+
+# Process deployment output files
+OUTPUT_DIR="script/${ENVIRONMENT}/output"
+# Initialize an empty array
+deployed_contracts='[]'
+
+# Process all output files
+AVS_L1_FILE="${OUTPUT_DIR}/deploy_avs_l1_output.json"
+CUSTOM_CONTRACTS_L1_FILE="${OUTPUT_DIR}/deploy_custom_contracts_l1_output.json"
+
+# Process the AVS L1 output file
+process_output_file "$AVS_L1_FILE" "AVS L1"
+# Process the custom contracts L1 output file
+process_output_file "$CUSTOM_CONTRACTS_L1_FILE" "Custom Contracts L1"
+
+# Create the final JSON structure with deployed_contracts key
+RESULT=$(jq -n --argjson contracts "$deployed_contracts" '{ deployed_l1_contracts: $contracts }')
+
+# Print the combined JSON result - this is the ONLY stdout output
+echo "$RESULT" | jq -c . 
