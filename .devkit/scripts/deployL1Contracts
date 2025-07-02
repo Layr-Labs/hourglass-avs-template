@@ -160,11 +160,10 @@ cd $contractsBasePath
 log "Deploying AVS L1 contracts..."
 PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" KEY_REGISTRAR_ADDRESS="${KEY_REGISTRAR_ADDRESS}" AGGREGATOR_OPERATOR_SET_ID="${AGGREGATOR_OPERATOR_SET_ID}" EXECUTOR_OPERATOR_SET_ID="${EXECUTOR_OPERATOR_SET_ID}" >&2
 
-
 log "L1 contract deployment completed successfully."
 
-# Sleep for a second so that nonce can be pulled correctly
-sleep 1
+# Sync nonce and sleep to prevent nonce conflicts
+sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L1_RPC_URL}" "deployer" 1
 
 # Deploy custom L1 contracts
 log "Deploying custom L1 contracts..."
