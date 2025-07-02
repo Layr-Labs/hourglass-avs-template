@@ -82,3 +82,86 @@ function ensureDockerHost() {
     # Return properly formed RPC url
     echo $DOCKER_RPC_URL
 }
+
+# Function to get current nonce from provider for an address
+get_current_nonce() {
+    local address="$1"
+    local rpc_url="$2"
+    
+    if [ -z "$address" ] || [ -z "$rpc_url" ]; then
+        log "Error: get_current_nonce requires address and RPC URL"
+        return 1
+    fi
+    
+    # Get nonce from provider
+    local nonce=$(cast nonce "$address" --rpc-url "$rpc_url" 2>/dev/null)
+    if [ $? -ne 0 ] || [ -z "$nonce" ]; then
+        log "Error: Failed to get nonce for address $address"
+        return 1
+    fi
+    
+    echo "$nonce"
+}
+
+# Function to sync Anvil nonce for an address
+sync_anvil_nonce() {
+    local private_key="$1"
+    local rpc_url="$2"
+    local description="${3:-address}"
+    
+    if [ -z "$private_key" ] || [ -z "$rpc_url" ]; then
+        log "Error: sync_anvil_nonce requires private_key and RPC URL"
+        return 1
+    fi
+    
+    # Derive address from private key
+    local address=$(cast wallet address --private-key "$private_key" 2>/dev/null)
+    if [ $? -ne 0 ] || [ -z "$address" ]; then
+        log "Error: Failed to derive address from private key"
+        return 1
+    fi
+    
+    # Get current nonce from provider
+    local current_nonce=$(get_current_nonce "$address" "$rpc_url")
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    
+    log "Syncing nonce for $description ($address): setting to $current_nonce"
+    
+    # Set nonce using anvil_setNonce RPC call
+    local response=$(curl -s -X POST "$rpc_url" \
+        -H "Content-Type: application/json" \
+        -d "{\"jsonrpc\":\"2.0\",\"method\":\"anvil_setNonce\",\"params\":[\"$address\",\"$current_nonce\"],\"id\":1}")
+    
+    if [ $? -ne 0 ]; then
+        log "Error: Failed to sync nonce via RPC call"
+        return 1
+    fi
+    
+    # Check if the response contains an error
+    local error=$(echo "$response" | jq -r '.error // empty' 2>/dev/null)
+    if [ -n "$error" ]; then
+        log "Error: RPC call failed: $error"
+        return 1
+    fi
+    
+    log "Successfully synced nonce for $description to $current_nonce"
+    return 0
+}
+
+# Function to sync nonces and sleep 
+sync_nonce_and_sleep() {
+    local private_key="$1"
+    local rpc_url="$2"
+    local description="${3:-deployer}"
+    local sleep_duration="${4:-1}"
+    
+    sync_anvil_nonce "$private_key" "$rpc_url" "$description"
+    local sync_result=$?
+    
+    log "Sleeping for ${sleep_duration} second(s) to ensure nonce propagation..."
+    sleep "$sleep_duration"
+    
+    return $sync_result
+}
