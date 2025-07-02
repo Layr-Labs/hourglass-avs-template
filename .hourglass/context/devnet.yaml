@@ -1,7 +1,9 @@
 operatorSets:
   - id: 0
+    curve_type: "BN254"
     strategies: ["0x5C8b55722f421556a2AAfb7A3EA63d4c3e514312"] # StETH strategy
   - id: 1
+    curve_type: "BN254"
     strategies: ["0x5C8b55722f421556a2AAfb7A3EA63d4c3e514312"] # StETH strategy
 
 aggregator:

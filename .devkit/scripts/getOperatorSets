@@ -52,6 +52,7 @@ log "Found $NUM_OPERATOR_SETS operator sets"
 # Transform the operator sets data to match the required format
 TRANSFORMED_SETS=$(echo "$OPERATOR_SETS" | jq -s 'map({
     operator_set_id: .id,
+    curve_type: .curve_type,
     strategies: .strategies | map({ strategy: . })
 })')
 
