@@ -19,6 +19,10 @@ get_abi_path() {
     local name="$1"
     if [ "$name" == "taskMailbox" ]; then
         echo "${contractsBasePath}/out/TaskMailbox.sol/TaskMailbox.json"
+    elif [ "$name" == "taskMailboxImpl" ]; then
+        echo "${contractsBasePath}/out/TaskMailbox.sol/TaskMailbox.json"
+    elif [ "$name" == "l2ProxyAdmin" ]; then
+        echo "${contractsBasePath}/out/ProxyAdmin.sol/ProxyAdmin.json"
     elif [ "$name" == "avsTaskHook" ]; then
         echo "${contractsBasePath}/out/AVSTaskHook.sol/AVSTaskHook.json"
     else
