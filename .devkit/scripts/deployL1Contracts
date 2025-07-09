@@ -19,6 +19,10 @@ get_abi_path() {
     local name="$1"
     if [ "$name" == "taskAVSRegistrar" ]; then
         echo "${contractsBasePath}/out/TaskAVSRegistrar.sol/TaskAVSRegistrar.json"
+    elif [ "$name" == "taskAVSRegistrarImpl" ]; then
+        echo "${contractsBasePath}/out/TaskAVSRegistrar.sol/TaskAVSRegistrar.json"
+    elif [ "$name" == "l1ProxyAdmin" ]; then
+        echo "${contractsBasePath}/out/ProxyAdmin.sol/ProxyAdmin.json"
     else
         echo "${contractsBasePath}/out/$name.sol/$name.json"
     fi
