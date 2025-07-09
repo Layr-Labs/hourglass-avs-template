@@ -13,7 +13,7 @@ contract TaskAVSRegistrar is TaskAVSRegistrarBase {
         IKeyRegistrar keyRegistrar,
         address owner,
         AvsConfig memory initialConfig
-    ) TaskAVSRegistrarBase(avs, allocationManager, keyRegistrar, owner, initialConfig) {}
+    ) TaskAVSRegistrarBase(avs, allocationManager, keyRegistrar) {}
 
     // TODO: Implement
 }
