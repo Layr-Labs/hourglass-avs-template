@@ -27,11 +27,9 @@ LOCAL_IMAGE_NAME="${IMAGE_NAME}:${VERSION}"
 log "Getting docker image id..."
 IMAGE_ID=$(docker inspect "$LOCAL_IMAGE_NAME" --format='{{.Id}}')
 
-# If empty , log it 
-if [ "$REGISTRY" == "null" ] || [ -z "$REGISTRY" ]; then
-    log "Registry Url empty in .hourglass/build.yaml.Passing empty registry url to context. Provide registry url explicitly while calling `devkit avs release publish`"
-    REGISTRY_URL=""
-else
+# Only set REGISTRY_URL if REGISTRY is non-null and non-empty
+if [ "$REGISTRY" != "null" ] && [ -n "$REGISTRY" ]; then
+    log "Setting registry URL to: ${REGISTRY}"
     REGISTRY_URL="${REGISTRY}"
 fi
 
