@@ -108,6 +108,9 @@ for sub in $(git config --file .gitmodules --get-regexp path | awk '{print $2}' 
     git submodule update --init "$sub"
 done
 
+# removing deleted files
+rm -rf ./contracts/test/TaskAVSRegistrar.t.sol || true
+
 log "Upgrade complete!"
 
 if [[ -n "$migratedContracts" ]]; then
