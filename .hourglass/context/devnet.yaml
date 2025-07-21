@@ -11,12 +11,16 @@ aggregator:
   operators:
     - address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
       socket: "aggregator:9000"
+  digest: "sha256:070a39857503d50e20b7227ea9481cf03f483d2d5026d03e6b217e04872c18e8"
+  registry: "public.ecr.aws/z6g0f8n7"
 
 executor:
   operatorSetId: 1
   operators:
     - address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
       socket: "executor:9090"
+  digest: "sha256:070a39857503d50e20b7227ea9481cf03f483d2d5026d03e6b217e04872c18e8"
+  registry: "public.ecr.aws/z6g0f8n7"
 
 mailbox:
   taskSla: 60

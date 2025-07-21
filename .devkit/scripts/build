@@ -9,42 +9,88 @@ ensureMake
 ensureForge
 ensureDocker
 
+# Parse command line arguments
+IMAGE_NAME=""
+VERSION=""
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --image)
+      IMAGE_NAME="$2"
+      shift 2
+      ;;
+    --image=*)
+      IMAGE_NAME="${1#*=}"
+      shift 1
+      ;;
+    --tag)
+      VERSION="$2"
+      shift 2
+      ;;
+    --tag=*)
+      VERSION="${1#*=}"
+      shift 1
+      ;;
+    *)
+      echo "Unknown option $1" >&2
+      exit 1
+      ;;
+  esac
+done
+
+# if image name is not provided , return error
+if [ -z "$IMAGE_NAME" ]; then
+  echo "Error: Image name is required in .devkit/scripts/build" >&2
+  exit 1
+fi
+
+# suffix the image name with -performer
+IMAGE_NAME="${IMAGE_NAME}-performer"
+
 log "Building contracts..."
 (cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol && cd -) >&2
 
 # Build the contracts and dependencies
 log "Building AVS performer..."
-BUILD_CONTAINER=true ./.hourglass/scripts/build.sh >&2
 
-# Get the image name from build.yaml
-IMAGE_NAME=$(yq eval '.container.image' .hourglass/build.yaml)
-REGISTRY=$(yq eval '.container.registry' .hourglass/build.yaml)
-VERSION=$(yq eval '.container.version' .hourglass/build.yaml)
-
-LOCAL_IMAGE_NAME="${IMAGE_NAME}:${VERSION}"
-
-# Get the docker image id
-log "Getting docker image id..."
-IMAGE_ID=$(docker inspect "$LOCAL_IMAGE_NAME" --format='{{.Id}}')
-
-# Only set REGISTRY_URL if REGISTRY is non-null and non-empty
-if [ "$REGISTRY" != "null" ] && [ -n "$REGISTRY" ]; then
-    log "Setting registry URL to: ${REGISTRY}"
-    REGISTRY_URL="${REGISTRY}"
+# Build the container and capture the JSON output
+if [ -n "$VERSION" ]; then
+  BUILD_OUTPUT=$(BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" --tag "$VERSION" 2>&1)
+else
+  BUILD_OUTPUT=$(BUILD_CONTAINER=true ./.hourglass/scripts/build.sh --image "$IMAGE_NAME" 2>&1)
 fi
 
-# Create and output the JSON structure
+# Debug: Show the captured output
+echo "DEBUG: Full build output:" >&2
+echo "$BUILD_OUTPUT" >&2
+
+# Extract the JSON from the build output (look for lines starting with { and ending with })
+BUILD_JSON=$(echo "$BUILD_OUTPUT" | awk '/^{/,/^}/' | tr -d '\n')
+
+# Debug: Show the extracted JSON
+echo "DEBUG: Extracted JSON: '$BUILD_JSON'" >&2
+
+# Parse the JSON to get image_id and image name
+IMAGE_ID=$(echo "$BUILD_JSON" | jq -r '.image_id')
+BUILT_IMAGE_NAME=$(echo "$BUILD_JSON" | jq -r '.image')
+
+if [ -z "$IMAGE_ID" ] || [ "$IMAGE_ID" = "null" ]; then
+  echo "Error: Failed to get image ID from build output" >&2
+  echo "Build output: $BUILD_OUTPUT" >&2
+  exit 1
+fi
+
+log "Built container: $BUILT_IMAGE_NAME"
+log "Image ID: $IMAGE_ID"
+
+# Create JSON output with component
 RESULT=$(jq -n \
-    --arg component "performer" \
-    --arg artifactId "$IMAGE_ID" \
-    --arg digest "" \
-    --arg registry "$REGISTRY_URL" \
+    --arg component "$BUILT_IMAGE_NAME" \
+    --arg image_id "$IMAGE_ID" \
     '{
-        artifacts: {
-            component: $component,
-            artifactId: $artifactId,
-            digest: $digest,
-            registry_url: $registry
+        artifact: {
+            artifactId: $image_id,
+            component: $component
         }
     }')
 
@@ -52,4 +98,3 @@ RESULT=$(jq -n \
 echo "$RESULT" | jq -c .
 
 log "Build completed successfully."
-log "Updated artifacts field in context with image id: $IMAGE_ID"
