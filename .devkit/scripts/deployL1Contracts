@@ -160,14 +160,23 @@ log "Starting L1 contract deployment using context for environment: $ENVIRONMENT
 # Change to contracts directory
 cd $contractsBasePath
 
+# Ensure outputs directory exists
+mkdir -p script/$ENVIRONMENT/output
+
 # Deploy AVS L1 contracts
 log "Deploying AVS L1 contracts..."
 PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" KEY_REGISTRAR_ADDRESS="${KEY_REGISTRAR_ADDRESS}" AGGREGATOR_OPERATOR_SET_ID="${AGGREGATOR_OPERATOR_SET_ID}" EXECUTOR_OPERATOR_SET_ID="${EXECUTOR_OPERATOR_SET_ID}" >&2
 
 log "L1 contract deployment completed successfully."
 
-# Sync nonce and sleep to prevent nonce conflicts
-sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L1_RPC_URL}" "deployer" 1
+# Ensure nonce is in sync
+if [ "$environment" == "devnet" ]; then
+    # Sync nonce and sleep to prevent nonce conflicts
+    sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L1_RPC_URL}" "deployer" 1
+else
+    # Sleep for a block on other networks
+    sleep 12
+fi
 
 # Deploy custom L1 contracts
 log "Deploying custom L1 contracts..."
