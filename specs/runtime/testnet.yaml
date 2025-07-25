@@ -1,0 +1,18 @@
+# testnet environment overrides
+aggregator:
+  env:
+    LOG_LEVEL: "info"
+  resources:
+    tee_enabled: false
+
+executor:
+  env:
+    LOG_LEVEL: "info"
+  resources:
+    tee_enabled: false
+
+performer:
+  env:
+    LOG_LEVEL: "info"
+  resources:
+    tee_enabled: false

@@ -1,0 +1,32 @@
+project:
+  name: "{{ (datasource "context").AVS_NAME }}"  # Will be replaced from config.yaml
+  version: "{{ (datasource "context").VERSION }}" # Will be replaced from context
+
+aggregator:
+  operatorSetId: "{{ (datasource "context").AGGREGATOR_OPERATOR_SET_ID }}"
+  image:
+    registry: "{{ (datasource "context").AGGREGATOR_REGISTRY }}"
+    digest: "{{ (datasource "context").AGGREGATOR_DIGEST }}"
+  env:
+    LOG_LEVEL: "info"
+  resources:
+    tee_enabled: false
+
+executor:
+  operatorSetId: "{{ (datasource "context").EXECUTOR_OPERATOR_SET_ID }}"
+  image:
+    registry: "{{ (datasource "context").EXECUTOR_REGISTRY }}"
+    digest: "{{ (datasource "context").EXECUTOR_DIGEST }}"
+  env:
+    LOG_LEVEL: "info"
+  resources:
+    tee_enabled: false
+
+performer:
+  image:
+    registry: "{{ (datasource "context").PERFORMER_REGISTRY }}"
+    digest: "{{ (datasource "context").PERFORMER_DIGEST }}"
+  env:
+    LOG_LEVEL: "info"
+  resources:
+    tee_enabled: false 

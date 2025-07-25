@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set -e
+
+source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
+
+# Check if required tools are available
+ensureDocker
+ensureJq
+ensureYq
+ensureGomplate
+
+# Pass all arguments to the release script
+./.hourglass/scripts/release.sh "$@"
