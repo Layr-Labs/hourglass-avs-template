@@ -33,6 +33,11 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
+if [ -z "$REGISTRY" ]; then
+  echo "Error: --registry is required" >&2
+  exit 1
+fi
+
 if [ -z "$IMAGE" ]; then
   echo "Error: --image is required" >&2
   exit 1
@@ -75,7 +80,7 @@ if [ -z "$avs_name" ] || [ "$avs_name" = "null" ]; then
 fi
 
 echo "AVS Name: ${avs_name}" >&2
-echo "All OCI artifacts will be pushed to: ${REGISTRY}/${avs_name}" >&2
+echo "Registry: ${REGISTRY}" >&2
 
 # Setup buildx for multi-platform builds
 echo "Setting up multi-platform builder..." >&2
@@ -86,21 +91,14 @@ else
   docker buildx use multiarch >&2
 fi
 
-# Construct performer image name using AVS name
-# Everything is pushed to {registry}/{avs-name} with different tags
-if [ -n "$REGISTRY" ]; then
-  performer_full_image="${REGISTRY}/${avs_name}:performer-${VERSION}"
-else
-  performer_full_image="${avs_name}:performer-${VERSION}"
-fi
+# Construct performer image name
+# Use registry exactly as provided by the user
+performer_full_image="${REGISTRY}:performer-${VERSION}"
 
 echo "Building multi-architecture performer image: ${performer_full_image}" >&2
 echo "Platforms: linux/amd64,linux/arm64" >&2
 
 # Build and push multi-arch
-# All images are pushed to {registry}/{avs-name} with different tags:
-# - Performer: {registry}/{avs-name}:performer-{version}
-# - Runtime specs: {registry}/{avs-name}:opset-{id}-v{version}
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
   --tag "$performer_full_image" \
@@ -120,12 +118,8 @@ echo "Performer Image Index Digest: $performer_digest" >&2
 echo "Generating EigenRuntime specifications..." >&2
 
 # Prepare context data for substitution
-# Construct the AVS repository path for the performer
-if [ -n "$REGISTRY" ]; then
-  avs_repository="${REGISTRY}/${avs_name}"
-else
-  avs_repository="${avs_name}"
-fi
+# Use registry exactly as provided
+avs_repository="${REGISTRY}"
 
 CONTEXT_DATA=$(jq -n \
   --arg avs_name "$avs_name" \
