@@ -9,11 +9,10 @@ gas_reports = ["*"]
 # Defines paths for Solidity imports.
 remappings = [
     "forge-std/=lib/forge-std/src/",
-    "@hourglass-monorepo/=lib/hourglass-monorepo/contracts/",
-    "@eigenlayer-middleware/=lib/hourglass-monorepo/contracts/lib/eigenlayer-middleware/",
-    "@eigenlayer-contracts/=lib/hourglass-monorepo/contracts/lib/eigenlayer-middleware/lib/eigenlayer-contracts/",
-    "@openzeppelin/=lib/hourglass-monorepo/contracts/lib/eigenlayer-middleware/lib/openzeppelin-contracts/",
-    "@openzeppelin-upgrades/=lib/hourglass-monorepo/contracts/lib/eigenlayer-middleware/lib/openzeppelin-contracts-upgradeable/",
+    "@eigenlayer-middleware/=lib/eigenlayer-middleware/",
+    "@eigenlayer-contracts/=lib/eigenlayer-middleware/lib/eigenlayer-contracts/",
+    "@openzeppelin/=lib/eigenlayer-middleware/lib/openzeppelin-contracts/",
+    "@openzeppelin-upgrades/=lib/eigenlayer-middleware/lib/openzeppelin-contracts-upgradeable/",
     "@project/=../../contracts/src/",
 ]
 
