@@ -9,8 +9,45 @@ spec:
     digest: {{ $values.aggregator.image.digest }}
     env:
     {{- range $k, $v := $values.aggregator.env }}
-      - name: {{ $k }}
-        value: "{{ $v }}"
+    - name: {{ $k }}
+      value: "{{ $v }}"
     {{- end }}
+    - name: LOG_LEVEL
+      value: "info"
+    - name: OPERATOR_ADDRESS
+      value: "${OPERATOR_ADDRESS}"
+    # Support both private key and remote signer
+    - name: OPERATOR_PRIVATE_KEY
+      value: "${OPERATOR_PRIVATE_KEY:}"
+    - name: USE_REMOTE_SIGNER
+      value: "${USE_REMOTE_SIGNER:false}"
+    - name: REMOTE_SIGNER_URL
+      value: "${REMOTE_SIGNER_URL:}"
+    - name: REMOTE_SIGNER_PUBLIC_KEY
+      value: "${REMOTE_SIGNER_PUBLIC_KEY:}"
+    - name: REMOTE_SIGNER_CA_CERT_PATH
+      value: "${REMOTE_SIGNER_CA_CERT_PATH:}"
+    - name: REMOTE_SIGNER_CLIENT_CERT_PATH
+      value: "${REMOTE_SIGNER_CLIENT_CERT_PATH:}"
+    - name: REMOTE_SIGNER_CLIENT_KEY_PATH
+      value: "${REMOTE_SIGNER_CLIENT_KEY_PATH:}"
+    # BLS keystore configuration
+    - name: BLS_KEYSTORE_PATH
+      value: "${BLS_KEYSTORE_PATH:}"
+    - name: BLS_KEYSTORE_PASSWORD
+      value: "${BLS_KEYSTORE_PASSWORD:}"
+    # Chain configs
+    - name: L1_CHAIN_ID
+      value: "${L1_CHAIN_ID}"
+    - name: L1_RPC_URL
+      value: "${L1_RPC_URL}"
+    - name: L2_CHAIN_ID
+      value: "${L2_CHAIN_ID}"
+    - name: L2_RPC_URL
+      value: "${L2_RPC_URL}"
+    - name: AGGREGATOR_PORT
+      value: "${AGGREGATOR_PORT:9000}"
+    - name: POLL_INTERVAL_SECONDS
+      value: "${POLL_INTERVAL_SECONDS:2}"
     resources:
       tee_enabled: {{ $values.aggregator.resources.tee_enabled }}
