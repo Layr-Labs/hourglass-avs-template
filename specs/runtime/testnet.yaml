@@ -1,4 +1,3 @@
-# testnet environment overrides
 aggregator:
   env:
     LOG_LEVEL: "info"

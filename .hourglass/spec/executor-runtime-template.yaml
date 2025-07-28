@@ -10,9 +10,35 @@ spec:
     command: ["executor", "run"]
     env:
     {{- range $k, $v := $values.executor.env }}
-      - name: {{ $k }}
-        value: "{{ $v }}"
+    - name: {{ $k }}
+      value: "{{ $v }}"
     {{- end }}
+    - name: OPERATOR_ADDRESS
+      value: "${OPERATOR_ADDRESS}"
+    - name: OPERATOR_PRIVATE_KEY
+      value: "${OPERATOR_PRIVATE_KEY:}"
+    - name: USE_REMOTE_SIGNER
+      value: "${USE_REMOTE_SIGNER:false}"
+    - name: REMOTE_SIGNER_URL
+      value: "${REMOTE_SIGNER_URL:}"
+    - name: REMOTE_SIGNER_PUBLIC_KEY
+      value: "${REMOTE_SIGNER_PUBLIC_KEY:}"
+    - name: REMOTE_SIGNER_CA_CERT_PATH
+      value: "${REMOTE_SIGNER_CA_CERT_PATH:}"
+    - name: REMOTE_SIGNER_CLIENT_CERT_PATH
+      value: "${REMOTE_SIGNER_CLIENT_CERT_PATH:}"
+    - name: REMOTE_SIGNER_CLIENT_KEY_PATH
+      value: "${REMOTE_SIGNER_CLIENT_KEY_PATH:}"
+    - name: BLS_KEYSTORE_PATH
+      value: "${BLS_KEYSTORE_PATH:}"
+    - name: BLS_KEYSTORE_PASSWORD
+      value: "${BLS_KEYSTORE_PASSWORD:}"
+    - name: L1_CHAIN_ID
+      value: "${L1_CHAIN_ID}"
+    - name: L1_RPC_URL
+      value: "${L1_RPC_URL}"
+    - name: GRPC_PORT
+      value: "${GRPC_PORT:9090}"
     resources:
       tee_enabled: {{ $values.executor.resources.tee_enabled }}
   performer:
@@ -21,8 +47,8 @@ spec:
     command: ["performer", "run"]
     env:
     {{- range $k, $v := $values.performer.env }}
-      - name: {{ $k }}
-        value: "{{ $v }}"
+    - name: {{ $k }}
+      value: "{{ $v }}"
     {{- end }}
     resources:
       tee_enabled: {{ $values.performer.resources.tee_enabled }}
