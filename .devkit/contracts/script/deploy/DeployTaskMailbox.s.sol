@@ -7,8 +7,7 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {IKeyRegistrarTypes} from "@eigenlayer-contracts/src/contracts/interfaces/IKeyRegistrar.sol";
-
-import {TaskMailbox} from "@hourglass-monorepo/src/core/TaskMailbox.sol";
+import {TaskMailbox} from "@eigenlayer-contracts/src/contracts/avs/task/TaskMailbox.sol";
 
 contract DeployTaskMailbox is Script {
     function run(

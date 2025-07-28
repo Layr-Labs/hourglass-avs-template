@@ -8,8 +8,7 @@ import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transp
 
 import {IAllocationManager} from "@eigenlayer-contracts/src/contracts/interfaces/IAllocationManager.sol";
 import {IKeyRegistrar} from "@eigenlayer-contracts/src/contracts/interfaces/IKeyRegistrar.sol";
-
-import {ITaskAVSRegistrarBaseTypes} from "@hourglass-monorepo/src/interfaces/avs/l1/ITaskAVSRegistrarBase.sol";
+import {ITaskAVSRegistrarBaseTypes} from "@eigenlayer-middleware/src/interfaces/ITaskAVSRegistrarBase.sol";
 
 import {TaskAVSRegistrar} from "@project/l1-contracts/TaskAVSRegistrar.sol";
 

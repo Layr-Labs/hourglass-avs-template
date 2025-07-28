@@ -7,9 +7,8 @@ import {stdJson} from "forge-std/StdJson.sol";
 import {IKeyRegistrarTypes} from "@eigenlayer-contracts/src/contracts/interfaces/IKeyRegistrar.sol";
 import {OperatorSet, OperatorSetLib} from "@eigenlayer-contracts/src/contracts/libraries/OperatorSetLib.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-
-import {ITaskMailbox, ITaskMailboxTypes} from "@hourglass-monorepo/src/interfaces/core/ITaskMailbox.sol";
-import {IAVSTaskHook} from "@hourglass-monorepo/src/interfaces/avs/l2/IAVSTaskHook.sol";
+import {ITaskMailbox, ITaskMailboxTypes} from "@eigenlayer-contracts/src/contracts/interfaces/ITaskMailbox.sol";
+import {IAVSTaskHook} from "@eigenlayer-contracts/src/contracts/interfaces/IAVSTaskHook.sol";
 
 contract SetupAVSTaskMailboxConfig is Script {
     using stdJson for string;
@@ -33,12 +32,15 @@ contract SetupAVSTaskMailboxConfig is Script {
         // Set the Executor Operator Set Task Config
         ITaskMailboxTypes.ExecutorOperatorSetTaskConfig memory executorOperatorSetTaskConfig = ITaskMailboxTypes
             .ExecutorOperatorSetTaskConfig({
-            curveType: IKeyRegistrarTypes.CurveType(curveType),
             taskHook: IAVSTaskHook(taskHook),
-            feeToken: IERC20(address(0)),
-            feeCollector: address(0),
             taskSLA: taskSLA,
-            stakeProportionThreshold: 10_000,
+            feeToken: IERC20(address(0)),
+            curveType: IKeyRegistrarTypes.CurveType(curveType),
+            feeCollector: address(0),
+            consensus: ITaskMailboxTypes.Consensus({
+                consensusType: ITaskMailboxTypes.ConsensusType.STAKE_PROPORTION_THRESHOLD,
+                value: abi.encode(10_000)
+            }),
             taskMetadata: bytes("")
         });
         ITaskMailbox(taskMailbox).setExecutorOperatorSetTaskConfig(

@@ -4,8 +4,7 @@ pragma solidity ^0.8.27;
 import {Script, console} from "forge-std/Script.sol";
 import {stdJson} from "forge-std/StdJson.sol";
 import {OperatorSet} from "@eigenlayer-contracts/src/contracts/libraries/OperatorSetLib.sol";
-
-import {ITaskMailbox, ITaskMailboxTypes} from "@hourglass-monorepo/src/interfaces/core/ITaskMailbox.sol";
+import {ITaskMailbox, ITaskMailboxTypes} from "@eigenlayer-contracts/src/contracts/interfaces/ITaskMailbox.sol";
 
 contract CreateTask is Script {
     using stdJson for string;
@@ -26,7 +25,6 @@ contract CreateTask is Script {
         OperatorSet memory executorOperatorSet = OperatorSet({avs: avs, id: executorOperatorSetId});
         ITaskMailboxTypes.TaskParams memory taskParams = ITaskMailboxTypes.TaskParams({
             refundCollector: address(0),
-            avsFee: 0,
             executorOperatorSet: executorOperatorSet,
             payload: payload
         });
