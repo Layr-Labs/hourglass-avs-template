@@ -171,28 +171,33 @@ cd $contractsBasePath
 if [ "$ENVIRONMENT" == "devnet" ]; then
     log "Deploying TaskMailbox contract (devnet only)..."
     PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-task-mailbox RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" BN254_CERTIFICATE_VERIFIER="${BN254_CERTIFICATE_VERIFIER_ADDRESS}" ECDSA_CERTIFICATE_VERIFIER="${ECDSA_CERTIFICATE_VERIFIER_ADDRESS}" >&2
+    # Sync nonce and sleep to prevent nonce conflicts
+    sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L2_RPC_URL}" "deployer" 1
 else
-    log "Error: Only 'devnet' environment is currently supported for TaskMailbox deployment"
-    exit 1
+    log "Info: Only 'devnet' environment is currently supported for TaskMailbox deployment"
 fi
-
-# Sync nonce and sleep to prevent nonce conflicts
-sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L2_RPC_URL}" "deployer" 1
 
 # Step 2: Deploy AVS L2 contracts
 log "Deploying AVS L2 contracts..."
 PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l2-contracts RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" >&2
 
-# Sync nonce for AVS account and sleep to prevent nonce conflicts
-sync_nonce_and_sleep "${PRIVATE_KEY_AVS}" "${L2_RPC_URL}" "AVS" 1
+# Ensure nonce is in sync
+if [ "$ENVIRONMENT" == "devnet" ]; then
+    # Sync nonce for AVS account and sleep to prevent nonce conflicts
+    sync_nonce_and_sleep "${PRIVATE_KEY_AVS}" "${L2_RPC_URL}" "AVS" 1
+else
+    # Sleep for a block on other networks
+    sleep 12
+fi
 
 # Step 3: Set up AVS Task Mailbox configuration with BN254 curve type
-log "Setting up AVS Task Mailbox configuration..."
-PRIVATE_KEY_AVS="${PRIVATE_KEY_AVS}" make setup-avs-task-mailbox-config RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} TASK_SLA=${TASK_SLA} CURVE_TYPE=2 >&2
+if [ "$ENVIRONMENT" == "devnet" ]; then
+    log "Setting up AVS Task Mailbox configuration..."
+    PRIVATE_KEY_AVS="${PRIVATE_KEY_AVS}" make setup-avs-task-mailbox-config RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} TASK_SLA=${TASK_SLA} CURVE_TYPE=2 >&2
+    # Sync nonce and sleep to prevent nonce conflicts
+    sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L2_RPC_URL}" "deployer" 1
+fi  
 
-
-# Sync nonce and sleep to prevent nonce conflicts
-sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L2_RPC_URL}" "deployer" 1
 # Step 4: Deploy custom contracts
 log "Deploying custom L2 contracts..."
 PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-custom-contracts-l2 RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" CONTEXT="${CONTEXT}" >&2
@@ -209,8 +214,12 @@ HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
 AVS_L2_FILE="${OUTPUT_DIR}/deploy_avs_l2_output.json"
 CUSTOM_CONTRACTS_L2_FILE="${OUTPUT_DIR}/deploy_custom_contracts_l2_output.json"
 
-# Process the core output file (TaskMailbox)
-process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
+# HOURGLASS_CORE_FILE only present on devnet
+if [ "$ENVIRONMENT" == "devnet" ]; then
+    # Process the core output file (TaskMailbox)
+    process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
+fi  
+
 # Process the AVS L2 output file
 process_output_file "$AVS_L2_FILE" "AVS L2"
 # Process the custom contracts L2 output file
