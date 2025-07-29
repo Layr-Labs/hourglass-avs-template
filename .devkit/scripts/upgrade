@@ -32,6 +32,37 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Navigate to the parent directories to find .devkit
 PROJECT_BASE_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
+# check if .devkit/contracts/.git exists
+if [[ ! -d "$originalProjectDir/.devkit/contracts/.git" ]]; then
+    cd $originalProjectDir
+    log "cd to '$originalProjectDir'"
+    log ".devkit/contracts is still a git submodule, removing"
+
+    log "running submodule deinit.."
+    git submodule deinit -f .devit/contracts || true
+
+    log "removing submodule .devkit/contracts from git config.."
+    git rm -rf .devkit/contracts || true
+
+    log "removing .devkit/contracts directory.."
+    rm -rf .devkit/contracts || true
+
+    log "removing .devkit/contracts/.git directory.."
+    rm -rf .git/modules/.devkit/contracts || true
+
+
+    set +e
+    if [ -n "$(git status --porcelain)" ]; then
+        log "staging and committing changes.."
+        git add .
+        git commit -m 'chore: removed .devkit/contracts submodule as part of upgrade'
+    fi
+    set -e
+    cd -
+fi
+log "Updating .devkit/contracts from git submodule to regular directory..."
+cp -rfv "${PROJECT_BASE_DIR}/.devkit/contracts" $originalProjectDir/.devkit
+
 # Copy everything from .devkit except for ./contracts
 for item in "${PROJECT_BASE_DIR}/.devkit/"*; do
   [ "$(basename "$item")" = "contracts" ] && continue
@@ -43,77 +74,10 @@ cp -rfv "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/Dockerfile" $originalProjectDir
 cp -rfv "${PROJECT_BASE_DIR}/contracts/" $originalProjectDir/contracts
 
-cd $PROJECT_BASE_DIR/.devkit/contracts
-git_repo=$(git config --get remote.origin.url | tr -d '\n')
-git_ref=$(git rev-parse HEAD | tr -d '\n')
-cd -
-
-migratedContracts=""
-
-# -----------------------------------------------------------------------------
-# In order for forge to play nice with things, .devkit/contracts needs to
-# remain as a proper git submodule. Until this logic was added, it was not
-# a submodule, but just a simple directory. This caused some funky behavior
-# like requiring the end-user to commit and track everything in .devkit/contracts
-# which is not ideal nor necessary anymore. In fact, the user shouldnt be modifying
-# anything in .devkit/contracts at all.
-# -----------------------------------------------------------------------------
-# first check to see if the .devkit/contracts directory is already a submodule
-if ! git -C "$originalProjectDir" ls-tree -r HEAD | grep -q "160000.*\.devkit/contracts$"; then
-    log "Contracts directory is not a submodule, making it one"
-
-    cd $originalProjectDir
-    if [[ -d ".devkit/contracts" ]]; then
-        log "Moving existing .devkit/contracts to .oldcontracts"
-        cp -r $originalProjectDir/.devkit/contracts $originalProjectDir/.oldcontracts
-
-        log "Removing existing .devkit/contracts directory from git cache"
-        rm -rf .devkit/contracts
-        git rm -rf --cached .devkit/contracts
-        git commit -m "fix: remove improperly added .devkit/contracts directory"
-    else
-        log "No existing .devkit/contracts found, creating new submodule"
-    fi
-
-    log "repo url: $git_repo"
-    log "repo ref: $git_ref"
-
-    if [[ ! -d ".devkit/contracts" ]]; then
-        log "Creating .devkit/contracts directory"
-    fi
-
-    log "Adding .devkit/contracts as a submodule..."
-    git submodule add --force $git_repo .devkit/contracts
-
-    migratedContracts="1"
-
-    # cleanup
-    rm -rf $originalProjectDir/.oldcontracts || true
-fi
-
-log "Updating contracts submodule to desired commit..."
-cd $originalProjectDir/.devkit/contracts
-git fetch origin $git_ref
-git checkout $git_ref
-
-cd $originalProjectDir
-
 log "Updating submodules..."
-
-# update submodules inside .devkit/contracts
-git -C .devkit/contracts submodule update --init --recursive
-
-# update all submodules at root except for .devkit/contracts
-for sub in $(git config --file .gitmodules --get-regexp path | awk '{print $2}' | grep -v '.devkit/contracts'); do
-    git submodule update --init "$sub"
-done
+git submodule update --init --recursive
 
 log "Upgrade complete!"
-
-if [[ -n "$migratedContracts" ]]; then
-    log "Successfully migrated your .devkit/contracts to a submodule."
-    log "Please run 'git add .devkit/contracts' to stage the changes."
-fi
 
 
 
