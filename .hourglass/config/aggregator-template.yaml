@@ -22,7 +22,8 @@ operator:
   address: "{{ $aggregator.address }}"
   {{- range $i, $agg := (ds "ctx").context.operators }}
   {{- if eq $aggregator.address $agg.address }}
-  operatorPrivateKey: "{{ $agg.ecdsa_key }}"
+  operatorPrivateKey:
+    privateKey: "{{ $agg.ecdsa_key }}"
   signingKeys:
     bls:
       keystore: |
