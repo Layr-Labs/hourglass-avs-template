@@ -18,7 +18,8 @@ operator:
   address: "{{ $executor.address }}"
   {{- range $i, $exec := (ds "ctx").context.operators }}
   {{- if eq $executor.address $exec.address }}
-  operatorPrivateKey: "{{ $exec.ecdsa_key }}"
+  operatorPrivateKey:
+    privateKey: "{{ $exec.ecdsa_key }}"
   signingKeys:
     bls:
       keystore: |

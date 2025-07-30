@@ -60,22 +60,55 @@ if [[ ! -d "$originalProjectDir/.devkit/contracts/.git" ]]; then
     set -e
     cd -
 fi
-log "Updating .devkit/contracts from git submodule to regular directory..."
-cp -rfv "${PROJECT_BASE_DIR}/.devkit/contracts" $originalProjectDir/.devkit
 
+log "Copying .devkit to the original project directory..."
 # Copy everything from .devkit except for ./contracts
 for item in "${PROJECT_BASE_DIR}/.devkit/"*; do
   [ "$(basename "$item")" = "contracts" ] && continue
   cp -rfv "$item" "$originalProjectDir/.devkit/"
 done
 
+log "Updating .devkit/contracts from git submodule to regular directory..."
+mkdir $originalProjectDir/.devkit/contracts || true
+for item in "${PROJECT_BASE_DIR}/.devkit/contracts/"*; do
+  [ "$(basename "$item")" = "lib" ] && continue
+  cp -rfv "$item" "$originalProjectDir/.devkit/contracts/"
+done
+cp -rf "${PROJECT_BASE_DIR}/.gitmodules" $originalProjectDir
+
+rm -rf $originalProjectDir/.devkit/contracts/.git || true
+rm -rf $originalProjectDir/.devkit/contracts/lib/* || true
+
 # Copy the rest of the template
-cp -rfv "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
-cp -rfv "${PROJECT_BASE_DIR}/Dockerfile" $originalProjectDir
-cp -rfv "${PROJECT_BASE_DIR}/contracts/" $originalProjectDir/contracts
+log "Copying .hourglass and Dockerfile to the original project directory..."
+cp -rf "${PROJECT_BASE_DIR}/.hourglass" $originalProjectDir
+cp -rf "${PROJECT_BASE_DIR}/Dockerfile" $originalProjectDir
+
+log "Copying contracts to the original project directory..."
+cp -rf "${PROJECT_BASE_DIR}/contracts/" $originalProjectDir/contracts
 
 log "Updating submodules..."
+log "Re-initializing submodules from .gitmodules..."
+cd $originalProjectDir
+git submodule deinit --all || true
+git config -f .gitmodules --get-regexp '^submodule\.' | grep '\.path ' | while read -r key path; do
+    submodule_name=$(echo "$key" | sed 's/^submodule\.\(.*\)\.path$/\1/')
+
+    url=$(git config -f .gitmodules --get "submodule.$submodule_name.url")
+    branch=$(git config -f .gitmodules --get "submodule.$submodule_name.branch" 2>/dev/null || true)
+
+    if [ -n "$branch" ]; then
+        log "running git submodule add for $url at $path with branch $branch"
+        git submodule add -b "$branch" "$url" "$path"
+    else
+        log "running git submodule add for $url at $path (no branch specified)"
+        git submodule add "$url" "$path"
+    fi
+done
+log "Updating submodules recursively..."
 git submodule update --init --recursive
+
+cd -
 
 log "Upgrade complete!"
 

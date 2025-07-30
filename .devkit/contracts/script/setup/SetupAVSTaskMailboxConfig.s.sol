@@ -9,18 +9,25 @@ import {OperatorSet, OperatorSetLib} from "@eigenlayer-contracts/src/contracts/l
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {ITaskMailbox, ITaskMailboxTypes} from "@eigenlayer-contracts/src/contracts/interfaces/ITaskMailbox.sol";
 import {IAVSTaskHook} from "@eigenlayer-contracts/src/contracts/interfaces/IAVSTaskHook.sol";
+import {IECDSACertificateVerifier} from "@eigenlayer-contracts/src/contracts/interfaces/IECDSACertificateVerifier.sol";
+import {IBN254CertificateVerifier} from "@eigenlayer-contracts/src/contracts/interfaces/IBN254CertificateVerifier.sol";
 
 contract SetupAVSTaskMailboxConfig is Script {
     using stdJson for string;
 
-    function run(string memory environment, uint32 executorOperatorSetId, uint96 taskSLA, uint8 curveType) public {
-        // Read addresses from config files
-        address taskMailbox = _readHourglassConfigAddress(environment, "taskMailbox");
-        console.log("Task Mailbox:", taskMailbox);
+    struct Context {
+        address avs;
+        uint256 avsPrivateKey;
+        uint256 deployerPrivateKey;
+        IBN254CertificateVerifier certificateVerifier;
+        IECDSACertificateVerifier ecdsaCertificateVerifier;
+        ITaskMailbox taskMailbox;
+        IAVSTaskHook taskHook;
+    }
 
-        // Read AVS L2 contract addresses
-        address taskHook = _readAVSL2ConfigAddress(environment, "avsTaskHook");
-        console.log("AVS Task Hook:", taskHook);
+    function run(string memory environment, uint32 executorOperatorSetId, uint96 taskSLA, uint8 curveType, string memory _context) public {
+        // Read the context
+        Context memory context = _readContext(environment, _context);
 
         // Load the private key from the environment variable
         uint256 avsPrivateKey = vm.envUint("PRIVATE_KEY_AVS");
@@ -32,7 +39,7 @@ contract SetupAVSTaskMailboxConfig is Script {
         // Set the Executor Operator Set Task Config
         ITaskMailboxTypes.ExecutorOperatorSetTaskConfig memory executorOperatorSetTaskConfig = ITaskMailboxTypes
             .ExecutorOperatorSetTaskConfig({
-            taskHook: IAVSTaskHook(taskHook),
+            taskHook: context.taskHook,
             taskSLA: taskSLA,
             feeToken: IERC20(address(0)),
             curveType: IKeyRegistrarTypes.CurveType(curveType),
@@ -43,11 +50,11 @@ contract SetupAVSTaskMailboxConfig is Script {
             }),
             taskMetadata: bytes("")
         });
-        ITaskMailbox(taskMailbox).setExecutorOperatorSetTaskConfig(
+        context.taskMailbox.setExecutorOperatorSetTaskConfig(
             OperatorSet(avs, executorOperatorSetId), executorOperatorSetTaskConfig
         );
         ITaskMailboxTypes.ExecutorOperatorSetTaskConfig memory executorOperatorSetTaskConfigStored =
-            ITaskMailbox(taskMailbox).getExecutorOperatorSetTaskConfig(OperatorSet(avs, executorOperatorSetId));
+            context.taskMailbox.getExecutorOperatorSetTaskConfig(OperatorSet(avs, executorOperatorSetId));
         console.log(
             "Executor Operator Set Task Config set with curve type:",
             uint8(executorOperatorSetTaskConfigStored.curveType),
@@ -55,6 +62,23 @@ contract SetupAVSTaskMailboxConfig is Script {
         );
 
         vm.stopBroadcast();
+    }
+
+    function _readContext(
+        string memory environment,
+        string memory _context
+    ) internal view returns (Context memory) {
+        // Parse the context
+        Context memory context;
+        context.avs = stdJson.readAddress(_context, ".context.avs.address");
+        context.avsPrivateKey = uint256(stdJson.readBytes32(_context, ".context.avs.avs_private_key"));
+        context.deployerPrivateKey = uint256(stdJson.readBytes32(_context, ".context.deployer_private_key"));
+        context.certificateVerifier = IBN254CertificateVerifier(stdJson.readAddress(_context, ".context.eigenlayer.l2.bn254_certificate_verifier"));
+        context.ecdsaCertificateVerifier = IECDSACertificateVerifier(stdJson.readAddress(_context, ".context.eigenlayer.l2.ecdsa_certificate_verifier"));
+        context.taskMailbox = ITaskMailbox(_readHourglassConfigAddress(environment, "taskMailbox"));
+        context.taskHook = IAVSTaskHook(_readAVSL2ConfigAddress(environment, "avsTaskHook"));
+
+        return context;
     }
 
     function _readHourglassConfigAddress(

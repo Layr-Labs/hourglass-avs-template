@@ -4,4 +4,4 @@
 [submodule ".devkit/contracts/lib/eigenlayer-middleware"]
 	path = .devkit/contracts/lib/eigenlayer-middleware
 	url = https://github.com/Layr-Labs/eigenlayer-middleware
-	branch = release-dev/hourglass
+	branch = dev
