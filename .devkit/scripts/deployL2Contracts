@@ -85,11 +85,13 @@ ensureForge
 # Extract required values from context
 ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
 L2_RPC_URL=$(echo "$CONTEXT" | jq -r '.context.chains.l2.rpc_url')
+L2_CHAIN_ID=$(echo "$CONTEXT" | jq -r '.context.chains.l2.chain_id')
 PRIVATE_KEY_DEPLOYER=$(echo "$CONTEXT" | jq -r '.context.deployer_private_key')
 PRIVATE_KEY_AVS=$(echo "$CONTEXT" | jq -r '.context.avs.avs_private_key')
 AVS_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.avs.address')
 BN254_CERTIFICATE_VERIFIER_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l2.bn254_certificate_verifier')
 ECDSA_CERTIFICATE_VERIFIER_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l2.ecdsa_certificate_verifier')
+TASK_MAILBOX_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l2.task_mailbox')
 
 # Validate required fields exist in JSON
 if [ "$L2_RPC_URL" == "null" ] || [ -z "$L2_RPC_URL" ]; then
@@ -167,15 +169,23 @@ log "Starting L2 contract deployment using context for environment: $ENVIRONMENT
 # Change to contracts directory
 cd $contractsBasePath
 
-# Step 1: Deploy TaskMailbox contract
-if [ "$ENVIRONMENT" == "devnet" ]; then
-    log "Deploying TaskMailbox contract (devnet only)..."
-    PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-task-mailbox RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" BN254_CERTIFICATE_VERIFIER="${BN254_CERTIFICATE_VERIFIER_ADDRESS}" ECDSA_CERTIFICATE_VERIFIER="${ECDSA_CERTIFICATE_VERIFIER_ADDRESS}" >&2
-    # Sync nonce and sleep to prevent nonce conflicts
-    sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L2_RPC_URL}" "deployer" 1
-else
-    log "Info: Only 'devnet' environment is currently supported for TaskMailbox deployment"
-fi
+# Deployment output files location
+OUTPUT_DIR="script/${ENVIRONMENT}/output"
+
+# TaskMailBox output is manually written for all contexts
+HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
+
+# Step 1: Construct $HOURGLASS_CORE_FILE output file
+cat > "$HOURGLASS_CORE_FILE" <<EOF
+{
+  "addresses": {
+    "taskMailbox": "$TASK_MAILBOX_ADDRESS"
+  },
+  "chainInfo": {
+    "chainId": $L2_CHAIN_ID
+  }
+}
+EOF
 
 # Step 2: Deploy AVS L2 contracts
 log "Deploying AVS L2 contracts..."
@@ -204,22 +214,15 @@ PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-custom-contracts-l2 R
 
 log "L2 contract deployment completed successfully."
 
-# Process deployment output files
-OUTPUT_DIR="script/${ENVIRONMENT}/output"
 # Initialize an empty array
 deployed_contracts='[]'
 
 # Process all output files
-HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
 AVS_L2_FILE="${OUTPUT_DIR}/deploy_avs_l2_output.json"
 CUSTOM_CONTRACTS_L2_FILE="${OUTPUT_DIR}/deploy_custom_contracts_l2_output.json"
 
-# HOURGLASS_CORE_FILE only present on devnet
-if [ "$ENVIRONMENT" == "devnet" ]; then
-    # Process the core output file (TaskMailbox)
-    process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
-fi  
-
+# Process the core output file (TaskMailbox)
+process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
 # Process the AVS L2 output file
 process_output_file "$AVS_L2_FILE" "AVS L2"
 # Process the custom contracts L2 output file
