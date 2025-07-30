@@ -15,6 +15,10 @@ build: deps
 	@echo "Building binaries..."
 	go build -o $(OUT)/performer ./cmd/main.go
 
+build-contracts:
+	@echo "Building contracts..."
+	cd .devkit/contracts && forge build
+
 deps:
 	GOPRIVATE=github.com/Layr-Labs/* go mod tidy
 
