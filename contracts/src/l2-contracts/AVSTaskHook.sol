@@ -28,6 +28,7 @@ contract AVSTaskHook is IAVSTaskHook {
     }
 
     function handlePostTaskResultSubmission(
+        address, /*caller*/
         bytes32 /*taskHash*/
     ) external {
         //TODO: Implement
