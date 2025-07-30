@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: BUSL-1.1
 pragma solidity ^0.8.27;
 
-import {OperatorSet} from "@eigenlayer-contracts/src/contracts/libraries/OperatorSetLib.sol";
-import {IAVSTaskHook} from "@hourglass-monorepo/src/interfaces/avs/l2/IAVSTaskHook.sol";
-import {ITaskMailboxTypes} from "@hourglass-monorepo/src/interfaces/core/ITaskMailbox.sol";
+import {IAVSTaskHook} from "@eigenlayer-contracts/src/contracts/interfaces/IAVSTaskHook.sol";
+import {ITaskMailboxTypes} from "@eigenlayer-contracts/src/contracts/interfaces/ITaskMailbox.sol";
 
 contract AVSTaskHook is IAVSTaskHook {
     function validatePreTaskCreation(
@@ -35,8 +34,7 @@ contract AVSTaskHook is IAVSTaskHook {
     }
 
     function calculateTaskFee(
-        OperatorSet memory, /*operatorSet*/
-        bytes memory /*payload*/
+        ITaskMailboxTypes.TaskParams memory /*taskParams*/
     ) external view returns (uint96) {
         //TODO: Implement
     }

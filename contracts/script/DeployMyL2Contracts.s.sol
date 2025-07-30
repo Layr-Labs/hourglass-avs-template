@@ -7,7 +7,7 @@ import {stdJson} from "forge-std/StdJson.sol";
 import {IBN254CertificateVerifier} from
     "@eigenlayer-contracts/src/contracts/interfaces/IBN254CertificateVerifier.sol";
 import {IECDSACertificateVerifier} from "@eigenlayer-contracts/src/contracts/interfaces/IECDSACertificateVerifier.sol";
-import {ITaskMailbox} from "@hourglass-monorepo/src/interfaces/core/ITaskMailbox.sol";
+import {ITaskMailbox} from "@eigenlayer-contracts/src/contracts/interfaces/ITaskMailbox.sol";
 
 import {AVSTaskHook} from "@project/l2-contracts/AVSTaskHook.sol";
 import {HelloWorldL2} from "@project/l2-contracts/HelloWorldL2.sol"; // Import your L2 custom contract
