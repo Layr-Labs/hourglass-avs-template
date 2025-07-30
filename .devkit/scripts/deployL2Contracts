@@ -171,7 +171,7 @@ cd $contractsBasePath
 # Deployment output files location
 OUTPUT_DIR="script/${ENVIRONMENT}/output"
 
-# TaskMailBox output is manually written if !devnet
+# TaskMailBox output is manually written for all contexts
 HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
 
 # Step 1: Construct $HOURGLASS_CORE_FILE output file
