@@ -221,8 +221,6 @@ deployed_contracts='[]'
 AVS_L2_FILE="${OUTPUT_DIR}/deploy_avs_l2_output.json"
 CUSTOM_CONTRACTS_L2_FILE="${OUTPUT_DIR}/deploy_custom_contracts_l2_output.json"
 
-# Process the core output file (TaskMailbox)
-process_output_file "$HOURGLASS_CORE_FILE" "Hourglass Core"
 # Process the AVS L2 output file
 process_output_file "$AVS_L2_FILE" "AVS L2"
 # Process the custom contracts L2 output file
