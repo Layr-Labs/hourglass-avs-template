@@ -174,16 +174,8 @@ OUTPUT_DIR="script/${ENVIRONMENT}/output"
 # TaskMailBox output is manually written if !devnet
 HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
 
-# Step 1: Deploy TaskMailbox contract
-if [ "$ENVIRONMENT" == "devnet" ]; then
-    log "Deploying TaskMailbox contract (devnet only)..."
-    PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-task-mailbox RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" BN254_CERTIFICATE_VERIFIER="${BN254_CERTIFICATE_VERIFIER_ADDRESS}" ECDSA_CERTIFICATE_VERIFIER="${ECDSA_CERTIFICATE_VERIFIER_ADDRESS}" >&2
-    # Sync nonce and sleep to prevent nonce conflicts
-    sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L2_RPC_URL}" "deployer" 1
-else
-    log "Info: Only 'devnet' environment is currently supported for TaskMailbox deployment"
-    # If deploying somewhere other than devnet, write $HOURGLASS_CORE_FILE
-    cat > "$HOURGLASS_CORE_FILE" <<EOF
+# Step 1: Construct $HOURGLASS_CORE_FILE output file
+cat > "$HOURGLASS_CORE_FILE" <<EOF
 {
   "addresses": {
     "taskMailbox": $TASK_MAIL_BOX_ADDRESS
@@ -193,7 +185,6 @@ else
   }
 }
 EOF
-fi
 
 # Step 2: Deploy AVS L2 contracts
 log "Deploying AVS L2 contracts..."
