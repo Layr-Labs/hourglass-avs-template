@@ -85,6 +85,7 @@ ensureForge
 # Extract required values from context
 ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
 L2_RPC_URL=$(echo "$CONTEXT" | jq -r '.context.chains.l2.rpc_url')
+L2_CHAIN_ID=$(echo "$CONTEXT" | jq -r '.context.chains.l2.chain_id')
 PRIVATE_KEY_DEPLOYER=$(echo "$CONTEXT" | jq -r '.context.deployer_private_key')
 PRIVATE_KEY_AVS=$(echo "$CONTEXT" | jq -r '.context.avs.avs_private_key')
 AVS_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.avs.address')
