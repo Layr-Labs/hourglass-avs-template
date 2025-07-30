@@ -90,7 +90,7 @@ PRIVATE_KEY_AVS=$(echo "$CONTEXT" | jq -r '.context.avs.avs_private_key')
 AVS_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.avs.address')
 BN254_CERTIFICATE_VERIFIER_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l2.bn254_certificate_verifier')
 ECDSA_CERTIFICATE_VERIFIER_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l2.ecdsa_certificate_verifier')
-TASK_MAIL_BOX_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l2.task_mail_box')
+TASK_MAILBOX_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l2.task_mailbox')
 
 # Validate required fields exist in JSON
 if [ "$L2_RPC_URL" == "null" ] || [ -z "$L2_RPC_URL" ]; then
@@ -178,7 +178,7 @@ HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
 cat > "$HOURGLASS_CORE_FILE" <<EOF
 {
   "addresses": {
-    "taskMailbox": $TASK_MAIL_BOX_ADDRESS
+    "taskMailbox": $TASK_MAILBOX_ADDRESS
   },
   "chainInfo": {
     "chainId": $L2_CHAIN_ID
