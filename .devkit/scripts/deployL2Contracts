@@ -167,6 +167,12 @@ log "Starting L2 contract deployment using context for environment: $ENVIRONMENT
 # Change to contracts directory
 cd $contractsBasePath
 
+# Deployment output files location
+OUTPUT_DIR="script/${ENVIRONMENT}/output"
+
+# TaskMailBox output is manually written if !devnet
+HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
+
 # Step 1: Deploy TaskMailbox contract
 if [ "$ENVIRONMENT" == "devnet" ]; then
     log "Deploying TaskMailbox contract (devnet only)..."
@@ -175,6 +181,17 @@ if [ "$ENVIRONMENT" == "devnet" ]; then
     sync_nonce_and_sleep "${PRIVATE_KEY_DEPLOYER}" "${L2_RPC_URL}" "deployer" 1
 else
     log "Info: Only 'devnet' environment is currently supported for TaskMailbox deployment"
+    # If deploying somewhere other than devnet, write $HOURGLASS_CORE_FILE
+    cat > "$HOURGLASS_CORE_FILE" <<EOF
+{
+  "addresses": {
+    "taskMailbox": "0xB99CC53e8db7018f557606C2a5B066527bF96b26"
+  },
+  "chainInfo": {
+    "chainId": $L2_CHAIN_ID
+  }
+}
+EOF
 fi
 
 # Step 2: Deploy AVS L2 contracts
@@ -204,13 +221,10 @@ PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-custom-contracts-l2 R
 
 log "L2 contract deployment completed successfully."
 
-# Process deployment output files
-OUTPUT_DIR="script/${ENVIRONMENT}/output"
 # Initialize an empty array
 deployed_contracts='[]'
 
 # Process all output files
-HOURGLASS_CORE_FILE="${OUTPUT_DIR}/deploy_hourglass_core_output.json"
 AVS_L2_FILE="${OUTPUT_DIR}/deploy_avs_l2_output.json"
 CUSTOM_CONTRACTS_L2_FILE="${OUTPUT_DIR}/deploy_custom_contracts_l2_output.json"
 
