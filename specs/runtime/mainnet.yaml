@@ -1,17 +1,26 @@
 aggregator:
-  env:
-    LOG_LEVEL: "info"
+  envs:
+    - name: LOG_LEVEL
+      kind: plain
+      value: "info"
+      required: true
   resources:
     tee_enabled: false
 
 executor:
-  env:
-    LOG_LEVEL: "info"
+  envs:
+    - name: LOG_LEVEL
+      kind: plain
+      value: "info"
+      required: true
   resources:
     tee_enabled: false
 
 performer:
-  env:
-    LOG_LEVEL: "info"
+  envs:
+    - name: LOG_LEVEL
+      kind: plain
+      value: "info"
+      required: true
   resources:
     tee_enabled: false
