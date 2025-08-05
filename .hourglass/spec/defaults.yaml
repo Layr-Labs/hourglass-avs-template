@@ -8,7 +8,6 @@ aggregator:
     registry: "{{ (datasource "context").AGGREGATOR_REGISTRY }}"
     digest: "{{ (datasource "context").AGGREGATOR_DIGEST }}"
   env:
-    LOG_LEVEL: "info"
   resources:
     tee_enabled: false
 
@@ -18,7 +17,6 @@ executor:
     registry: "{{ (datasource "context").EXECUTOR_REGISTRY }}"
     digest: "{{ (datasource "context").EXECUTOR_DIGEST }}"
   env:
-    LOG_LEVEL: "info"
   resources:
     tee_enabled: false
 
@@ -27,6 +25,5 @@ performer:
     registry: "{{ (datasource "context").PERFORMER_REGISTRY }}"
     digest: "{{ (datasource "context").PERFORMER_DIGEST }}"
   env:
-    LOG_LEVEL: "info"
   resources:
     tee_enabled: false 

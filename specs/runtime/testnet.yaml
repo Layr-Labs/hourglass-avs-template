@@ -1,26 +1,8 @@
-aggregator:
-  envs:
-    - name: LOG_LEVEL
-      kind: plain
-      value: "info"
-      required: true
-  resources:
-    tee_enabled: false
-
-executor:
-  envs:
-    - name: LOG_LEVEL
-      kind: plain
-      value: "info"
-      required: true
-  resources:
-    tee_enabled: false
-
 performer:
   envs:
-    - name: LOG_LEVEL
+    - name: AVS_SPECIFIC_ENV
       kind: plain
-      value: "info"
+      value: ""
       required: true
   resources:
     tee_enabled: false
