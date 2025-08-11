@@ -6,11 +6,7 @@
 {{- $avsRegistrar = $contract.address }}
 {{- end }}
 {{- end }}
-{{- range $i, $contract := (ds "ctx").context.deployed_l2_contracts }}
-{{- if eq $contract.name "taskMailbox" }}
-{{- $taskMailboxL2 = $contract.address }}
-{{- end }}
-{{- end }}
+{{- $taskMailboxL2 := (ds "ctx").context.eigenlayer.l2.task_mailbox }}
 grpcPort: 9090
 performerNetworkName: "hourglass-local_hourglass-network"
 operator:

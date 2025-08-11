@@ -6,11 +6,7 @@
 {{- $avsRegistrar = $contract.address }}
 {{- end }}
 {{- end }}
-{{- range $i, $contract := (ds "ctx").context.deployed_l2_contracts }}
-{{- if eq $contract.name "taskMailbox" }}
-{{- $taskMailboxL2 = $contract.address }}
-{{- end }}
-{{- end }}
+{{- $taskMailboxL2 := (ds "ctx").context.eigenlayer.l2.task_mailbox }}
 debug: false
 serverConfig:
   port: 9000
@@ -36,7 +32,7 @@ l1ChainId: {{ (ds "ctx").context.chains.l1.chain_id }}
 
 chains:
   - name: "ethereum"
-    network: "holesky"
+    network: "sepolia"
     chainId: {{ (ds "ctx").context.chains.l1.chain_id }}
     rpcUrl: "{{ (ds "ctx").context.chains.l1.rpc_url }}"
     pollIntervalSeconds: 2
