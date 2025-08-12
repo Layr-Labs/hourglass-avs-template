@@ -35,28 +35,35 @@ function readOperatorBlsKeystore() {
 }
 
 function loadBlsKeysForAllOperators() {
-    local operatorCount=$(echo $CONTEXT | jq -r ".context.operators | length")
-    for i in $(seq 0 $((operatorCount - 1))); do
-        local blsKeystorePath=$(echo $CONTEXT | jq -r ".context.operators[$i].bls_keystore_path")
-        local blsKeyContents=$(echo $(readOperatorBlsKeystore $blsKeystorePath) | jq -c '.')
-        # set the bls key contents in the context as a raw string
-        CONTEXT=$(echo $CONTEXT | jq --argjson blsKeyContents "$blsKeyContents" ".context.operators[$i].bls_key_contents = \$blsKeyContents")
+    local opCount ksCount i j blsKeystorePath blsKeyContents
+    opCount=$(jq -r '.context.operators | length' <<<"$CONTEXT")
+    for ((i=0; i<opCount; i++)); do
+        ksCount=$(jq -r ".context.operators[$i].keystores | length // 0" <<<"$CONTEXT")
+        for ((j=0; j<ksCount; j++)); do
+            blsKeystorePath=$(jq -r ".context.operators[$i].keystores[$j].bls_keystore_path // empty" <<<"$CONTEXT")
+            if [[ -n "$blsKeystorePath" && -f "$blsKeystorePath" ]]; then
+                blsKeyContents=$(readOperatorBlsKeystore "$blsKeystorePath" | jq -c '.')
+                CONTEXT=$(jq --argjson c "$blsKeyContents" \
+                    ".context.operators[$i].keystores[$j].bls_key_contents = \$c" <<<"$CONTEXT")
+            fi
+        done
     done
 }
 
 # Load ECDSA keys from keystores
 function loadECDSAKeysForAllOperators() {
-    local operatorCount=$(echo $CONTEXT | jq -r ".context.operators | length")
-    for i in $(seq 0 $((operatorCount - 1))); do
-        local ecdsaKeystorePath=$(echo $CONTEXT | jq -r ".context.operators[$i].ecdsa_keystore_path // empty")
-        local ecdsaKeystorePassword=$(echo $CONTEXT | jq -r ".context.operators[$i].ecdsa_keystore_password // empty")
-        local ecdsaKey=$(echo $CONTEXT | jq -r ".context.operators[$i].ecdsa_key // empty")
-        
-        # If keystore path exists and is a file, add keystore contents to context
-        if [ "$ecdsaKeystorePath" != "null" ] && [ "$ecdsaKeystorePath" != "empty" ] && [ -f "$ecdsaKeystorePath" ]; then
-            local ecdsaKeystoreContents=$(cat "$ecdsaKeystorePath" | jq -c '.')
-            CONTEXT=$(echo $CONTEXT | jq --argjson ecdsaKeystoreContents "$ecdsaKeystoreContents" ".context.operators[$i].ecdsa_keystore_contents = \$ecdsaKeystoreContents")
-        fi
+    local opCount ksCount i j ecdsaKeystorePath ecdsaKeystoreContents
+    opCount=$(jq -r '.context.operators | length' <<<"$CONTEXT")
+    for ((i=0; i<opCount; i++)); do
+        ksCount=$(jq -r ".context.operators[$i].keystores | length // 0" <<<"$CONTEXT")
+        for ((j=0; j<ksCount; j++)); do
+            ecdsaKeystorePath=$(jq -r ".context.operators[$i].keystores[$j].ecdsa_keystore_path // empty" <<<"$CONTEXT")
+            if [[ -n "$ecdsaKeystorePath" && -f "$ecdsaKeystorePath" ]]; then
+                ecdsaKeystoreContents=$(jq -c '.' "$ecdsaKeystorePath")
+                CONTEXT=$(jq --argjson c "$ecdsaKeystoreContents" \
+                    ".context.operators[$i].keystores[$j].ecdsa_keystore_contents = \$c" <<<"$CONTEXT")
+            fi
+        done
     done
 }
 
