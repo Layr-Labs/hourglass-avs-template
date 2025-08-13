@@ -39,7 +39,7 @@ if [[ ! -d "$originalProjectDir/.devkit/contracts/.git" ]]; then
     log ".devkit/contracts is still a git submodule, removing"
 
     log "running submodule deinit.."
-    git submodule deinit -f .devit/contracts || true
+    git submodule deinit -f .devkit/contracts || true
 
     log "removing submodule .devkit/contracts from git config.."
     git rm -rf .devkit/contracts || true
