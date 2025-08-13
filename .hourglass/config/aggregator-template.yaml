@@ -16,16 +16,21 @@ serverConfig:
 operator:
   {{- $aggregator := index (ds "ctx").aggregator.operators 0 }}
   address: "{{ $aggregator.address }}"
-  {{- range $i, $agg := (ds "ctx").context.operators }}
-  {{- if eq $aggregator.address $agg.address }}
+  {{- $aggSetID := (ds "ctx").aggregator.operatorSetId }}
+  {{- range $i, $op := (ds "ctx").context.operators }}
+    {{- if eq $aggregator.address $op.address }}
+      {{- range $j, $ks := $op.keystores }}
+        {{- if eq $ks.operatorSet $aggSetID }}
   operatorPrivateKey:
-    privateKey: "{{ $agg.ecdsa_key }}"
+    privateKey: "{{ $op.ecdsa_key }}"
   signingKeys:
     bls:
       keystore: |
-{{ toJSONPretty " " $agg.bls_key_contents | indent 8}}
-      password: "{{ $agg.bls_keystore_password }}"
-  {{- end}}
+{{ toJSONPretty " " $ks.bls_key_contents | indent 8 }}
+      password: "{{ $ks.bls_keystore_password }}"
+        {{- end }}
+      {{- end }}
+    {{- end }}
   {{- end }}
 
 l1ChainId: {{ (ds "ctx").context.chains.l1.chain_id }}
