@@ -5,3 +5,4 @@
 	path = .devkit/contracts/lib/eigenlayer-middleware
 	url = https://github.com/Layr-Labs/eigenlayer-middleware
 	branch = dev
+	commit = ed04a9423c7528eed15e68a13d222ec722961db7
