@@ -1,5 +1,5 @@
 {{- $values := (datasource "values") -}}
-apiVersion: eigenruntime.io/v1
+apiVersion: eigenruntime.io/v1alpha1
 kind: Hourglass
 name: {{ $values.project.name }}
 version: {{ $values.project.version }}
@@ -7,22 +7,22 @@ spec:
   executor:
     registry: {{ $values.executor.image.registry }}
     digest: {{ $values.executor.image.digest }}
-    command: ["executor", "run"]
     env:
-    {{- range $k, $v := $values.executor.env }}
-      - name: {{ $k }}
-        value: "{{ $v }}"
+    {{- range $env := $values.executor.env }}
+    - name: {{ $env.name }}
+      type: {{ $env.type }}
+      required: {{ $env.required }}
     {{- end }}
     resources:
       tee_enabled: {{ $values.executor.resources.tee_enabled }}
   performer:
     registry: {{ $values.performer.image.registry }}
     digest: {{ $values.performer.image.digest }}
-    command: ["performer", "run"]
     env:
-    {{- range $k, $v := $values.performer.env }}
-      - name: {{ $k }}
-        value: "{{ $v }}"
+    {{- range $env := $values.performer.env }}
+    - name: {{ $env.name }}
+      type: {{ $env.type }}
+      required: {{ $env.required }}
     {{- end }}
     resources:
       tee_enabled: {{ $values.performer.resources.tee_enabled }}
