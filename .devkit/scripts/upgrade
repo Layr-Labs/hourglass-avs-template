@@ -91,28 +91,43 @@ log "Updating submodules..."
 log "Re-initializing submodules from .gitmodules..."
 cd $originalProjectDir
 git submodule deinit --all || true
-git config -f .gitmodules --get-regexp '^submodule\.' | grep '\.path ' | while read -r key path; do
-    submodule_name=$(echo "$key" | sed 's/^submodule\.\(.*\)\.path$/\1/')
+git config -f .gitmodules --get-regexp '\.path$' | while read -r key path; do
+  name=${key#submodule.}; name=${name%.path}
+  url=$(git config -f .gitmodules --get "submodule.$name.url")
+  log "adding submodule $name -> $url at $path"
+  git submodule add --force --name "$name" "$url" "$path" || true
+done
+git submodule sync --recursive
 
-    url=$(git config -f .gitmodules --get "submodule.$submodule_name.url")
-    branch=$(git config -f .gitmodules --get "submodule.$submodule_name.branch" 2>/dev/null || true)
-
-    if [ -n "$branch" ]; then
-        log "running git submodule add for $url at $path with branch $branch"
-        git submodule add -b "$branch" "$url" "$path"
+# Pin each submodule to the exact commit recorded in the templates tree
+git config -f .gitmodules --get-regexp '\.path$' | while read -r key path; do
+  # Read the gitlink SHA from the template repos tree at HEAD
+  sub_sha=$(git -C "$PROJECT_BASE_DIR" ls-tree -z HEAD -- "$path" 2>/dev/null | tr '\0' '\n' | awk '{print $3}')
+  if [ -n "$sub_sha" ]; then
+    log "Pinning $path to $sub_sha"
+    # Make sure the commit is fetchable and present locally
+    git -C "$path" remote update --prune || true
+    git -C "$path" fetch --all --tags --prune || true
+    # Detach at the exact SHA - prevents a branch like 'dev' from being checked out
+    if git -C "$path" rev-parse -q --verify "$sub_sha^{commit}" >/dev/null 2>&1; then
+      git -C "$path" checkout --detach "$sub_sha"
+      git add -- "$path"
     else
-        log "running git submodule add for $url at $path (no branch specified)"
-        git submodule add "$url" "$path"
+      log "WARNING: $path missing $sub_sha - leaving as-is"
     fi
+  else
+    log "No commit recorded in template for $path - leaving as added"
+  fi
 done
 
 # Remove the orphaned submodule at contracts/lib/forge-std
 git submodule deinit -f contracts/lib/forge-std || true
 git rm -f contracts/lib/forge-std || true
-rm -rf .git/modules/contracts/lib/forge-std
+rm -rf .git/modules/contracts/lib/forge-std || true
 
-log "Updating submodules recursively..."
-git submodule update --init --recursive
+# Ensure worktrees match pinned gitlinks
+log "Updating submodules recursively at pinned commits..."
+git submodule update --init --recursive --checkout
 
 cd -
 
