@@ -105,6 +105,12 @@ git config -f .gitmodules --get-regexp '^submodule\.' | grep '\.path ' | while r
         git submodule add "$url" "$path"
     fi
 done
+
+# Remove the orphaned submodule at contracts/lib/forge-std
+git submodule deinit -f contracts/lib/forge-std || true
+git rm -f contracts/lib/forge-std || true
+rm -rf .git/modules/contracts/lib/forge-std
+
 log "Updating submodules recursively..."
 git submodule update --init --recursive
 
