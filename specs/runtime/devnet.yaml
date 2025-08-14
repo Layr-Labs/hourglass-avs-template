@@ -1,18 +1,18 @@
 # devnet environment overrides
 aggregator:
   env:
-    LOG_LEVEL: "info"
+    -  name: "EXAMPLE_ENV"
+       type: plain
+       required: false
   resources:
     tee_enabled: false
 
 executor:
   env:
-    LOG_LEVEL: "info"
   resources:
     tee_enabled: false
 
 performer:
   env:
-    LOG_LEVEL: "info"
   resources:
     tee_enabled: false
