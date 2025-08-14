@@ -1,9 +1,9 @@
 # devnet environment overrides
 aggregator:
   env:
-    name: "EXAMPLE_ENV"
-    type: plain
-    require: false
+    -  name: "EXAMPLE_ENV"
+       type: plain
+       required: false
   resources:
     tee_enabled: false
 
