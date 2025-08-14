@@ -7,7 +7,6 @@ spec:
   executor:
     registry: {{ $values.executor.image.registry }}
     digest: {{ $values.executor.image.digest }}
-    command: ["executor", "run"]
     env:
     {{- range $env := $values.executor.env }}
     - name: {{ $env.name }}
@@ -19,7 +18,6 @@ spec:
   performer:
     registry: {{ $values.performer.image.registry }}
     digest: {{ $values.performer.image.digest }}
-    command: ["performer", "run"]
     env:
     {{- range $env := $values.performer.env }}
     - name: {{ $env.name }}
