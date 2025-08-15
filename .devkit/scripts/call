@@ -72,6 +72,7 @@ ENVIRONMENT=$(echo "$CONTEXT" | jq -r '.context.name')
 L2_RPC_URL=$(echo "$CONTEXT" | jq -r '.context.chains.l2.rpc_url')
 PRIVATE_KEY_APP=$(echo "$CONTEXT" | jq -r '.context.app_private_key')
 AVS_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.avs.address')
+TASK_MAILBOX_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l2.task_mailbox')
 
 # Get executor operator set ID from environment YAML file
 ENVIRONMENT_YAML_FILE=".hourglass/context/${ENVIRONMENT}.yaml"
@@ -114,6 +115,16 @@ if [[ ! "$AVS_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
     exit 1
 fi
 
+if [ "$TASK_MAILBOX_ADDRESS" == "null" ] || [ -z "$TASK_MAILBOX_ADDRESS" ]; then
+  log "Error: Missing eigenlayer.l2.task_mailbox in context"
+  exit 1
+fi
+
+if [[ ! "$TASK_MAILBOX_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+  log "Error: TASK_MAILBOX_ADDRESS must be a valid Ethereum address"
+  exit 1
+fi
+
 # Validate payload is a hex string
 if [[ ! "$PAYLOAD" =~ ^0x[a-fA-F0-9]+$ ]]; then
     log "Error: Generated payload must be a hex string (0x followed by hex characters)"
@@ -124,7 +135,63 @@ fi
 log "Creating task on the TaskMailbox contract..."
 log "Using payload encoded from signature: $SIGNATURE, args: $ARGS"
 
-# Create a task on the TaskMailbox contract
-cd ./.devkit/contracts && PRIVATE_KEY_APP="${PRIVATE_KEY_APP}" make create-task RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} PAYLOAD="${PAYLOAD}"
+# Capture the last bytes32 printed by forge as the task hash
+RAW_OUT_FILE="$(mktemp)"
+# run your make target and tee its stdout so we can parse it
+cd ./.devkit/contracts
+PRIVATE_KEY_APP="${PRIVATE_KEY_APP}" make create-task \
+  RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" \
+  EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} PAYLOAD="${PAYLOAD}" | tee "${RAW_OUT_FILE}"
+cd - >/dev/null
 
 log "Task created successfully." 
+
+# Capture taskHash from raw output
+TASK_HASH=$(
+  awk '/Created task with hash:/{getline; print;}' "${RAW_OUT_FILE}" \
+  | grep -Eo '0x[a-fA-F0-9]{64}' | head -n1
+)
+if [[ ! "$TASK_HASH" =~ ^0x[a-fA-F0-9]{64}$ ]]; then
+  log "Error: could not parse taskHash from create-task output"
+  exit 1
+fi
+rm -f "${RAW_OUT_FILE}"
+
+# Discovered taskHash, waiting for verification
+log "Task hash: ${TASK_HASH}"
+log "Waiting for TaskVerified..."
+
+# Start block just after creation to avoid missing the event
+FROM_BLOCK=$(cast block-number --rpc-url "$L2_RPC_URL")
+
+#  30 minutes if sleep=5
+MAX_ATTEMPTS=360
+SLEEP=5
+FOUND=0
+
+# Poll for TaskVerified() logs
+for ((i=1; i<=MAX_ATTEMPTS; i++)); do
+  EVENT=$(cast logs \
+    --rpc-url "$L2_RPC_URL" \
+    --address "$TASK_MAILBOX_ADDRESS" \
+    --from-block "$FROM_BLOCK" \
+    --to-block latest \
+    "TaskVerified(address,bytes32,address,uint32,bytes,bytes)" \
+    "$TASK_HASH" --json)
+
+  if [ -n "$EVENT" ] && [ "$EVENT" != "[]" ]; then
+    echo "$EVENT" | jq -r '.[0].data' | while read -r DATA; do
+      DECODED="$(cast --abi-decode "(uint32,bytes,bytes)" "$DATA")"
+      echo "TaskVerified received"
+      echo "$DECODED"
+    done
+    FOUND=1
+    break
+  fi
+  sleep $SLEEP
+done
+
+if [ $FOUND -eq 0 ]; then
+  echo "Timeout: TaskVerified not seen"
+  exit 1
+fi
