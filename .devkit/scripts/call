@@ -145,8 +145,6 @@ PRIVATE_KEY_APP="${PRIVATE_KEY_APP}" make create-task \
   PAYLOAD="${PAYLOAD}" | tee "${RAW_OUT_FILE}"
 cd - >/dev/null
 
-log "Task created successfully." 
-
 # Capture taskHash from raw output
 TASK_HASH=$(
   awk '/Created task with hash:/{getline; print;}' "${RAW_OUT_FILE}" \
@@ -159,16 +157,26 @@ fi
 rm -f "${RAW_OUT_FILE}"
 
 # Discovered taskHash, waiting for verification
-log "Task hash: ${TASK_HASH}"
-log "Waiting for TaskVerified..."
+log "Task created successfully:" 
+log " - Task hash: ${TASK_HASH}"
+
+# Poll for TaskVerified() logs
+log "\nWaiting for TaskVerified()..."
 
 # Start block just after creation to avoid missing the event
-FROM_BLOCK=$(cast block-number --rpc-url "$L2_RPC_URL")
+FROM_BLOCK_RAW="$(cast block-number --rpc-url "$L2_RPC_URL" | tr -d '[:space:]')"
+FROM_BLOCK="$(printf '%s' "$FROM_BLOCK_RAW" | tr -cd '0-9')"
+if [ -z "$FROM_BLOCK" ]; then
+  log "Error: invalid from-block '$FROM_BLOCK_RAW'"; exit 1
+fi
 
-#  30 minutes if sleep=5
+# 30 minutes if sleep=5
 MAX_ATTEMPTS=360
 SLEEP=5
 FOUND=0
+EXECUTOR_SET_ID=""
+EXECUTOR_CERT=""
+RESULT_BYTES=""
 
 # Poll for TaskVerified() logs
 for ((i=1; i<=MAX_ATTEMPTS; i++)); do
@@ -181,18 +189,36 @@ for ((i=1; i<=MAX_ATTEMPTS; i++)); do
     "$TASK_HASH" --json)
 
   if [ -n "$EVENT" ] && [ "$EVENT" != "[]" ]; then
-    echo "$EVENT" | jq -r '.[0].data' | while read -r DATA; do
-      DECODED="$(cast --abi-decode "(uint32,bytes,bytes)" "$DATA")"
-      echo "TaskVerified received"
-      echo "$DECODED"
-    done
+    # Pick the first matching log
+    DATA="$(jq -r '.[-1].data' <<<"$EVENT")"
+    DECODED="$(cast --abi-decode "(uint32,bytes,bytes)" "$DATA")"
+    EXECUTOR_SET_ID="$(printf '%s\n' "$DECODED" | sed -n '1p')"
+    EXECUTOR_CERT="$(printf '%s\n' "$DECODED" | sed -n '2p')"
+    RESULT_BYTES="$(printf '%s\n' "$DECODED" | sed -n '3p')"
+      
+    # Print to stderr
+    log "\nTaskVerified event received:"
+    log " - executorOperatorSetId: $EXECUTOR_SET_ID"
+    log " - executorCert: $EXECUTOR_CERT"
+    log " - result: $RESULT_BYTES"
+
     FOUND=1
     break
   fi
   sleep $SLEEP
 done
 
+# Failed to find TaskVerified event, fail gracefully
 if [ $FOUND -eq 0 ]; then
-  echo "Timeout: TaskVerified not seen"
+  log " - Timeout: TaskVerified() not seen\n"
+  jq -nc --arg taskHash "$TASK_HASH" '{"taskHash":$taskHash,"status":"timeout"}' | jq -c .
   exit 1
 fi
+
+# Print the combined JSON result - this is the ONLY stdout output
+jq -nc \
+  --arg taskHash "$TASK_HASH" \
+  --arg executorOperatorSetId "$EXECUTOR_SET_ID" \
+  --arg executorCert "$EXECUTOR_CERT" \
+  --arg result "$RESULT_BYTES" \
+  '{"taskHash":$taskHash,"status":"verified","executorOperatorSetId":$executorOperatorSetId,"executorCert":$executorCert,"result":$result}' | jq -c .
