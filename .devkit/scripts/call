@@ -140,8 +140,9 @@ RAW_OUT_FILE="$(mktemp)"
 # run your make target and tee its stdout so we can parse it
 cd ./.devkit/contracts
 PRIVATE_KEY_APP="${PRIVATE_KEY_APP}" make create-task \
-  RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" \
-  EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} PAYLOAD="${PAYLOAD}" | tee "${RAW_OUT_FILE}"
+  RPC_URL="${L2_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" TASK_MAILBOX_ADDRESS="${TASK_MAILBOX_ADDRESS}" \
+  AVS_ADDRESS="${AVS_ADDRESS}" EXECUTOR_OPERATOR_SET_ID=${EXECUTOR_OPERATOR_SET_ID} \
+  PAYLOAD="${PAYLOAD}" | tee "${RAW_OUT_FILE}"
 cd - >/dev/null
 
 log "Task created successfully." 

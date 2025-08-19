@@ -67,7 +67,7 @@ create-task:
 	forge script script/call/CreateTask.s.sol \
 		--rpc-url $(RPC_URL) \
 		--broadcast \
-		--sig "run(string, address, uint32, bytes)" $(ENVIRONMENT) $(AVS_ADDRESS) $(EXECUTOR_OPERATOR_SET_ID) $(PAYLOAD) \
+		--sig "run(string, address, address, uint32, bytes)" $(ENVIRONMENT) $(TASK_MAILBOX_ADDRESS) $(AVS_ADDRESS) $(EXECUTOR_OPERATOR_SET_ID) $(PAYLOAD) \
 		--slow \
 		-vvvv
 
