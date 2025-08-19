@@ -65,7 +65,7 @@ func main() {
 
 	w := NewTaskWorker(l)
 
-	pp, err := server.NewPonosPerformerWithRpcServer(&server.PonosPerformerConfig{
+	pp, err := server.NewPonosPerformerWithRpcServerHealthCheck(&server.PonosPerformerConfig{
 		Port:    8080,
 		Timeout: 5 * time.Second,
 	}, w, l)
