@@ -20,9 +20,8 @@ func Test_TaskRequestPayload(t *testing.T) {
 	taskWorker := NewTaskWorker(logger)
 
 	taskRequest := &performerV1.TaskRequest{
-		TaskId:   []byte("test-task-id"),
-		Payload:  []byte("test-data"),
-		Metadata: []byte("test-metadata"),
+		TaskId:  []byte("test-task-id"),
+		Payload: []byte("test-data"),
 	}
 
 	err = taskWorker.ValidateTask(taskRequest)

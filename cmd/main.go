@@ -51,7 +51,6 @@ func (tw *TaskWorker) HandleTask(t *performerV1.TaskRequest) (*performerV1.TaskR
 	// ------------------------------------------------------------------------
 	// This is where the Performer will do the work and provide compute.
 	// E.g. the Perfomer could call an external API, a local service or a script.
-
 	var resultBytes []byte
 	return &performerV1.TaskResponse{
 		TaskId: t.TaskId,
@@ -65,7 +64,7 @@ func main() {
 
 	w := NewTaskWorker(l)
 
-	pp, err := server.NewPonosPerformerWithRpcServerHealthCheck(&server.PonosPerformerConfig{
+	pp, err := server.NewPonosPerformerWithRpcServer(&server.PonosPerformerConfig{
 		Port:    8080,
 		Timeout: 5 * time.Second,
 	}, w, l)
