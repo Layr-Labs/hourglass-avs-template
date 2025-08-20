@@ -87,6 +87,7 @@ PRIVATE_KEY_DEPLOYER=$(echo "$CONTEXT" | jq -r '.context.deployer_private_key')
 AVS_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.avs.address')
 ALLOCATION_MANAGER_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l1.allocation_manager')
 KEY_REGISTRAR_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l1.key_registrar')
+PERMISSION_CONTROLLER_ADDRESS=$(echo "$CONTEXT" | jq -r '.context.eigenlayer.l1.permission_controller')
 
 # Validate required fields exist in JSON
 if [ "$L1_RPC_URL" == "null" ] || [ -z "$L1_RPC_URL" ]; then
@@ -116,6 +117,11 @@ fi
 
 if [ "$KEY_REGISTRAR_ADDRESS" == "null" ] || [ -z "$KEY_REGISTRAR_ADDRESS" ]; then
     log "Error: Missing eigenlayer.l1.key_registrar in context"
+    exit 1
+fi
+
+if [ "$PERMISSION_CONTROLLER_ADDRESS" == "null" ] || [ -z "$PERMISSION_CONTROLLER_ADDRESS" ]; then
+    log "Error: Missing eigenlayer.l1.permission_controller in context"
     exit 1
 fi
 
@@ -154,6 +160,7 @@ validate_eth_address() {
 validate_eth_address "$AVS_ADDRESS" "AVS_ADDRESS"
 validate_eth_address "$ALLOCATION_MANAGER_ADDRESS" "ALLOCATION_MANAGER_ADDRESS"
 validate_eth_address "$KEY_REGISTRAR_ADDRESS" "KEY_REGISTRAR_ADDRESS"
+validate_eth_address "$PERMISSION_CONTROLLER_ADDRESS" "PERMISSION_CONTROLLER_ADDRESS"
 
 log "Starting L1 contract deployment using context for environment: $ENVIRONMENT"
 
@@ -165,7 +172,7 @@ mkdir -p script/$ENVIRONMENT/output
 
 # Deploy AVS L1 contracts
 log "Deploying AVS L1 contracts..."
-PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" KEY_REGISTRAR_ADDRESS="${KEY_REGISTRAR_ADDRESS}" AGGREGATOR_OPERATOR_SET_ID="${AGGREGATOR_OPERATOR_SET_ID}" EXECUTOR_OPERATOR_SET_ID="${EXECUTOR_OPERATOR_SET_ID}" >&2
+PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" KEY_REGISTRAR_ADDRESS="${KEY_REGISTRAR_ADDRESS}" PERMISSION_CONTROLLER_ADDRESS="${PERMISSION_CONTROLLER_ADDRESS}" AGGREGATOR_OPERATOR_SET_ID="${AGGREGATOR_OPERATOR_SET_ID}" EXECUTOR_OPERATOR_SET_ID="${EXECUTOR_OPERATOR_SET_ID}" >&2
 
 log "L1 contract deployment completed successfully."
 
