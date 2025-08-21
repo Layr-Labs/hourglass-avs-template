@@ -52,7 +52,7 @@ contract DeployAVSL1Contracts is Script {
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(taskAVSRegistrarImpl),
             address(proxyAdmin),
-            abi.encodeWithSelector(TaskAVSRegistrar.initialize.selector, avs, initialConfig)
+            abi.encodeWithSelector(TaskAVSRegistrar.initialize.selector, avs, avs, initialConfig)
         );
         console.log("TaskAVSRegistrar proxy deployed to:", address(proxy));
 
