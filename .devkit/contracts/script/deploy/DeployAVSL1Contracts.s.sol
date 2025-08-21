@@ -8,6 +8,7 @@ import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transp
 
 import {IAllocationManager} from "@eigenlayer-contracts/src/contracts/interfaces/IAllocationManager.sol";
 import {IKeyRegistrar} from "@eigenlayer-contracts/src/contracts/interfaces/IKeyRegistrar.sol";
+import {IPermissionController} from "@eigenlayer-contracts/src/contracts/interfaces/IPermissionController.sol";
 import {ITaskAVSRegistrarBaseTypes} from "@eigenlayer-middleware/src/interfaces/ITaskAVSRegistrarBase.sol";
 
 import {TaskAVSRegistrar} from "@project/l1-contracts/TaskAVSRegistrar.sol";
@@ -18,16 +19,16 @@ contract DeployAVSL1Contracts is Script {
         address avs,
         address allocationManager,
         address keyRegistrar,
+        address permissionController,
         uint32 aggregatorOperatorSetId,
         uint32 executorOperatorSetId
     ) public {
         // Load the private key from the environment variable
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_DEPLOYER");
-        address deployer = vm.addr(deployerPrivateKey);
 
         // Deploy the TaskAVSRegistrar middleware contract with proxy pattern
         vm.startBroadcast(deployerPrivateKey);
-        console.log("Deployer address:", deployer);
+        console.log("Deployer address:", vm.addr(deployerPrivateKey));
 
         // Create initial config
         uint32[] memory executorOperatorSetIds = new uint32[](1);
@@ -43,7 +44,7 @@ contract DeployAVSL1Contracts is Script {
 
         // Deploy implementation
         TaskAVSRegistrar taskAVSRegistrarImpl = new TaskAVSRegistrar(
-            avs, IAllocationManager(allocationManager), IKeyRegistrar(keyRegistrar)
+            IAllocationManager(allocationManager), IKeyRegistrar(keyRegistrar), IPermissionController(permissionController)
         );
         console.log("TaskAVSRegistrar implementation deployed to:", address(taskAVSRegistrarImpl));
 
@@ -51,7 +52,7 @@ contract DeployAVSL1Contracts is Script {
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(taskAVSRegistrarImpl),
             address(proxyAdmin),
-            abi.encodeWithSelector(TaskAVSRegistrar.initialize.selector, avs, initialConfig)
+            abi.encodeWithSelector(TaskAVSRegistrar.initialize.selector, avs, avs, initialConfig)
         );
         console.log("TaskAVSRegistrar proxy deployed to:", address(proxy));
 
