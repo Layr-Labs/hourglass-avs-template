@@ -2,7 +2,11 @@
 
 # Function to log to stderr
 log() {
-    echo "$@" >&2
+  if [ $# -eq 0 ]; then
+    echo "" >&2
+  else
+    echo -e "$@" >&2
+  fi
 }
 
 function ensureJq() {

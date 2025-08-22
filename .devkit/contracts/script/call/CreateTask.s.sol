@@ -9,9 +9,8 @@ import {ITaskMailbox, ITaskMailboxTypes} from "@eigenlayer-contracts/src/contrac
 contract CreateTask is Script {
     using stdJson for string;
 
-    function run(string memory environment, address avs, uint32 executorOperatorSetId, bytes memory payload) public {
-        // Read TaskMailbox address from config
-        address taskMailbox = _readTaskMailboxAddress(environment);
+    function run(string memory environment, address taskMailbox, address avs, uint32 executorOperatorSetId, bytes memory payload) public {
+        // TaskMailbox address from args
         console.log("Task Mailbox:", taskMailbox);
 
         // Load the private key from the environment variable
@@ -36,17 +35,5 @@ contract CreateTask is Script {
         console.logBytes(task.payload);
 
         vm.stopBroadcast();
-    }
-
-    function _readTaskMailboxAddress(
-        string memory environment
-    ) internal view returns (address) {
-        // Load the output file
-        string memory hourglassConfigFile =
-            string.concat("script/", environment, "/output/deploy_hourglass_core_output.json");
-        string memory hourglassConfig = vm.readFile(hourglassConfigFile);
-
-        // Parse and return the TaskMailbox address
-        return stdJson.readAddress(hourglassConfig, ".addresses.taskMailbox");
     }
 }
