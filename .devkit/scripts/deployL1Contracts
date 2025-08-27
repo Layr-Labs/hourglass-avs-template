@@ -136,6 +136,11 @@ fi
 AGGREGATOR_OPERATOR_SET_ID=$(yq -r '.aggregator.operatorSetId' "$ENVIRONMENT_YAML_FILE")
 EXECUTOR_OPERATOR_SET_ID=$(yq -r '.executor.operatorSetId' "$ENVIRONMENT_YAML_FILE")
 
+# Extract aggregator operators addresses as a comma-separated list with brackets for Forge
+AGGREGATOR_OPERATORS_RAW=$(yq -r '.aggregator.operators[].address' "$ENVIRONMENT_YAML_FILE" | paste -sd "," -)
+# Format for Forge: [addr1,addr2,addr3]
+AGGREGATOR_OPERATORS="[${AGGREGATOR_OPERATORS_RAW}]"
+
 # Validate YAML values
 if [ "$AGGREGATOR_OPERATOR_SET_ID" == "null" ]; then
     log "Error: Missing aggregator.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
@@ -144,6 +149,12 @@ fi
 
 if [ "$EXECUTOR_OPERATOR_SET_ID" == "null" ]; then
     log "Error: Missing executor.operatorSetId in ${ENVIRONMENT_YAML_FILE}"
+    exit 1
+fi
+
+# Validate aggregator operators
+if [ -z "$AGGREGATOR_OPERATORS_RAW" ] || [ "$AGGREGATOR_OPERATORS_RAW" == "null" ]; then
+    log "Error: Missing or empty aggregator.operators in ${ENVIRONMENT_YAML_FILE}"
     exit 1
 fi
 
@@ -172,7 +183,7 @@ mkdir -p script/$ENVIRONMENT/output
 
 # Deploy AVS L1 contracts
 log "Deploying AVS L1 contracts..."
-PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" KEY_REGISTRAR_ADDRESS="${KEY_REGISTRAR_ADDRESS}" PERMISSION_CONTROLLER_ADDRESS="${PERMISSION_CONTROLLER_ADDRESS}" AGGREGATOR_OPERATOR_SET_ID="${AGGREGATOR_OPERATOR_SET_ID}" EXECUTOR_OPERATOR_SET_ID="${EXECUTOR_OPERATOR_SET_ID}" >&2
+PRIVATE_KEY_DEPLOYER="${PRIVATE_KEY_DEPLOYER}" make deploy-avs-l1-contracts RPC_URL="${L1_RPC_URL}" ENVIRONMENT="${ENVIRONMENT}" AVS_ADDRESS="${AVS_ADDRESS}" ALLOCATION_MANAGER_ADDRESS="${ALLOCATION_MANAGER_ADDRESS}" KEY_REGISTRAR_ADDRESS="${KEY_REGISTRAR_ADDRESS}" PERMISSION_CONTROLLER_ADDRESS="${PERMISSION_CONTROLLER_ADDRESS}" AGGREGATOR_OPERATOR_SET_ID="${AGGREGATOR_OPERATOR_SET_ID}" EXECUTOR_OPERATOR_SET_ID="${EXECUTOR_OPERATOR_SET_ID}" AGGREGATOR_OPERATORS="${AGGREGATOR_OPERATORS}" >&2
 
 log "L1 contract deployment completed successfully."
 

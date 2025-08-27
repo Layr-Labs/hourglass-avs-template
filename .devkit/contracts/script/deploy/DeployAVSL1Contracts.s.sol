@@ -7,6 +7,7 @@ import {TransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transpa
 import {ITransparentUpgradeableProxy} from "@openzeppelin/contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import {IAllocationManager} from "@eigenlayer-contracts/src/contracts/interfaces/IAllocationManager.sol";
+import {OperatorSet} from "@eigenlayer-contracts/src/contracts/libraries/OperatorSetLib.sol";
 import {IKeyRegistrar} from "@eigenlayer-contracts/src/contracts/interfaces/IKeyRegistrar.sol";
 import {IPermissionController} from "@eigenlayer-contracts/src/contracts/interfaces/IPermissionController.sol";
 import {ITaskAVSRegistrarBaseTypes} from "@eigenlayer-middleware/src/interfaces/ITaskAVSRegistrarBase.sol";
@@ -21,7 +22,8 @@ contract DeployAVSL1Contracts is Script {
         address keyRegistrar,
         address permissionController,
         uint32 aggregatorOperatorSetId,
-        uint32 executorOperatorSetId
+        uint32 executorOperatorSetId,
+        address[] memory aggregatorWhitelistedOperators
     ) public {
         // Load the private key from the environment variable
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_DEPLOYER");
@@ -44,7 +46,9 @@ contract DeployAVSL1Contracts is Script {
 
         // Deploy implementation
         TaskAVSRegistrar taskAVSRegistrarImpl = new TaskAVSRegistrar(
-            IAllocationManager(allocationManager), IKeyRegistrar(keyRegistrar), IPermissionController(permissionController)
+            IAllocationManager(allocationManager),
+            IKeyRegistrar(keyRegistrar),
+            IPermissionController(permissionController)
         );
         console.log("TaskAVSRegistrar implementation deployed to:", address(taskAVSRegistrarImpl));
 
@@ -52,9 +56,22 @@ contract DeployAVSL1Contracts is Script {
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(taskAVSRegistrarImpl),
             address(proxyAdmin),
-            abi.encodeWithSelector(TaskAVSRegistrar.initialize.selector, avs, avs, initialConfig)
+            abi.encodeWithSelector(
+                TaskAVSRegistrar.initialize.selector, avs, vm.addr(deployerPrivateKey), initialConfig
+            )
         );
         console.log("TaskAVSRegistrar proxy deployed to:", address(proxy));
+
+        // Whitelist operators
+        OperatorSet memory aggregatorOperatorSet = OperatorSet({avs: avs, id: aggregatorOperatorSetId});
+        for (uint256 i = 0; i < aggregatorWhitelistedOperators.length; i++) {
+            TaskAVSRegistrar(address(proxy)).addOperatorToAllowlist(
+                aggregatorOperatorSet, aggregatorWhitelistedOperators[i]
+            );
+        }
+
+        // Transfer ownership of the proxy to the avs
+        TaskAVSRegistrar(address(proxy)).transferOwnership(avs);
 
         // Transfer ProxyAdmin ownership to avs (or a multisig in production)
         proxyAdmin.transferOwnership(avs);
@@ -65,7 +82,12 @@ contract DeployAVSL1Contracts is Script {
         _writeOutputToJson(environment, address(proxy), address(taskAVSRegistrarImpl), address(proxyAdmin));
     }
 
-    function _writeOutputToJson(string memory environment, address taskAVSRegistrarProxy, address taskAVSRegistrarImpl, address proxyAdmin) internal {
+    function _writeOutputToJson(
+        string memory environment,
+        address taskAVSRegistrarProxy,
+        address taskAVSRegistrarImpl,
+        address proxyAdmin
+    ) internal {
         // Add the addresses object
         string memory addresses = "addresses";
         vm.serializeAddress(addresses, "taskAVSRegistrar", taskAVSRegistrarProxy);

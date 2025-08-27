@@ -9,7 +9,13 @@ import {ITaskMailbox, ITaskMailboxTypes} from "@eigenlayer-contracts/src/contrac
 contract CreateTask is Script {
     using stdJson for string;
 
-    function run(string memory environment, address taskMailbox, address avs, uint32 executorOperatorSetId, bytes memory payload) public {
+    function run(
+        string memory environment,
+        address taskMailbox,
+        address avs,
+        uint32 executorOperatorSetId,
+        bytes memory payload
+    ) public {
         // TaskMailbox address from args
         console.log("Task Mailbox:", taskMailbox);
 
