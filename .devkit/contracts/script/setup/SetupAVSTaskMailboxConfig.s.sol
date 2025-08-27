@@ -25,7 +25,13 @@ contract SetupAVSTaskMailboxConfig is Script {
         IAVSTaskHook taskHook;
     }
 
-    function run(string memory environment, uint32 executorOperatorSetId, uint96 taskSLA, uint8 curveType, string memory _context) public {
+    function run(
+        string memory environment,
+        uint32 executorOperatorSetId,
+        uint96 taskSLA,
+        uint8 curveType,
+        string memory _context
+    ) public {
         // Read the context
         Context memory context = _readContext(environment, _context);
 
@@ -64,17 +70,18 @@ contract SetupAVSTaskMailboxConfig is Script {
         vm.stopBroadcast();
     }
 
-    function _readContext(
-        string memory environment,
-        string memory _context
-    ) internal view returns (Context memory) {
+    function _readContext(string memory environment, string memory _context) internal view returns (Context memory) {
         // Parse the context
         Context memory context;
         context.avs = stdJson.readAddress(_context, ".context.avs.address");
         context.avsPrivateKey = uint256(stdJson.readBytes32(_context, ".context.avs.avs_private_key"));
         context.deployerPrivateKey = uint256(stdJson.readBytes32(_context, ".context.deployer_private_key"));
-        context.certificateVerifier = IBN254CertificateVerifier(stdJson.readAddress(_context, ".context.eigenlayer.l2.bn254_certificate_verifier"));
-        context.ecdsaCertificateVerifier = IECDSACertificateVerifier(stdJson.readAddress(_context, ".context.eigenlayer.l2.ecdsa_certificate_verifier"));
+        context.certificateVerifier = IBN254CertificateVerifier(
+            stdJson.readAddress(_context, ".context.eigenlayer.l2.bn254_certificate_verifier")
+        );
+        context.ecdsaCertificateVerifier = IECDSACertificateVerifier(
+            stdJson.readAddress(_context, ".context.eigenlayer.l2.ecdsa_certificate_verifier")
+        );
         context.taskMailbox = ITaskMailbox(_readHourglassConfigAddress(environment, "taskMailbox"));
         context.taskHook = IAVSTaskHook(_readAVSL2ConfigAddress(environment, "avsTaskHook"));
 

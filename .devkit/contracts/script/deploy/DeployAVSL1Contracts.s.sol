@@ -46,7 +46,9 @@ contract DeployAVSL1Contracts is Script {
 
         // Deploy implementation
         TaskAVSRegistrar taskAVSRegistrarImpl = new TaskAVSRegistrar(
-            IAllocationManager(allocationManager), IKeyRegistrar(keyRegistrar), IPermissionController(permissionController)
+            IAllocationManager(allocationManager),
+            IKeyRegistrar(keyRegistrar),
+            IPermissionController(permissionController)
         );
         console.log("TaskAVSRegistrar implementation deployed to:", address(taskAVSRegistrarImpl));
 
@@ -54,14 +56,18 @@ contract DeployAVSL1Contracts is Script {
         TransparentUpgradeableProxy proxy = new TransparentUpgradeableProxy(
             address(taskAVSRegistrarImpl),
             address(proxyAdmin),
-            abi.encodeWithSelector(TaskAVSRegistrar.initialize.selector, avs, vm.addr(deployerPrivateKey), initialConfig)
+            abi.encodeWithSelector(
+                TaskAVSRegistrar.initialize.selector, avs, vm.addr(deployerPrivateKey), initialConfig
+            )
         );
         console.log("TaskAVSRegistrar proxy deployed to:", address(proxy));
 
         // Whitelist operators
         OperatorSet memory aggregatorOperatorSet = OperatorSet({avs: avs, id: aggregatorOperatorSetId});
         for (uint256 i = 0; i < aggregatorWhitelistedOperators.length; i++) {
-            TaskAVSRegistrar(address(proxy)).addOperatorToAllowlist(aggregatorOperatorSet, aggregatorWhitelistedOperators[i]);
+            TaskAVSRegistrar(address(proxy)).addOperatorToAllowlist(
+                aggregatorOperatorSet, aggregatorWhitelistedOperators[i]
+            );
         }
 
         // Transfer ownership of the proxy to the avs
@@ -76,7 +82,12 @@ contract DeployAVSL1Contracts is Script {
         _writeOutputToJson(environment, address(proxy), address(taskAVSRegistrarImpl), address(proxyAdmin));
     }
 
-    function _writeOutputToJson(string memory environment, address taskAVSRegistrarProxy, address taskAVSRegistrarImpl, address proxyAdmin) internal {
+    function _writeOutputToJson(
+        string memory environment,
+        address taskAVSRegistrarProxy,
+        address taskAVSRegistrarImpl,
+        address proxyAdmin
+    ) internal {
         // Add the addresses object
         string memory addresses = "addresses";
         vm.serializeAddress(addresses, "taskAVSRegistrar", taskAVSRegistrarProxy);
