@@ -170,8 +170,8 @@ if [ -z "$FROM_BLOCK" ]; then
   log "Error: invalid from-block '$FROM_BLOCK_RAW'"; exit 1
 fi
 
-# 30 minutes if sleep=5
-MAX_ATTEMPTS=360
+# 35s if sleep=5
+MAX_ATTEMPTS=7
 SLEEP=5
 FOUND=0
 EXECUTOR_SET_ID=""
