@@ -6,6 +6,7 @@ services:
     image: public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v1.0.0-rc.4_80cd248
     networks:
       - hourglass-network
+      - custom-network
     ports:
       - "127.0.0.1:9090:9090"
     command:
@@ -34,4 +35,6 @@ services:
       - ./config:/ponos-config
 networks:
   hourglass-network:
+    driver: bridge
+  custom-network:
     driver: bridge
