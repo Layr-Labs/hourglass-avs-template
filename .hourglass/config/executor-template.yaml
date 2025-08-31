@@ -37,7 +37,7 @@ l1Chain:
 avsPerformers:
   - image:
       repository: "{{ (ds "ctx").config.project.name }}-performer"
-      tag: "{{ coalesce (ds "ctx").context.artifact.version "0" }}"
+      tag: "{{ (ds "ctx").context.artifact.version | default "" | or "0" }}"
     processType: "server"
     avsAddress: "{{ (ds "ctx").context.avs.address }}"
     workerCount: 1
