@@ -191,16 +191,29 @@ for ((i=1; i<=MAX_ATTEMPTS; i++)); do
   if [ -n "$EVENT" ] && [ "$EVENT" != "[]" ]; then
     # Pick the first matching log
     DATA="$(jq -r '.[-1].data' <<<"$EVENT")"
-    DECODED="$(cast --abi-decode "(uint32,bytes,bytes)" "$DATA")"
+    TOPIC1=$(jq -r '.[-1].topics[1]' <<<"$EVENT")   # aggregator
+    TOPIC2=$(jq -r '.[-1].topics[2]' <<<"$EVENT")   # taskHash
+    TOPIC3=$(jq -r '.[-1].topics[3]' <<<"$EVENT")   # avs
+
+    # Indexed params from topics
+    AGGREGATOR="0x${TOPIC1:26}"
+    TASK_HASH="$TOPIC2"
+    AVS="0x${TOPIC3:26}"
+
+    # Remaining params from decoded data
+    DECODED="$(cast calldata-decode "f(uint32,bytes,bytes)" "0x00000000${DATA#0x}")"
     EXECUTOR_SET_ID="$(printf '%s\n' "$DECODED" | sed -n '1p')"
     EXECUTOR_CERT="$(printf '%s\n' "$DECODED" | sed -n '2p')"
     RESULT_BYTES="$(printf '%s\n' "$DECODED" | sed -n '3p')"
       
     # Print to stderr
     log "\nTaskVerified event received:"
-    log " - executorOperatorSetId: $EXECUTOR_SET_ID"
-    log " - executorCert: $EXECUTOR_CERT"
-    log " - result: $RESULT_BYTES"
+    log " - Aggregator: $AGGREGATOR"
+    log " - TaskHash: $TASK_HASH"
+    log " - AVS: $AVS"
+    log " - ExecutorOperatorSetId: $EXECUTOR_SET_ID"
+    log " - ExecutorCert: $EXECUTOR_CERT"
+    log " - TaskResult: $RESULT_BYTES\n"
 
     FOUND=1
     break
