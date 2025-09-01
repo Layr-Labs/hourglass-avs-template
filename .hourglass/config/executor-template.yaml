@@ -8,7 +8,7 @@
 {{- end }}
 {{- $taskMailboxL2 := (ds "ctx").context.eigenlayer.l2.task_mailbox }}
 grpcPort: 9090
-performerNetworkName: "custom-network"
+performerNetworkName: "hourglass-local_hourglass-network"
 managementServerGrpcPort: 8081
 storage:
   type: "memory"
