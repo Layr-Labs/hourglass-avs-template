@@ -1,9 +1,9 @@
 operatorSets:
   - id: 0
-    curve_type: "BN254"
+    curve_type: "ECDSA"
     strategies: ["0x8b29d91e67b013e855EaFe0ad704aC4Ab086a574"] # StETH strategy
   - id: 1
-    curve_type: "BN254"
+    curve_type: "ECDSA"
     strategies: ["0x8b29d91e67b013e855EaFe0ad704aC4Ab086a574"] # StETH strategy
 
 aggregator:
