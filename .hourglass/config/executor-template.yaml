@@ -52,7 +52,7 @@ operator:
   signingKeys:
     {{- if eq $curve "ecdsa" }}
     ecdsa:
-      privateKey: "{{ $op.ecdsa_key }}"
+      privateKey: "{{ $ks.ecdsa_private_key }}"
     {{- else if or (eq $curve "bn254") (eq $curve "bls") }}
     bls:
       keystore: |

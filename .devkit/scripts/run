@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # source in helper functions
 source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
@@ -51,17 +51,59 @@ function loadBlsKeysForAllOperators() {
 
 # Load ECDSA keys from keystores
 function loadECDSAKeysForAllOperators() {
-    local opCount ksCount i j ecdsaKeystorePath ecdsaKeystoreContents
+    local opCount ksCount i j
     opCount=$(jq -r '.context.operators | length' <<<"$CONTEXT")
+
+    # temp keystore dir for cast
+    local TMP_KS
+    TMP_KS="$(mktemp -d)"
+    trap 'rm -rf "$TMP_KS"' EXIT
+
     for ((i=0; i<opCount; i++)); do
         ksCount=$(jq -r ".context.operators[$i].keystores | length // 0" <<<"$CONTEXT")
         for ((j=0; j<ksCount; j++)); do
+            # pull fields
+            local ecdsaKeystorePath ecdsaPass
             ecdsaKeystorePath=$(jq -r ".context.operators[$i].keystores[$j].ecdsa_keystore_path // empty" <<<"$CONTEXT")
-            if [[ -n "$ecdsaKeystorePath" && -f "$ecdsaKeystorePath" ]]; then
-                ecdsaKeystoreContents=$(jq -c '.' "$ecdsaKeystorePath")
-                CONTEXT=$(jq --argjson c "$ecdsaKeystoreContents" \
-                    ".context.operators[$i].keystores[$j].ecdsa_keystore_contents = \$c" <<<"$CONTEXT")
+            ecdsaPass=$(jq -r ".context.operators[$i].keystores[$j].ecdsa_keystore_password // empty" <<<"$CONTEXT")
+
+            # skip if not present
+            [[ -z "$ecdsaKeystorePath" || ! -f "$ecdsaKeystorePath" ]] && continue
+            [[ -z "$ecdsaPass" ]] && { echo "Missing password for $ecdsaKeystorePath" >&2; continue; }
+
+            # cast needs the file named as the account alias in a keystore dir
+            local alias
+            alias="$(basename "$ecdsaKeystorePath")"
+
+            # place a copy under TMP_KS with the alias
+            cp "$ecdsaKeystorePath" "$TMP_KS/$alias"
+
+            # if password is wrong, cast exits non-zero and we skip.
+            local out
+            if ! out=$(cast wallet decrypt-keystore "$alias" -k "$TMP_KS" --unsafe-password "$ecdsaPass" 2>/dev/null); then
+                echo "Decrypt failed for $ecdsaKeystorePath" >&2
+                continue
             fi
+
+            # extract the 64-hex private key
+            priv="$(printf '%s\n' "$out" | grep -Eo '0x[0-9A-Fa-f]{64}' | tail -n1)"
+            if [ -z "$priv" ]; then
+            echo "decrypt failed: $alias -> $out" >&2
+            continue
+            fi
+
+            # persist keystore contents and decrypted artifacts back into CONTEXT
+            local ecdsaKeystoreContents
+            ecdsaKeystoreContents=$(jq -c '.' "$ecdsaKeystorePath")
+
+            CONTEXT=$(jq \
+                --argjson c "$ecdsaKeystoreContents" \
+                --arg pk "$priv" \
+                ".context.operators[$i].keystores[$j]
+                    |= (. + {
+                        ecdsa_keystore_contents: \$c,
+                        ecdsa_private_key: \$pk,
+                    })" <<<"$CONTEXT")
         done
     done
 }
