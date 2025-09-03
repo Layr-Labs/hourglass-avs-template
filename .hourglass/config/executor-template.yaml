@@ -2,38 +2,75 @@
 {{- $avsRegistrar := "" }}
 {{- $taskMailboxL2 := "" }}
 {{- range $i, $contract := (ds "ctx").context.deployed_l1_contracts }}
-{{- if eq $contract.name "taskAVSRegistrar" }}
-{{- $avsRegistrar = $contract.address }}
+  {{- if eq $contract.name "taskAVSRegistrar" }}
+    {{- $avsRegistrar = $contract.address }}
+  {{- end }}
 {{- end }}
+{{- $taskMailboxL2 = (ds "ctx").context.eigenlayer.l2.task_mailbox }}
+
+{{- /* required vars */}}
+{{- $opSetID := (ds "ctx").executor.operatorSetId }}
+{{- $executor := index (ds "ctx").executor.operators 0 }}
+
+{{- /* resolve curve type */}}
+{{- $curve := "" }}
+{{- range $i, $os := (ds "ctx").operatorSets }}
+  {{- if eq (printf "%v" $os.id) (printf "%v" $opSetID) }}
+    {{- $curve = (strings.ToLower $os.curve_type) }}
+  {{- end }}
 {{- end }}
-{{- $taskMailboxL2 := (ds "ctx").context.eigenlayer.l2.task_mailbox }}
+{{- if eq $curve "" }}
+  {{- range $i, $op := (ds "ctx").context.operators }}
+    {{- if eq $executor.address $op.address }}
+      {{- range $j, $ks := $op.keystores }}
+        {{- if eq (printf "%v" $ks.operatorSet) (printf "%v" $opSetID) }}
+          {{- $curve = (strings.ToLower ($ks.curve_type | default "")) }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+{{- end }}
+{{- if eq $curve "" }}{{- fail (printf "curve_type not found for operatorSetId=%v" $opSetID) }}{{- end }}
+
 grpcPort: 9090
 performerNetworkName: "hourglass-local_hourglass-network"
 managementServerGrpcPort: 8081
 storage:
   type: "memory"
+
 operator:
-  {{- $executor := index (ds "ctx").executor.operators 0 }}
   address: "{{ $executor.address }}"
-  {{- $aggSetID := (ds "ctx").executor.operatorSetId }}
+  {{- $found := false }}
   {{- range $i, $op := (ds "ctx").context.operators }}
-    {{- if eq $executor.address $op.address }}
+    {{- if and (not $found) (eq $executor.address $op.address) }}
       {{- range $j, $ks := $op.keystores }}
-        {{- if eq $ks.operatorSet $aggSetID }}
+        {{- if eq (printf "%v" $ks.operatorSet) (printf "%v" $opSetID) }}
+          {{- $found = true }}
   operatorPrivateKey:
+    # EOA used for tx signing
     privateKey: "{{ $op.ecdsa_key }}"
   signingKeys:
+    {{- if eq $curve "ecdsa" }}
+    ecdsa:
+      privateKey: "{{ $ks.ecdsa_private_key }}"
+    {{- else if or (eq $curve "bn254") (eq $curve "bls") }}
     bls:
       keystore: |
 {{ toJSONPretty " " $ks.bls_key_contents | indent 8 }}
       password: "{{ $ks.bls_keystore_password }}"
+    {{- else }}
+    {{- fail (printf "unsupported curve_type %q" $curve) }}
+    {{- end }}
         {{- end }}
       {{- end }}
     {{- end }}
   {{- end }}
+  {{- if not $found }}{{- fail (printf "no keystore for operatorSetId=%v and operator=%s" $opSetID $executor.address) }}{{- end }}
+
 l1Chain:
   chainId: "{{ (ds "ctx").context.chains.l1.chain_id }}"
   rpcUrl: "{{ (ds "ctx").context.chains.l1.rpc_url }}"
+
 avsPerformers:
   - image:
       repository: "{{ (ds "ctx").config.project.name }}-performer"
@@ -41,7 +78,7 @@ avsPerformers:
     processType: "server"
     avsAddress: "{{ (ds "ctx").context.avs.address }}"
     workerCount: 1
-    signingCurve: "bn254"
+    signingCurve: "{{ $curve }}"
     avsRegistrarAddress: "{{ $avsRegistrar }}"
 
 overrideContracts:

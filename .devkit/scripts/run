@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
 # source in helper functions
 source "$( dirname "${BASH_SOURCE[0]}" )/helpers/helpers.sh"
-
 
 # Check if context parameter is provided
 if [ -z "$1" ]; then
@@ -52,23 +51,85 @@ function loadBlsKeysForAllOperators() {
 
 # Load ECDSA keys from keystores
 function loadECDSAKeysForAllOperators() {
-    local opCount ksCount i j ecdsaKeystorePath ecdsaKeystoreContents
+    local opCount ksCount i j
     opCount=$(jq -r '.context.operators | length' <<<"$CONTEXT")
+
+    # temp keystore dir for cast
+    local TMP_KS
+    TMP_KS="$(mktemp -d)"
+    trap 'rm -rf "$TMP_KS"' EXIT
+
     for ((i=0; i<opCount; i++)); do
         ksCount=$(jq -r ".context.operators[$i].keystores | length // 0" <<<"$CONTEXT")
         for ((j=0; j<ksCount; j++)); do
+            # pull fields
+            local ecdsaKeystorePath ecdsaPass
             ecdsaKeystorePath=$(jq -r ".context.operators[$i].keystores[$j].ecdsa_keystore_path // empty" <<<"$CONTEXT")
-            if [[ -n "$ecdsaKeystorePath" && -f "$ecdsaKeystorePath" ]]; then
-                ecdsaKeystoreContents=$(jq -c '.' "$ecdsaKeystorePath")
-                CONTEXT=$(jq --argjson c "$ecdsaKeystoreContents" \
-                    ".context.operators[$i].keystores[$j].ecdsa_keystore_contents = \$c" <<<"$CONTEXT")
+            ecdsaPass=$(jq -r ".context.operators[$i].keystores[$j].ecdsa_keystore_password // empty" <<<"$CONTEXT")
+
+            # skip if not present
+            [[ -z "$ecdsaKeystorePath" || ! -f "$ecdsaKeystorePath" ]] && continue
+            [[ -z "$ecdsaPass" ]] && { echo "Missing password for $ecdsaKeystorePath" >&2; continue; }
+
+            # cast needs the file named as the account alias in a keystore dir
+            local alias
+            alias="$(basename "$ecdsaKeystorePath")"
+
+            # place a copy under TMP_KS with the alias
+            cp "$ecdsaKeystorePath" "$TMP_KS/$alias"
+
+            # if password is wrong, cast exits non-zero and we skip.
+            local out
+            if ! out=$(cast wallet decrypt-keystore "$alias" -k "$TMP_KS" --unsafe-password "$ecdsaPass" 2>/dev/null); then
+                echo "Decrypt failed for $ecdsaKeystorePath" >&2
+                continue
             fi
+
+            # extract the 64-hex private key
+            priv="$(printf '%s\n' "$out" | grep -Eo '0x[0-9A-Fa-f]{64}' | tail -n1)"
+            if [ -z "$priv" ]; then
+            echo "decrypt failed: $alias -> $out" >&2
+            continue
+            fi
+
+            # persist keystore contents and decrypted artifacts back into CONTEXT
+            local ecdsaKeystoreContents
+            ecdsaKeystoreContents=$(jq -c '.' "$ecdsaKeystorePath")
+
+            CONTEXT=$(jq \
+                --argjson c "$ecdsaKeystoreContents" \
+                --arg pk "$priv" \
+                ".context.operators[$i].keystores[$j]
+                    |= (. + {
+                        ecdsa_keystore_contents: \$c,
+                        ecdsa_private_key: \$pk,
+                    })" <<<"$CONTEXT")
         done
     done
 }
 
 loadBlsKeysForAllOperators
 loadECDSAKeysForAllOperators
+
+# build { "id":"curve" } map from env config
+opsetMap="$(jq -c '
+  ( .operatorSets // [] )
+  | map(select(has("id") and has("curve_type")))
+  | map({key:(.id|tostring), value:(.curve_type|tostring)})
+  | from_entries
+' <<<"$contextConfig")"
+
+# stamp curve_type onto each keystore by operatorSet
+CONTEXT="$(jq -c --argjson m "$opsetMap" '
+  .context.operators |= (map(
+    .keystores |= (map(
+      if has("operatorSet") and ($m[(.operatorSet|tostring)] // null) != null
+      then . + { curve_type: ($m[(.operatorSet|tostring)]) }
+      else .
+      end
+    ))
+  ))
+' <<<"$CONTEXT")"
 
 # construct rpc_urls for environment
 L1_RPC_URL=$(echo $CONTEXT | jq -r '.context.chains.l1.rpc_url')
@@ -80,10 +141,12 @@ L2_DOCKER_RPC_URL=$(ensureDockerHost "$L2_RPC_URL")
 CONTEXT=$(echo $CONTEXT | jq --arg url "$L1_DOCKER_RPC_URL" '.context.chains.l1.rpc_url = $url')
 CONTEXT=$(echo $CONTEXT | jq --arg url "$L2_DOCKER_RPC_URL" '.context.chains.l2.rpc_url = $url')
 
-# set aggregator and executor
+# set aggregator, executor and operatorSets from env config
 CONTEXT=$(echo $CONTEXT | jq --argjson contextConfig "$contextConfig" '.aggregator = $contextConfig.aggregator')
 CONTEXT=$(echo $CONTEXT | jq --argjson contextConfig "$contextConfig" '.executor = $contextConfig.executor')
+CONTEXT=$(echo "$CONTEXT" | jq --argjson contextConfig "$contextConfig" '.operatorSets = ($contextConfig.operatorSets // [])')
 
+# ensure deployed contracts exist else exit
 deployedL1Contracts=$(echo $CONTEXT | jq -r '.context.deployed_l1_contracts')
 deployedL2Contracts=$(echo $CONTEXT | jq -r '.context.deployed_l2_contracts')
 if [ "$deployedL1Contracts" == "null" ] || [ -z "$deployedL1Contracts" ] || [ "$deployedL2Contracts" == "null" ] || [ -z "$deployedL2Contracts" ]; then
@@ -91,6 +154,7 @@ if [ "$deployedL1Contracts" == "null" ] || [ -z "$deployedL1Contracts" ] || [ "$
     exit 1
 fi
 
+# render templates
 echo $CONTEXT | gomplate -f .hourglass/config/aggregator-template.yaml -d 'ctx=stdin:/?type=application/json' > .hourglass/config/aggregator.yaml
 echo $CONTEXT | gomplate -f .hourglass/config/executor-template.yaml -d 'ctx=stdin:/?type=application/json' > .hourglass/config/executor.yaml
 

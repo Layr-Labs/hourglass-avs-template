@@ -2,11 +2,12 @@
 {{- $avsRegistrar := "" }}
 {{- $taskMailboxL2 := "" }}
 {{- range $i, $contract := (ds "ctx").context.deployed_l1_contracts }}
-{{- if eq $contract.name "taskAVSRegistrar" }}
-{{- $avsRegistrar = $contract.address }}
+  {{- if eq $contract.name "taskAVSRegistrar" }}
+    {{- $avsRegistrar = $contract.address }}
+  {{- end }}
 {{- end }}
-{{- end }}
-{{- $taskMailboxL2 := (ds "ctx").context.eigenlayer.l2.task_mailbox }}
+{{- $taskMailboxL2 = (ds "ctx").context.eigenlayer.l2.task_mailbox }}
+
 debug: false
 serverConfig:
   port: 9000
@@ -17,25 +18,57 @@ managementServerGrpcPort: 8080
 storage:
   type: "memory"
 
-operator:
-  {{- $aggregator := index (ds "ctx").aggregator.operators 0 }}
-  address: "{{ $aggregator.address }}"
-  {{- $aggSetID := (ds "ctx").aggregator.operatorSetId }}
+{{- /* required vars */}}
+{{- $aggregator := index (ds "ctx").aggregator.operators 0 }}
+{{- $opSetID := (ds "ctx").aggregator.operatorSetId }}
+
+{{- /* resolve curve type*/}}
+{{- $curve := "" }}
+{{- range $i, $os := (ds "ctx").operatorSets }}
+  {{- if eq (printf "%v" $os.id) (printf "%v" $opSetID) }}
+    {{- $curve = (strings.ToLower $os.curve_type) }}
+  {{- end }}
+{{- end }}
+{{- if eq $curve "" }}
   {{- range $i, $op := (ds "ctx").context.operators }}
     {{- if eq $aggregator.address $op.address }}
       {{- range $j, $ks := $op.keystores }}
-        {{- if eq $ks.operatorSet $aggSetID }}
-  operatorPrivateKey:
-    privateKey: "{{ $op.ecdsa_key }}"
-  signingKeys:
-    bls:
-      keystore: |
-{{ toJSONPretty " " $ks.bls_key_contents | indent 8 }}
-      password: "{{ $ks.bls_keystore_password }}"
+        {{- if eq (printf "%v" $ks.operatorSet) (printf "%v" $opSetID) }}
+          {{- $curve = (strings.ToLower ($ks.curve_type | default "")) }}
         {{- end }}
       {{- end }}
     {{- end }}
   {{- end }}
+{{- end }}
+{{- if eq $curve "" }}{{- fail (printf "curve_type not found for aggregator operatorSetId=%v" $opSetID) }}{{- end }}
+
+operator:
+  address: "{{ $aggregator.address }}"
+  {{- $found := false }}
+  {{- range $i, $op := (ds "ctx").context.operators }}
+    {{- if and (not $found) (eq $aggregator.address $op.address) }}
+      {{- range $j, $ks := $op.keystores }}
+        {{- if eq (printf "%v" $ks.operatorSet) (printf "%v" $opSetID) }}
+          {{- $found = true }}
+  operatorPrivateKey:
+    privateKey: "{{ $op.ecdsa_key }}"
+  signingKeys:
+    {{- if eq $curve "ecdsa" }}
+    ecdsa:
+      privateKey: "{{ $ks.ecdsa_private_key }}"
+    {{- else if or (eq $curve "bn254") (eq $curve "bls") }}
+    bls:
+      keystore: |
+{{ toJSONPretty " " $ks.bls_key_contents | indent 8 }}
+      password: "{{ $ks.bls_keystore_password }}"
+    {{- else }}
+    {{- fail (printf "unsupported curve_type %q" $curve) }}
+    {{- end }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  {{- if not $found }}{{- fail (printf "no keystore for operatorSetId=%v and operator=%s" $opSetID $aggregator.address) }}{{- end }}
 
 l1ChainId: {{ (ds "ctx").context.chains.l1.chain_id }}
 
