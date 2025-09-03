@@ -11,7 +11,7 @@ aggregator:
   operators:
     - address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
       socket: "aggregator:9000"
-  digest: "sha256:aff2ae3693153bbc9f1782c4c106977c12186f081f4bd11f66ad1c11a3c933a0"
+  digest: "sha256:804e8f1e44b785c17b4c2750b608616135f184234f9cc1ce394ab7ab5a84d4d3"
   registry: "public.ecr.aws/z6g0f8n7/eigenlayer-hourglass"
 
 executor:
@@ -19,7 +19,7 @@ executor:
   operators:
     - address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
       socket: "executor:9090"
-  digest: "sha256:aff2ae3693153bbc9f1782c4c106977c12186f081f4bd11f66ad1c11a3c933a0"
+  digest: "sha256:804e8f1e44b785c17b4c2750b608616135f184234f9cc1ce394ab7ab5a84d4d3"
   registry: "public.ecr.aws/z6g0f8n7/eigenlayer-hourglass"
 
 mailbox:
