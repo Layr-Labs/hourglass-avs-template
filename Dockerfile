@@ -11,4 +11,8 @@ FROM debian:stable-slim
 
 COPY --from=build /build/bin/performer /usr/local/bin/performer
 
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+
 CMD ["/usr/local/bin/performer"]
