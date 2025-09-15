@@ -19,4 +19,4 @@ executor:
       socket: "executor:9090"
 
 mailbox:
-  taskSla: 60
+  taskSla: 120

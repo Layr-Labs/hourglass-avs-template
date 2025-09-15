@@ -23,4 +23,4 @@ executor:
   registry: "public.ecr.aws/z6g0f8n7/eigenlayer-hourglass"
 
 mailbox:
-  taskSla: 60
+  taskSla: 120
