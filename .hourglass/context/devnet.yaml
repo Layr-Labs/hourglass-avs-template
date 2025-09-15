@@ -19,8 +19,8 @@ executor:
   operators:
     - address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
       socket: "executor:9090"
-  digest: "sha256:804e8f1e44b785c17b4c2750b608616135f184234f9cc1ce394ab7ab5a84d4d3"
+  digest: "sha256:3f0b2eee9da45e23ed7a0b23d3121ba24bfea1fffa4c140ce9b5469ca1ec4b16"
   registry: "public.ecr.aws/z6g0f8n7/eigenlayer-hourglass"
 
 mailbox:
-  taskSla: 60
+  taskSla: 120
