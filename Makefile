@@ -19,6 +19,10 @@ build-contracts:
 	@echo "Building contracts..."
 	cd .devkit/contracts && forge build
 
+bindings: build-contracts
+	@echo "Generating Go bindings for contracts..."
+	./.hourglass/scripts/generate-bindings.sh
+
 deps:
 	GOPRIVATE=github.com/Layr-Labs/* go mod tidy
 
