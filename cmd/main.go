@@ -104,7 +104,7 @@ func (tw *TaskWorker) HandleTask(t *performerV1.TaskRequest) (*performerV1.TaskR
 		}
 
 		// Example 2: Get custom contract addresses (like HelloWorldL1)
-		if helloWorldL1, err := tw.contractStore.GetContract("HELLOWORLDL1"); err == nil {
+		if helloWorldL1, err := tw.contractStore.GetContract("HELLO_WORLD_L1"); err == nil {
 			tw.logger.Info("HelloWorldL1 contract", zap.String("address", helloWorldL1.Hex()))
 
 			// Now you can use the address to create a contract binding
