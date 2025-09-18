@@ -3,10 +3,15 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
+	"github.com/Layr-Labs/hourglass-avs-template/contracts/bindings/l1/helloworldl1"
+	"github.com/Layr-Labs/hourglass-avs-template/contracts/bindings/l1/taskavsregistrar"
+	"github.com/Layr-Labs/hourglass-monorepo/ponos/pkg/performer/contracts"
 	"github.com/Layr-Labs/hourglass-monorepo/ponos/pkg/performer/server"
 	performerV1 "github.com/Layr-Labs/protocol-apis/gen/protos/eigenlayer/hourglass/v1/performer"
+	"github.com/ethereum/go-ethereum/ethclient"
 	"go.uber.org/zap"
 )
 
@@ -18,12 +23,41 @@ import (
 // Aggregator to place in the outbox once the signing threshold is met.
 
 type TaskWorker struct {
-	logger *zap.Logger
+	logger        *zap.Logger
+	contractStore *contracts.ContractStore
+	l1Client      *ethclient.Client
+	l2Client      *ethclient.Client
 }
 
 func NewTaskWorker(logger *zap.Logger) *TaskWorker {
+	// Initialize contract store from environment variables
+	contractStore, err := contracts.NewContractStore()
+	if err != nil {
+		logger.Warn("Failed to load contract store", zap.Error(err))
+	}
+
+	// Initialize Ethereum clients if RPC URLs are provided
+	var l1Client, l2Client *ethclient.Client
+
+	if l1RpcUrl := os.Getenv("L1_RPC_URL"); l1RpcUrl != "" {
+		l1Client, err = ethclient.Dial(l1RpcUrl)
+		if err != nil {
+			logger.Error("Failed to connect to L1 RPC", zap.Error(err))
+		}
+	}
+
+	if l2RpcUrl := os.Getenv("L2_RPC_URL"); l2RpcUrl != "" {
+		l2Client, err = ethclient.Dial(l2RpcUrl)
+		if err != nil {
+			logger.Error("Failed to connect to L2 RPC", zap.Error(err))
+		}
+	}
+
 	return &TaskWorker{
-		logger: logger,
+		logger:        logger,
+		contractStore: contractStore,
+		l1Client:      l1Client,
+		l2Client:      l2Client,
 	}
 }
 
@@ -36,7 +70,7 @@ func (tw *TaskWorker) ValidateTask(t *performerV1.TaskRequest) error {
 	// Implement your AVS task validation logic here
 	// ------------------------------------------------------------------------
 	// This is where the Perfomer will validate the task request data.
-	// E.g. the Perfomer may validate that the request params are well formed and adhere to a schema.
+	// E.g. the Perfomer may validate that the request params are well-formed and adhere to a schema.
 
 	return nil
 }
@@ -45,6 +79,45 @@ func (tw *TaskWorker) HandleTask(t *performerV1.TaskRequest) (*performerV1.TaskR
 	tw.logger.Sugar().Infow("Handling task",
 		zap.Any("task", t),
 	)
+
+	// ------------------------------------------------------------------------
+	// Example: How to interact with your custom contracts
+	// ------------------------------------------------------------------------
+
+	// Example 1: Get addresses of known AVS contracts
+	if tw.contractStore != nil {
+		// Get known contract addresses
+		taskRegistrarAddr, err := tw.contractStore.GetTaskAVSRegistrar()
+		if err != nil {
+			tw.logger.Warn("TaskAVSRegistrar not found", zap.Error(err))
+		} else {
+			tw.logger.Info("TaskAVSRegistrar", zap.String("address", taskRegistrarAddr.Hex()))
+
+			// Example of using the TaskAVSRegistrar contract binding
+			if tw.l1Client != nil {
+				registrar, err := taskavsregistrar.NewTaskAVSRegistrar(taskRegistrarAddr, tw.l1Client)
+				if err == nil {
+					// You can now call methods on the registrar contract
+					_ = registrar
+				}
+			}
+		}
+
+		// Example 2: Get custom contract addresses (like HelloWorldL1)
+		if helloWorldL1, err := tw.contractStore.GetContract("HELLOWORLDL1"); err == nil {
+			tw.logger.Info("HelloWorldL1 contract", zap.String("address", helloWorldL1.Hex()))
+
+			// Now you can use the address to create a contract binding
+			contract, err := helloworldl1.NewHelloWorldL1(helloWorldL1, tw.l1Client)
+			if err == nil {
+				message, _ := contract.GetMessage(nil)
+				tw.logger.Info("Contract message", zap.String("message", message))
+			}
+		}
+
+		// Example 3: List all available contracts
+		tw.logger.Info("Available contracts", zap.Strings("contracts", tw.contractStore.ListContracts()))
+	}
 
 	// ------------------------------------------------------------------------
 	// Implement your AVS logic here

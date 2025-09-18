@@ -80,6 +80,30 @@ avsPerformers:
     workerCount: 1
     signingCurve: "{{ $curve }}"
     avsRegistrarAddress: "{{ $avsRegistrar }}"
+    envs:
+      # L1 and L2 RPC URLs
+      - name: "L1_RPC_URL"
+        value: "{{ (ds "ctx").context.chains.l1.rpc_url }}"
+        type: plain
+      - name: "L2_RPC_URL"
+        value: "{{ (ds "ctx").context.chains.l2.rpc_url }}"
+        type: plain
+      # L1 Contract addresses
+      {{- range $i, $contract := (ds "ctx").context.deployed_l1_contracts }}
+      {{- $name := $contract.name | regexp.Replace "([a-z0-9])([A-Z])" "${1}_${2}" }}
+      {{- $name = $name | regexp.Replace "([A-Z]+)([A-Z][a-z])" "${1}_${2}" }}
+      - name: "{{ $name | strings.ToUpper }}"
+        value: "{{ $contract.address }}"
+        type: plain
+      {{- end }}
+      # L2 Contract addresses
+      {{- range $i, $contract := (ds "ctx").context.deployed_l2_contracts }}
+      {{- $name := $contract.name | regexp.Replace "([a-z0-9])([A-Z])" "${1}_${2}" }}
+      {{- $name = $name | regexp.Replace "([A-Z]+)([A-Z][a-z])" "${1}_${2}" }}
+      - name: "{{ $name | strings.ToUpper }}"
+        value: "{{ $contract.address }}"
+        type: plain
+      {{- end }}
 
 overrideContracts:
   taskMailbox:

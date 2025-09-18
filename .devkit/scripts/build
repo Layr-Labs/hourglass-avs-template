@@ -59,6 +59,14 @@ IMAGE_NAME="${IMAGE_NAME}-performer"
 log "Building contracts..."
 (cd .devkit/contracts && forge clean && forge build -- --include ../../contracts/**/*.sol && cd -) >&2
 
+# Generate Go bindings for custom contracts
+if [ -f "./.hourglass/scripts/generate-bindings.sh" ]; then
+  log "Generating Go bindings for custom contracts..."
+  ./.hourglass/scripts/generate-bindings.sh >&2
+else
+  log "No binding generation script found, skipping..."
+fi
+
 # Build the contracts and dependencies
 log "Building AVS performer..."
 
