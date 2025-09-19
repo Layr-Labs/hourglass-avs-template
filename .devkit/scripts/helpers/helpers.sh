@@ -66,6 +66,13 @@ function ensureCast() {
     fi
 }
 
+function ensureAbigen() {
+    if ! command -v abigen &> /dev/null; then
+        log "Error: abigen not found. Please install with: go install github.com/ethereum/go-ethereum/cmd/abigen@latest"
+        exit 1
+    fi
+}
+
 # Pass in RPC_URL ($1)
 function ensureDockerHost() {
     # Detect OS and default DOCKERS_HOST when not provided

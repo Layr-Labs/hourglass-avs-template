@@ -62,19 +62,19 @@ contract DeployAVSL1Contracts is Script {
         );
         console.log("TaskAVSRegistrar proxy deployed to:", address(proxy));
 
-        // Transfer ownership of the proxy to the avs
-        TaskAVSRegistrar(address(proxy)).transferOwnership(avs);
-
-        // Transfer ProxyAdmin ownership to avs (or a multisig in production)
-        proxyAdmin.transferOwnership(avs);
-
-        // Whitelist operators
+        // Whitelist operators BEFORE transferring ownership
         OperatorSet memory aggregatorOperatorSet = OperatorSet({avs: avs, id: aggregatorOperatorSetId});
         for (uint256 i = 0; i < aggregatorWhitelistedOperators.length; i++) {
             TaskAVSRegistrar(address(proxy)).addOperatorToAllowlist(
                 aggregatorOperatorSet, aggregatorWhitelistedOperators[i]
             );
         }
+
+        // Transfer ownership of the proxy to the avs
+        TaskAVSRegistrar(address(proxy)).transferOwnership(avs);
+
+        // Transfer ProxyAdmin ownership to avs (or a multisig in production)
+        proxyAdmin.transferOwnership(avs);
 
         vm.stopBroadcast();
 
