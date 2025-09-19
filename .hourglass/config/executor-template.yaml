@@ -104,6 +104,13 @@ avsPerformers:
         value: "{{ $contract.address }}"
         type: plain
       {{- end }}
+      # Custom performer environment variables from specs
+      {{- range $env := (ds "ctx").performer_custom_env }}
+      - name: "{{ $env.name }}"
+        value: "{{ $env.value | default "" }}"
+        type: {{ $env.type | default "plain" }}
+        required: {{ $env.required | default false }}
+      {{- end }}
 
 overrideContracts:
   taskMailbox:
