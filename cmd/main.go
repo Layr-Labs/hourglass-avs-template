@@ -81,33 +81,33 @@ func (tw *TaskWorker) HandleTask(t *performerV1.TaskRequest) (*performerV1.TaskR
 	)
 
 	// ------------------------------------------------------------------------
-	// Example: How to interact with your custom contracts
+	// Example: How to interact with contracts
 	// ------------------------------------------------------------------------
 
-	// Example 1: Get addresses of known AVS contracts
+	// Example 1: Generate bindings to contracts
 	if tw.contractStore != nil {
-		// Get known contract addresses
+
 		taskRegistrarAddr, err := tw.contractStore.GetTaskAVSRegistrar()
 		if err != nil {
 			tw.logger.Warn("TaskAVSRegistrar not found", zap.Error(err))
 		} else {
 			tw.logger.Info("TaskAVSRegistrar", zap.String("address", taskRegistrarAddr.Hex()))
 
-			// Example of using the TaskAVSRegistrar contract binding
+			// TaskAVSRegistrar contract binding
 			if tw.l1Client != nil {
 				registrar, err := taskavsregistrar.NewTaskAVSRegistrar(taskRegistrarAddr, tw.l1Client)
 				if err == nil {
-					// You can now call methods on the registrar contract
+					// Call the registrar contract
 					_ = registrar
 				}
 			}
 		}
 
-		// Example 2: Get custom contract addresses (like HelloWorldL1)
+		// Example 2: Get custom contract addresses
 		if helloWorldL1, err := tw.contractStore.GetContract("HELLO_WORLD_L1"); err == nil {
 			tw.logger.Info("HelloWorldL1 contract", zap.String("address", helloWorldL1.Hex()))
 
-			// Now you can use the address to create a contract binding
+			// Use the address to create a contract binding
 			contract, err := helloworldl1.NewHelloWorldL1(helloWorldL1, tw.l1Client)
 			if err == nil {
 				message, _ := contract.GetMessage(nil)
@@ -115,7 +115,7 @@ func (tw *TaskWorker) HandleTask(t *performerV1.TaskRequest) (*performerV1.TaskR
 			}
 		}
 
-		// Example 3: List all available contracts
+		// Example 3: List available contracts
 		tw.logger.Info("Available contracts", zap.Strings("contracts", tw.contractStore.ListContracts()))
 	}
 
