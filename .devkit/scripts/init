@@ -354,6 +354,16 @@ install_gomplate_linux() {
     fi
 }
 
+install_abigen_go() {
+    if ! command -v abigen >/dev/null 2>&1; then
+        log_info "Installing abigen..."
+        go install github.com/ethereum/go-ethereum/cmd/abigen@latest
+        log_success "abigen installed successfully"
+    else
+        log_info "abigen is already installed"
+    fi
+}
+
 # Install dependencies based on platform
 if [[ "$PLATFORM" == "macos" ]]; then
     install_homebrew
@@ -365,6 +375,7 @@ if [[ "$PLATFORM" == "macos" ]]; then
     install_with_brew yq
     install_foundry
     install_go_macos
+    install_abigen_go
     install_docker_macos
 elif [[ "$PLATFORM" == "linux" ]]; then
     if [[ "$LINUX_FLAVOR" == "debian" ]]; then
@@ -374,6 +385,7 @@ elif [[ "$PLATFORM" == "linux" ]]; then
         install_with_apt iproute2
         install_with_apt coreutils realpath
         install_go_debian
+        install_abigen_go
         install_gomplate_linux
         install_yq_binary
         install_foundry
