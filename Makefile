@@ -17,7 +17,7 @@ build: deps
 
 build-contracts:
 	@echo "Building contracts..."
-	cd .devkit/contracts && forge build
+	cd .devkit/contracts && forge build -- --include ../../contracts/**/*.sol
 
 bindings: build-contracts
 	@echo "Generating Go bindings for contracts..."

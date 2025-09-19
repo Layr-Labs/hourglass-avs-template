@@ -1,30 +1,24 @@
 #!/bin/bash
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# Paths
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
-log() {
-    echo -e "${GREEN}[generate-bindings]${NC} $1"
-}
+# source in helper functions
+source "${PROJECT_ROOT}/.devkit/scripts/helpers/helpers.sh"
+
+# Check if abigen is installed
+ensureAbigen
+
+# Colors for output
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m' # No Color
 
 error() {
     echo -e "${RED}[generate-bindings]${NC} $1" >&2
 }
-
-# Check if abigen is installed
-if ! command -v abigen &> /dev/null; then
-    error "abigen is not installed. Please install go-ethereum tools:"
-    error "  go install github.com/ethereum/go-ethereum/cmd/abigen@latest"
-    exit 1
-fi
-
-# Paths
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-PROJECT_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 CONTRACTS_DIR="${PROJECT_ROOT}/contracts"
 DEVKIT_CONTRACTS_DIR="${PROJECT_ROOT}/.devkit/contracts"
 BINDING_DIR="${CONTRACTS_DIR}/bindings"

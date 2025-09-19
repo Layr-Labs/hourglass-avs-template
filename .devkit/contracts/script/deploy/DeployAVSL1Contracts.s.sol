@@ -10,6 +10,7 @@ import {IAllocationManager} from "@eigenlayer-contracts/src/contracts/interfaces
 import {IKeyRegistrar} from "@eigenlayer-contracts/src/contracts/interfaces/IKeyRegistrar.sol";
 import {IPermissionController} from "@eigenlayer-contracts/src/contracts/interfaces/IPermissionController.sol";
 import {ITaskAVSRegistrarBaseTypes} from "@eigenlayer-middleware/src/interfaces/ITaskAVSRegistrarBase.sol";
+import {OperatorSet} from "@eigenlayer-contracts/src/contracts/libraries/OperatorSetLib.sol";
 
 import {TaskAVSRegistrar} from "@project/l1-contracts/TaskAVSRegistrar.sol";
 
@@ -21,7 +22,8 @@ contract DeployAVSL1Contracts is Script {
         address keyRegistrar,
         address permissionController,
         uint32 aggregatorOperatorSetId,
-        uint32 executorOperatorSetId
+        uint32 executorOperatorSetId,
+        address[] memory aggregatorWhitelistedOperators
     ) public {
         // Load the private key from the environment variable
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY_DEPLOYER");
@@ -59,6 +61,14 @@ contract DeployAVSL1Contracts is Script {
             )
         );
         console.log("TaskAVSRegistrar proxy deployed to:", address(proxy));
+
+        // Whitelist operators BEFORE transferring ownership
+        OperatorSet memory aggregatorOperatorSet = OperatorSet({avs: avs, id: aggregatorOperatorSetId});
+        for (uint256 i = 0; i < aggregatorWhitelistedOperators.length; i++) {
+            TaskAVSRegistrar(address(proxy)).addOperatorToAllowlist(
+                aggregatorOperatorSet, aggregatorWhitelistedOperators[i]
+            );
+        }
 
         // Transfer ownership of the proxy to the avs
         TaskAVSRegistrar(address(proxy)).transferOwnership(avs);
