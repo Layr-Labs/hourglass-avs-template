@@ -34,9 +34,10 @@ process_output_file() {
     local file_path="$1"
     local file_desc="$2"
     
+    # If file is missing, warn and do nothing else
     if [ ! -f "$file_path" ]; then
-        log "Error: $file_desc output file $file_path not found"
-        exit 1
+        log "Warning: $file_desc output file $file_path not found"
+        return 0
     fi
     
     # Extract entries with properly formatted abi paths
@@ -45,14 +46,13 @@ process_output_file() {
         address=$(echo "$entry" | jq -r '.address')
         abi_path=$(get_abi_path "$name")
 
-        # Check if ABI file exists
+        # check if ABI file exists
         if [ ! -f "$abi_path" ]; then
             log "Warning: ABI file $abi_path does not exist for contract $name. Run 'devkit avs build' first."
         fi
 
         # convert path back to relative to the project. take abi_path and remove $projectDir
         abi_path=$(echo "$abi_path" | sed "s|$projectDir/||")
-
 
         contract_json=$(jq -n \
             --arg name "$name" \

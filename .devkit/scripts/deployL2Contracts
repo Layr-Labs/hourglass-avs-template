@@ -36,9 +36,10 @@ process_output_file() {
     local file_path="$1"
     local file_desc="$2"
     
+    # If file is missing, warn and do nothing else
     if [ ! -f "$file_path" ]; then
-        log "Error: $file_desc output file $file_path not found"
-        exit 1
+        log "Warning: $file_desc output file $file_path not found"
+        return 0
     fi
     
     # Extract entries with properly formatted abi paths
