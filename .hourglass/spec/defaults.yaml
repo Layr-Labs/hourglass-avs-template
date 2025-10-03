@@ -11,12 +11,6 @@ aggregator:
     - name: "OPERATOR_ADDRESS"
       type: "plain"
       required: true
-    - name: "OPERATOR_PRIVATE_KEY"
-      type: "plain"
-      required: true
-    - name: "KEYSTORE_PASSWORD"
-      type: "plain"
-      required: true
     - name: "L1_RPC_URL"
       type: "plain"
       required: true
@@ -55,12 +49,6 @@ executor:
     digest: "{{ (datasource "context").EXECUTOR_DIGEST }}"
   env:
     - name: "OPERATOR_ADDRESS"
-      type: "plain"
-      required: true
-    - name: "OPERATOR_PRIVATE_KEY"
-      type: "plain"
-      required: true
-    - name: "KEYSTORE_PASSWORD"
       type: "plain"
       required: true
     - name: "L1_RPC_URL"
