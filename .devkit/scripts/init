@@ -52,6 +52,17 @@ inpath() {
     echo $PATH | tr ':' '\n' | grep -qx "$1" && echo "$1 is in PATH" || echo "$1 is NOT in PATH"
 }
 
+# Get the install path of devkit
+get_devkit_path() {
+    local devkit_path
+    devkit_path=$(command -v devkit 2>/dev/null)
+    if [ -z "$devkit_path" ]; then
+        echo "Error: devkit not found in PATH" >&2
+        return 1
+    fi
+    dirname "$devkit_path"
+}
+
 # Add the given dir to the user path and profile
 add_to_path() {
   local dir="$1"
@@ -347,8 +358,11 @@ install_go_debian() {
 install_gomplate_linux() {
     if ! command -v gomplate >/dev/null 2>&1; then
         log_info "Installing gomplate..."
-        go install github.com/hairyhenderson/gomplate/v4/cmd/gomplate@latest
-        log_success "gomplate installed successfully"
+        local install_dir
+        install_dir=$(get_devkit_path) || return 1
+
+        GOBIN="$install_dir" go install github.com/hairyhenderson/gomplate/v4/cmd/gomplate@latest
+        log_success "gomplate installed successfully to $install_dir"
     else
         log_info "gomplate is already installed"
     fi
@@ -357,8 +371,11 @@ install_gomplate_linux() {
 install_abigen_go() {
     if ! command -v abigen >/dev/null 2>&1; then
         log_info "Installing abigen..."
-        go install github.com/ethereum/go-ethereum/cmd/abigen@latest
-        log_success "abigen installed successfully"
+        local install_dir
+        install_dir=$(get_devkit_path) || return 1
+
+        GOBIN="$install_dir" go install github.com/ethereum/go-ethereum/cmd/abigen@v1.16.2
+        log_success "abigen installed successfully to $install_dir"
     else
         log_info "abigen is already installed"
     fi
