@@ -1,0 +1,22 @@
+operatorSets:
+  - id: 0
+    curve_type: "ECDSA"
+    strategies: ["0x93c4b944d05dfe6df7645a86cd2206016c51564d"] # StETH strategy
+  - id: 1
+    curve_type: "ECDSA"
+    strategies: ["0x93c4b944d05dfe6df7645a86cd2206016c51564d"] # StETH strategy
+
+aggregator:
+  operatorSetId: 0
+  operators:
+    - address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
+      socket: "aggregator:9000"
+
+executor:
+  operatorSetId: 1
+  operators:
+    - address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
+      socket: "executor:9090"
+
+mailbox:
+  taskSla: 120
