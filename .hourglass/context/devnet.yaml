@@ -11,16 +11,16 @@ aggregator:
   operators:
     - address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
       socket: "aggregator:9000"
-  digest: "sha256:c8b8e510a890808d4b27c4cb9bfd9c45a58925a3be00f2e30c472562640dbf18"
-  registry: "ghcr.io/bdchatham/boop"
+  digest: "sha256:07df4f956fc95c38b3c0aa97173cd1847ab5fe8d2d169a8b30de05d4aeaf4d14"
+  registry: "public.ecr.aws/z6g0f8n7/eigenlayer-hourglass"
 
 executor:
   operatorSetId: 1
   operators:
     - address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
       socket: "executor:9090"
-  digest: "sha256:c8b8e510a890808d4b27c4cb9bfd9c45a58925a3be00f2e30c472562640dbf18"
-  registry: "ghcr.io/bdchatham/boop"
+  digest: "sha256:07df4f956fc95c38b3c0aa97173cd1847ab5fe8d2d169a8b30de05d4aeaf4d14"
+  registry: "public.ecr.aws/z6g0f8n7/eigenlayer-hourglass"
 
 mailbox:
   taskSla: 120
