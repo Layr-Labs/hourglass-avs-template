@@ -3,7 +3,7 @@ version: '3.8'
 name: hourglass-local
 services:
   executor:
-    image: public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v1.0.0-rc.5_1a605af
+    image: public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v1.0.0-rc.5_4a2e86b
     networks:
       - hourglass-network
     ports:
@@ -19,7 +19,7 @@ services:
       - ./config:/ponos-config
       - /var/run/docker.sock:/var/run/docker.sock # required for DinD
   aggregator:
-    image: public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v1.0.0-rc.5_1a605af
+    image: public.ecr.aws/z6g0f8n7/eigenlayer-hourglass:v1.0.0-rc.5_4a2e86b
     networks:
       - hourglass-network
     ports:
