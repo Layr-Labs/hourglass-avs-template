@@ -22,7 +22,7 @@ aggregator:
       required: true
     - name: "L2_CHAIN_ID"
       type: "plain"
-      required: false
+      required: true
    # Optional variables
     - name: "L1_NETWORK_NAME"
       type: "plain"
