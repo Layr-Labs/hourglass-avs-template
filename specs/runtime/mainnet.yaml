@@ -1,14 +1,29 @@
 # mainnet environment overrides
 aggregator:
   env:
-    -  name: "EXAMPLE_ENV"
-       type: plain
-       required: false
+    - name: "L1_RPC_URL"
+      type: "plain"
+      required: true
+    - name: "L1_CHAIN_ID"
+      type: "plain"
+      required: true
+    - name: "L2_RPC_URL"
+      type: "plain"
+      required: true
+    - name: "L2_CHAIN_ID"
+      type: "plain"
+      required: true
   resources:
     tee_enabled: false
 
 executor:
   env:
+    - name: "L1_RPC_URL"
+      type: "plain"
+      required: true
+    - name: "L1_CHAIN_ID"
+      type: "plain"
+      required: true
   resources:
     tee_enabled: false
 

@@ -15,8 +15,8 @@ echo "$CONTEXT_DATA" | gomplate -d 'context=stdin:?type=application/json' -f "$D
 
 # Then merge with user values (user values take precedence)
 if [ -f "$USER_VALUES_FILE" ]; then
-  # Use yq to deep merge, with user values overriding defaults
-  yq eval-all 'select(fileIndex == 0) * select(fileIndex == 1)' "$TEMP_DEFAULTS" "$USER_VALUES_FILE" > "$OUTPUT_FILE"
+  # Use yq to deep merge with array concatenation, with user values overriding defaults
+  yq eval-all 'select(fileIndex == 0) *+ select(fileIndex == 1)' "$TEMP_DEFAULTS" "$USER_VALUES_FILE" > "$OUTPUT_FILE"
 else
   cp "$TEMP_DEFAULTS" "$OUTPUT_FILE"
 fi

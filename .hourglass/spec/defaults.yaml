@@ -11,34 +11,6 @@ aggregator:
     - name: "OPERATOR_ADDRESS"
       type: "plain"
       required: true
-    - name: "L1_RPC_URL"
-      type: "plain"
-      required: true
-    - name: "L1_CHAIN_ID"
-      type: "plain"
-      required: true
-    - name: "L2_RPC_URL"
-      type: "plain"
-      required: true
-    - name: "L2_CHAIN_ID"
-      type: "plain"
-      required: true
-   # Optional variables
-    - name: "L1_NETWORK_NAME"
-      type: "plain"
-      required: false
-    - name: "L1_NETWORK"
-      type: "plain"
-      required: false
-    - name: "L2_NETWORK_NAME"
-      type: "plain"
-      required: false
-    - name: "L2_NETWORK"
-      type: "plain"
-      required: false
-    - name: "DEBUG"
-      type: "plain"
-      required: false
   resources:
     tee_enabled: false
 
@@ -51,25 +23,6 @@ executor:
     - name: "OPERATOR_ADDRESS"
       type: "plain"
       required: true
-    - name: "L1_RPC_URL"
-      type: "plain"
-      required: true
-    - name: "L1_CHAIN_ID"
-      type: "plain"
-      required: true
-    # Optional variables
-    - name: "EXECUTOR_SERVICE_PORT"
-      type: "plain"
-      required: false
-    - name: "EXECUTOR_MGMT_PORT"
-      type: "plain"
-      required: false
-    - name: "PERFORMER_NETWORK_NAME"
-      type: "plain"
-      required: false
-    - name: "DEBUG"
-      type: "plain"
-      required: false
   resources:
     tee_enabled: false
 
