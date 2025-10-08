@@ -11,7 +11,7 @@ aggregator:
   operators:
     - address: "0x90F79bf6EB2c4f870365E785982E1f101E93b906"
       socket: "aggregator:9000"
-  digest: "sha256:f5c986af8ca8006b6a688e93a66a779de6875adc518c484dcb04cba1a0a7a3d5"
+  digest: "sha256:20a25f59296caa378d7659b1afa66b83003348ad44fc34b73cd25fffd5c08456"
   registry: "ghcr.io/bdchatham/hgctl-integ"
 
 executor:
@@ -19,7 +19,7 @@ executor:
   operators:
     - address: "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65"
       socket: "executor:9090"
-  digest: "sha256:f5c986af8ca8006b6a688e93a66a779de6875adc518c484dcb04cba1a0a7a3d5"
+  digest: "sha256:20a25f59296caa378d7659b1afa66b83003348ad44fc34b73cd25fffd5c08456"
   registry: "ghcr.io/bdchatham/hgctl-integ"
 
 mailbox:
